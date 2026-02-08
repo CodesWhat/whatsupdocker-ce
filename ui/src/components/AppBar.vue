@@ -28,55 +28,7 @@
     </v-menu>
   </v-app-bar>
 </template>
-<script>
-import { computed, inject } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { logout } from "@/services/auth";
-import logo from "@/assets/whale-logo.png";
-
-export default {
-  props: {
-    user: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const eventBus = inject("eventBus");
-
-    const viewName = computed(() => {
-      return route.name;
-    });
-
-    const performLogout = async () => {
-      try {
-        const logoutResult = await logout();
-        if (logoutResult.logoutUrl) {
-          window.location = logoutResult.logoutUrl;
-        } else {
-          await router.push({
-            name: "login",
-          });
-        }
-      } catch (e) {
-        eventBus.emit(
-          "notify",
-          `Error when trying to logout (${e.message})`,
-          "error",
-        );
-      }
-    };
-
-    return {
-      logo,
-      viewName,
-      logout: performLogout,
-    };
-  },
-};
-</script>
+<script lang="ts" src="./AppBar.ts"></script>
 <style scoped>
 .app-logo {
   height: 30px;
