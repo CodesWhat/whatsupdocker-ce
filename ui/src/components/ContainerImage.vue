@@ -36,6 +36,9 @@
       </template>
       <v-list-item-title>Registry</v-list-item-title>
       <v-list-item-subtitle>{{ image.registry.name }}</v-list-item-subtitle>
+      <v-list-item-subtitle v-if="image.registry.lookupImage"
+        >{{ image.registry.lookupImage }} (lookup)</v-list-item-subtitle
+      >
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>

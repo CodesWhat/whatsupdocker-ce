@@ -9,6 +9,8 @@ export interface ContainerImage {
     registry: {
         name: string;
         url: string;
+        lookupImage?: string;
+        lookupUrl?: string;
     };
     name: string;
     tag: {
@@ -87,6 +89,8 @@ const schema = joi.object({
                 .object({
                     name: joi.string().min(1).required(),
                     url: joi.string().min(1).required(),
+                    lookupImage: joi.string(),
+                    lookupUrl: joi.string(),
                 })
                 .required(),
             name: joi.string().min(1).required(),
@@ -377,6 +381,16 @@ export function validate(container: any): Container {
         );
     }
     const containerValidated = validation.value as Container;
+
+    // Backward compatibility: old experimental branches persisted lookupUrl.
+    if (
+        containerValidated.image?.registry?.lookupImage === undefined &&
+        containerValidated.image?.registry?.lookupUrl !== undefined
+    ) {
+        containerValidated.image.registry.lookupImage =
+            containerValidated.image.registry.lookupUrl;
+    }
+    delete containerValidated.image?.registry?.lookupUrl;
 
     // Add computed properties
     addUpdateAvailableProperty(containerValidated);

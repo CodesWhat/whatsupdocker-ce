@@ -797,6 +797,152 @@ describe('Docker Watcher', () => {
             expect(result).toBeDefined();
         });
 
+        test('should use lookup image label for registry matching', async () => {
+            await docker.register('watcher', 'docker', 'test', {});
+            const container = {
+                Id: '123',
+                Image: 'harbor.example.com/dockerhub-proxy/traefik:v3.5.3',
+                Names: ['/traefik'],
+                State: 'running',
+                Labels: {
+                    'wud.registry.lookup.image': 'library/traefik',
+                },
+            };
+            const imageDetails = {
+                Id: 'image123',
+                Architecture: 'amd64',
+                Os: 'linux',
+                Created: '2023-01-01',
+                RepoDigests: ['harbor.example.com/dockerhub-proxy/traefik@sha256:abc123'],
+            };
+            mockImage.inspect.mockResolvedValue(imageDetails);
+            mockParse.mockImplementation((value) => {
+                if (
+                    value ===
+                    'harbor.example.com/dockerhub-proxy/traefik:v3.5.3'
+                ) {
+                    return {
+                        domain: 'harbor.example.com',
+                        path: 'dockerhub-proxy/traefik',
+                        tag: 'v3.5.3',
+                    };
+                }
+                if (value === 'library/traefik') {
+                    return {
+                        path: 'library/traefik',
+                    };
+                }
+                return {
+                    domain: 'docker.io',
+                    path: 'library/nginx',
+                    tag: '1.0.0',
+                };
+            });
+            mockTag.parse.mockReturnValue({ major: 3, minor: 5, patch: 3 });
+            const harborRegistry = {
+                normalizeImage: jest.fn((img) => img),
+                getId: () => 'harbor',
+                match: (img) => img.registry.url === 'harbor.example.com',
+            };
+            const hubRegistry = {
+                normalizeImage: jest.fn((img) => ({
+                    ...img,
+                    registry: {
+                        ...img.registry,
+                        url: 'https://registry-1.docker.io/v2',
+                    },
+                })),
+                getId: () => 'hub',
+                match: (img) =>
+                    !img.registry.url ||
+                    /^.*\.?docker.io$/.test(img.registry.url),
+            };
+            registry.getState.mockReturnValue({
+                registry: {
+                    harbor: harborRegistry,
+                    hub: hubRegistry,
+                },
+            });
+
+            const containerModule = await import('../../../model/container');
+            const validateContainer = containerModule.validate;
+            // @ts-ignore
+            validateContainer.mockImplementation((c) => c);
+
+            const result = await docker.addImageDetailsToContainer(container);
+
+            expect(result.image.registry.name).toBe('hub');
+            expect(result.image.registry.url).toBe(
+                'https://registry-1.docker.io/v2',
+            );
+            expect(result.image.registry.lookupImage).toBe('library/traefik');
+            expect(result.image.name).toBe('library/traefik');
+        });
+
+        test('should support legacy lookup url label without crashing', async () => {
+            await docker.register('watcher', 'docker', 'test', {});
+            const container = {
+                Id: '123',
+                Image: 'harbor.example.com/dockerhub-proxy/traefik:v3.5.3',
+                Names: ['/traefik'],
+                State: 'running',
+                Labels: {
+                    'wud.registry.lookup.url': 'https://registry-1.docker.io',
+                },
+            };
+            const imageDetails = {
+                Id: 'image123',
+                Architecture: 'amd64',
+                Os: 'linux',
+                Created: '2023-01-01',
+                RepoDigests: ['harbor.example.com/dockerhub-proxy/traefik@sha256:abc123'],
+            };
+            mockImage.inspect.mockResolvedValue(imageDetails);
+            mockParse.mockReturnValue({
+                domain: 'harbor.example.com',
+                path: 'dockerhub-proxy/traefik',
+                tag: 'v3.5.3',
+            });
+            mockTag.parse.mockReturnValue({ major: 3, minor: 5, patch: 3 });
+            const harborRegistry = {
+                normalizeImage: jest.fn((img) => img),
+                getId: () => 'harbor',
+                match: (img) => img.registry.url === 'harbor.example.com',
+            };
+            const hubRegistry = {
+                normalizeImage: jest.fn((img) => ({
+                    ...img,
+                    registry: {
+                        ...img.registry,
+                        url: 'https://registry-1.docker.io/v2',
+                    },
+                })),
+                getId: () => 'hub',
+                match: (img) =>
+                    !img.registry.url ||
+                    /^.*\.?docker.io$/.test(img.registry.url),
+            };
+            registry.getState.mockReturnValue({
+                registry: {
+                    harbor: harborRegistry,
+                    hub: hubRegistry,
+                },
+            });
+
+            const containerModule = await import('../../../model/container');
+            const validateContainer = containerModule.validate;
+            // @ts-ignore
+            validateContainer.mockImplementation((c) => c);
+
+            const result = await docker.addImageDetailsToContainer(container);
+
+            expect(result.image.registry.name).toBe('hub');
+            expect(result.image.registry.lookupImage).toBe(
+                'https://registry-1.docker.io',
+            );
+            expect(result.image.name).toBe('dockerhub-proxy/traefik');
+        });
+
         test('should handle container with implicit docker hub image (no domain)', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const container = {

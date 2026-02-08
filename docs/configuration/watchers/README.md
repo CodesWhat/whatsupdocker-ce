@@ -184,6 +184,7 @@ To fine-tune the behaviour of WUD _per container_, you can add labels on them.
 | `wud.display.icon`    | :white_circle: | Custom display icon for the container              | Valid [Material Design Icon](https://materialdesignicons.com/), [Fontawesome Icon](https://fontawesome.com/) or [Simple icon](https://simpleicons.org/) (see details below) | `mdi:docker`                                                                          |
 | `wud.display.name`    | :white_circle: | Custom display name for the container              | Valid String                                                                                                                                                                | Container name                                                                        |
 | `wud.inspect.tag.path`| :white_circle: | Docker inspect path used to derive a local semver tag | Slash-separated path in `docker inspect` output                                                                                                                             |                                                                                       |
+| `wud.registry.lookup.image` | :white_circle: | Alternative image reference used for update lookups | Full image path (for example `library/traefik` or `ghcr.io/traefik/traefik`)                                                                                               |                                                                                       |
 | `wud.link.template`   | :white_circle: | Browsable link associated to the container version | JS string template with vars `${container}`, `${original}`, `${transformed}`, `${major}`, `${minor}`, `${patch}`, `${prerelease}`                                           |                                                                                       |
 | `wud.tag.exclude`     | :white_circle: | Regex to exclude specific tags                     | Valid JavaScript Regex                                                                                                                                                      |                                                                                       |
 | `wud.tag.include`     | :white_circle: | Regex to include specific tags only                | Valid JavaScript Regex                                                                                                                                                      |                                                                                       |
@@ -194,6 +195,7 @@ To fine-tune the behaviour of WUD _per container_, you can add labels on them.
 | `wud.watch`           | :white_circle: | Watch this container                               | Valid Boolean                                                                                                                                                               | `true` when `WUD_WATCHER_{watcher_name}_WATCHBYDEFAULT` is `true` (`false` otherwise) |
 
 !> `wud.inspect.tag.path` is optional and opt-in. Use it only when your image metadata tracks the running app version reliably; some images set unrelated values.
+!> Legacy alias `wud.registry.lookup.url` is still accepted for compatibility, but prefer `wud.registry.lookup.image`.
 
 ## Label examples
 
@@ -278,6 +280,31 @@ docker run -d \
   --name myapp \
   --label wud.inspect.tag.path=Config/Labels/org.opencontainers.image.version \
   ghcr.io/example/myapp:latest
+```
+<!-- tabs:end -->
+
+### Use an alternative image for update lookups
+
+Use this when your runtime image is pulled from a cache/proxy registry, but you want updates checked against an upstream image.
+
+<!-- tabs:start -->
+#### **Docker Compose**
+```yaml
+services:
+  traefik:
+    image: harbor.example.com/dockerhub-proxy/traefik:v3.5.3
+    labels:
+      - wud.watch=true
+      - wud.registry.lookup.image=library/traefik
+```
+
+#### **Docker**
+```bash
+docker run -d \
+  --name traefik \
+  --label 'wud.watch=true' \
+  --label 'wud.registry.lookup.image=library/traefik' \
+  harbor.example.com/dockerhub-proxy/traefik:v3.5.3
 ```
 <!-- tabs:end -->
 

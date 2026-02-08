@@ -18,6 +18,8 @@ import {
     wudTagExclude,
     wudTagTransform,
     wudInspectTagPath,
+    wudRegistryLookupImage,
+    wudRegistryLookupUrl,
     wudWatchDigest,
     wudLinkTemplate,
     wudDisplayName,
@@ -199,20 +201,80 @@ function getTagCandidates(
 
 function normalizeContainer(container: Container) {
     const containerWithNormalizedImage = container;
+    const imageForMatching = getImageForRegistryLookup(container.image);
     const registryProvider = Object.values(getRegistries()).find((provider) =>
-        provider.match(container.image),
+        provider.match(imageForMatching),
     );
     if (!registryProvider) {
         log.warn(`${fullName(container)} - No Registry Provider found`);
         containerWithNormalizedImage.image.registry.name = 'unknown';
     } else {
         containerWithNormalizedImage.image = registryProvider.normalizeImage(
-            container.image,
+            imageForMatching,
         );
         containerWithNormalizedImage.image.registry.name =
             registryProvider.getId();
     }
     return validateContainer(containerWithNormalizedImage);
+}
+
+/**
+ * Build an image candidate used for registry matching and tag lookups.
+ * The lookup value can be:
+ * - an image reference (preferred): ghcr.io/user/image or library/nginx
+ * - a legacy registry url: https://registry-1.docker.io
+ */
+function getImageForRegistryLookup(image: ContainerImage) {
+    const lookupImage =
+        image.registry.lookupImage || image.registry.lookupUrl || '';
+    const lookupImageTrimmed = lookupImage.trim();
+    if (lookupImageTrimmed === '') {
+        return image;
+    }
+
+    // Legacy fallback: support plain registry URL values from older experiments.
+    if (/^https?:\/\//i.test(lookupImageTrimmed)) {
+        try {
+            const lookupUrl = new URL(lookupImageTrimmed).hostname;
+            return {
+                ...image,
+                registry: {
+                    ...image.registry,
+                    url: lookupUrl,
+                },
+            };
+        } catch (e) {
+            return image;
+        }
+    }
+
+    const parsedLookupImage = parse(lookupImageTrimmed);
+    const parsedPath = parsedLookupImage.path;
+    const parsedDomain = parsedLookupImage.domain;
+
+    // If only a registry hostname was provided, keep the original image name.
+    if (parsedPath && !parsedDomain && !lookupImageTrimmed.includes('/')) {
+        return {
+            ...image,
+            registry: {
+                ...image.registry,
+                url: parsedPath,
+            },
+        };
+    }
+
+    if (!parsedPath) {
+        return image;
+    }
+
+    return {
+        ...image,
+        registry: {
+            ...image.registry,
+            url: parsedDomain || 'registry-1.docker.io',
+        },
+        name: parsedPath,
+    };
 }
 
 /**
@@ -744,6 +806,8 @@ class Docker extends Watcher {
                 container.Labels[wudDisplayIcon],
                 container.Labels[wudTriggerInclude],
                 container.Labels[wudTriggerExclude],
+                container.Labels[wudRegistryLookupImage],
+                container.Labels[wudRegistryLookupUrl],
             ).catch((e) => {
                 this.log.warn(
                     `Failed to fetch image detail for container ${container.Id}: ${e.message}`,
@@ -876,9 +940,16 @@ class Docker extends Watcher {
         displayIcon: string,
         triggerInclude: string,
         triggerExclude: string,
+        registryLookupImage: string,
+        registryLookupUrl: string,
     ) {
         const containerId = container.Id;
         const containerLabels = container.Labels || {};
+        const lookupImageValue =
+            registryLookupImage ||
+            containerLabels[wudRegistryLookupImage] ||
+            registryLookupUrl ||
+            containerLabels[wudRegistryLookupUrl];
 
         // Is container already in store? just return it :)
         const containerInStore = storeContainer.getContainer(containerId);
@@ -973,6 +1044,7 @@ class Docker extends Watcher {
                 registry: {
                     name: 'unknown', // Will be overwritten by normalizeContainer
                     url: parsedImage.domain,
+                    lookupImage: lookupImageValue,
                 },
                 name: parsedImage.path,
                 tag: {

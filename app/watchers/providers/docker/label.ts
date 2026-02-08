@@ -29,6 +29,16 @@ export const wudTagTransform = 'wud.tag.transform';
 export const wudInspectTagPath = 'wud.inspect.tag.path';
 
 /**
+ * Optional image reference to use for update lookups.
+ */
+export const wudRegistryLookupImage = 'wud.registry.lookup.image';
+
+/**
+ * Legacy alias kept for compatibility with old experimental builds.
+ */
+export const wudRegistryLookupUrl = 'wud.registry.lookup.url';
+
+/**
  * Should container digest be tracked? (true | false).
  */
 export const wudWatchDigest = 'wud.watch.digest';

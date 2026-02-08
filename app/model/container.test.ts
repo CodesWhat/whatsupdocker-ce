@@ -327,6 +327,75 @@ test('fullName should build an id with watcher name & container name when called
     ).toEqual('watcher_container_name');
 });
 
+test('model should migrate legacy lookupUrl to lookupImage', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+                lookupUrl: 'https://registry-1.docker.io',
+            },
+            name: 'organization/image',
+            tag: {
+                value: '1.0.0',
+                semver: true,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: '1.0.0',
+        },
+    });
+
+    expect(containerValidated.image.registry.lookupImage).toBe(
+        'https://registry-1.docker.io',
+    );
+    expect(containerValidated.image.registry.lookupUrl).toBeUndefined();
+});
+
+test('flatten should include lookup image when configured', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+                lookupImage: 'library/nginx',
+            },
+            name: 'organization/image',
+            tag: {
+                value: '1.0.0',
+                semver: true,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: '1.0.0',
+        },
+    });
+
+    expect(container.flatten(containerValidated).image_registry_lookup_image).toBe(
+        'library/nginx',
+    );
+});
+
 test('getLink should render link templates when called', async () => {
     const { testable_getLink: getLink } = container;
     expect(

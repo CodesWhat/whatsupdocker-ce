@@ -18,6 +18,7 @@ test('gauge must be populated when containers are in the store', async () => {
                 registry: {
                     name: 'registry',
                     url: 'https://hub',
+                    lookupImage: 'library/nginx',
                 },
                 name: 'organization/image',
                 tag: {
@@ -50,6 +51,7 @@ test('gauge must be populated when containers are in the store', async () => {
             image_id: 'image-123456789',
             image_name: 'organization/image',
             image_os: 'os',
+            image_registry_lookup_image: 'library/nginx',
             image_registry_name: 'registry',
             image_registry_url: 'https://hub',
             image_tag_semver: false,
