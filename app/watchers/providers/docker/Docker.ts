@@ -82,11 +82,23 @@ function getTagCandidates(
     logContainer: any,
 ) {
     let filteredTags = tags;
+    let allowIncludeFilterRecovery = false;
 
     // Match include tag regex
     if (container.includeTags) {
         const includeTagsRegex = new RegExp(container.includeTags);
         filteredTags = filteredTags.filter((tag) => includeTagsRegex.test(tag));
+        // If current semver tag falls outside include filter, still attempt to
+        // move toward the include-filtered semver stream.
+        if (
+            container.image.tag.semver &&
+            !includeTagsRegex.test(container.image.tag.value)
+        ) {
+            logContainer.warn(
+                `Current tag "${container.image.tag.value}" does not match includeTags regex "${container.includeTags}". Trying best-effort semver upgrade within filtered tags.`,
+            );
+            allowIncludeFilterRecovery = true;
+        }
     } else {
         // If no includeTags, filter out tags starting with "sha"
         filteredTags = filteredTags.filter((tag) => !tag.startsWith('sha'));
@@ -173,16 +185,19 @@ function getTagCandidates(
             });
         }
 
-        // Keep only greater semver
-        filteredTags = filteredTags.filter((tag) =>
-            isGreaterSemver(
-                transformTag(container.transformTags, tag),
-                transformTag(
-                    container.transformTags,
-                    container.image.tag.value,
+        // Keep only greater semver unless we are recovering from an include-filter
+        // mismatch on current tag, in which case we keep best matching semver.
+        if (!allowIncludeFilterRecovery) {
+            filteredTags = filteredTags.filter((tag) =>
+                isGreaterSemver(
+                    transformTag(container.transformTags, tag),
+                    transformTag(
+                        container.transformTags,
+                        container.image.tag.value,
+                    ),
                 ),
-            ),
-        );
+            );
+        }
 
         // Apply semver sort desc
         filteredTags.sort((t1, t2) => {

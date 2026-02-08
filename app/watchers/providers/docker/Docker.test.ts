@@ -736,6 +736,47 @@ describe('Docker Watcher', () => {
 
             expect(result).toEqual({ tag: '1.3' });
         });
+
+        test('should best-effort suggest semver tag when current tag is outside include filter', async () => {
+            const container = {
+                includeTags: '^1\\.',
+                image: {
+                    registry: { name: 'hub' },
+                    tag: { value: '2.0.0', semver: true },
+                    digest: { watch: false },
+                },
+            };
+            const mockRegistry = {
+                getTags: jest
+                    .fn()
+                    .mockResolvedValue(['1.8.0', '1.9.0', '2.1.0']),
+            };
+            registry.getState.mockReturnValue({
+                registry: { hub: mockRegistry },
+            });
+
+            const rank = {
+                '1.8.0': 180,
+                '1.9.0': 190,
+                '2.0.0': 200,
+                '2.1.0': 210,
+            };
+            mockTag.isGreater.mockImplementation(
+                (version1, version2) => rank[version1] >= rank[version2],
+            );
+            mockTag.parse.mockImplementation((version) =>
+                rank[version] ? { major: 1, minor: 0, patch: 0 } : null,
+            );
+
+            const mockLogChild = { error: jest.fn(), warn: jest.fn() };
+
+            const result = await docker.findNewVersion(container, mockLogChild);
+
+            expect(result).toEqual({ tag: '1.9.0' });
+            expect(mockLogChild.warn).toHaveBeenCalledWith(
+                expect.stringContaining('does not match includeTags regex'),
+            );
+        });
     });
 
     describe('Container Details', () => {
