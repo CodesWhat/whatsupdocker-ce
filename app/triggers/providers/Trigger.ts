@@ -91,11 +91,11 @@ class Trigger extends Component {
             switch (threshold) {
                 case 'major-only':
                     thresholdPassing =
-                        containerResult.updateKind.semverDiff == 'major';
+                        containerResult.updateKind.semverDiff === 'major';
                     break;
                 case 'minor-only':
                     thresholdPassing =
-                        containerResult.updateKind.semverDiff == 'minor';
+                        containerResult.updateKind.semverDiff === 'minor';
                     break;
                 case 'minor':
                     thresholdPassing =

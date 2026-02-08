@@ -149,13 +149,19 @@ function getTagCandidates(
         );
 
         // Remove prefix and suffix (keep only digits and dots)
-        const numericPart = container.image.tag.value.match(/(\d+(\.\d+)*)/);
+        const numericPart = transformTag(
+            container.transformTags,
+            container.image.tag.value,
+        ).match(/(\d+(\.\d+)*)/);
 
         if (numericPart) {
             const referenceGroups = numericPart[0].split('.').length;
 
             filteredTags = filteredTags.filter((tag) => {
-                const tagNumericPart = tag.match(/(\d+(\.\d+)*)/);
+                const tagNumericPart = transformTag(
+                    container.transformTags,
+                    tag,
+                ).match(/(\d+(\.\d+)*)/);
                 if (!tagNumericPart) return false; // skip tags without numeric part
                 const tagGroups = tagNumericPart[0].split('.').length;
 

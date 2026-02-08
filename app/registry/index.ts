@@ -70,17 +70,17 @@ function getAvailableProviders(basePath: string) {
 function getDocumentationLink(kind: ComponentKind) {
     const docLinks: Record<ComponentKind, string> = {
         trigger:
-            'https://github.com/getwud/wud/tree/main/docs/configuration/triggers',
+            'https://github.com/CodesWhat/whatsupdocker-ce/tree/main/docs/configuration/triggers',
         watcher:
-            'https://github.com/getwud/wud/tree/main/docs/configuration/watchers',
+            'https://github.com/CodesWhat/whatsupdocker-ce/tree/main/docs/configuration/watchers',
         registry:
-            'https://github.com/getwud/wud/tree/main/docs/configuration/registries',
+            'https://github.com/CodesWhat/whatsupdocker-ce/tree/main/docs/configuration/registries',
         authentication:
-            'https://github.com/getwud/wud/tree/main/docs/configuration/authentications',
+            'https://github.com/CodesWhat/whatsupdocker-ce/tree/main/docs/configuration/authentications',
     };
     return (
         docLinks[kind] ||
-        'https://github.com/getwud/wud/tree/main/docs/configuration'
+        'https://github.com/CodesWhat/whatsupdocker-ce/tree/main/docs/configuration'
     );
 }
 
@@ -135,10 +135,16 @@ async function registerComponent(
 ): Promise<Component> {
     const providerLowercase = provider.toLowerCase();
     const nameLowercase = name.toLowerCase();
-    const componentFile = `${componentPath}/${providerLowercase.toLowerCase()}/${capitalize(provider)}`;
+    const componentFileByConvention = `${componentPath}/${providerLowercase}/${capitalize(provider)}`;
+    const componentFileLowercase = `${componentPath}/${providerLowercase}/${providerLowercase}`;
+    const componentFile = fs.existsSync(
+        path.resolve(__dirname, `${componentFileByConvention}.js`),
+    )
+        ? componentFileByConvention
+        : componentFileLowercase;
     try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const ComponentClass = (await import(componentFile)).default;
+        const componentModule = await import(componentFile);
+        const ComponentClass = componentModule.default || componentModule;
         const component: Component = new ComponentClass();
         const componentRegistered = await component.register(
             kind,

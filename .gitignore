@@ -103,3 +103,6 @@ typings/
 *.DS_Store
 app/dist/
 dist/
+
+# Local planning docs
+.planning/
