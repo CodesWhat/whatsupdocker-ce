@@ -9,28 +9,36 @@ jest.mock('axios', () =>
 
 const trueforge = new Trueforge();
 trueforge.configuration = {
-    username: 'user',
+    namespace: 'namespace',
+    account: 'account',
     token: 'token',
 };
 
 jest.mock('axios');
 
-test('validatedConfiguration should initialize when configuration is valid', async () => {
+test('validatedConfiguration should initialize when auth configuration is valid', async () => {
     expect(
         trueforge.validateConfiguration({
-            username: 'user',
+            namespace: 'namespace',
+            account: 'account',
             token: 'token',
         }),
     ).toStrictEqual({
-        username: 'user',
+        namespace: 'namespace',
+        account: 'account',
         token: 'token',
     });
+});
+
+test('validatedConfiguration should initialize when anonymous configuration is valid', async () => {
+    expect(trueforge.validateConfiguration('')).toStrictEqual({});
+    expect(trueforge.validateConfiguration(undefined)).toStrictEqual({});
 });
 
 test('validatedConfiguration should throw error when configuration is missing', async () => {
     expect(() => {
         trueforge.validateConfiguration({});
-    }).toThrow('"username" is required');
+    }).toThrow();
 });
 
 test('match should return true when registry url is from trueforge', async () => {
@@ -66,5 +74,12 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
         registry: {
             url: 'https://oci.trueforge.org/test/image/v2',
         },
+    });
+});
+
+test('getAuthPull should return quay-compatible pull credentials', async () => {
+    expect(trueforge.getAuthPull()).toStrictEqual({
+        username: 'namespace+account',
+        password: 'token',
     });
 });

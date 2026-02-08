@@ -15,7 +15,7 @@ lscr.configuration = {
 
 jest.mock('axios');
 
-test('validatedConfiguration should initialize when configuration is valid', async () => {
+test('validatedConfiguration should initialize when auth configuration is valid', async () => {
     expect(
         lscr.validateConfiguration({
             username: 'user',
@@ -27,10 +27,15 @@ test('validatedConfiguration should initialize when configuration is valid', asy
     });
 });
 
+test('validatedConfiguration should initialize when anonymous configuration is valid', async () => {
+    expect(lscr.validateConfiguration('')).toStrictEqual({});
+    expect(lscr.validateConfiguration(undefined)).toStrictEqual({});
+});
+
 test('validatedConfiguration should throw error when configuration is missing', async () => {
     expect(() => {
         lscr.validateConfiguration({});
-    }).toThrow('"username" is required');
+    }).toThrow();
 });
 
 test('match should return true when registry url is from lscr', async () => {
