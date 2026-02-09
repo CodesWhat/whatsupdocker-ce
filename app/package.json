@@ -50,7 +50,7 @@
         "pushover-notifications": "1.2.3",
         "semver": "7.7.4",
         "set-value": "4.1.0",
-        "snake-case": "3.0.4",
+        "snake-case": "4.0.0",
         "sort-es": "1.7.18",
         "uuid": "11.0.3",
         "yaml": "2.8.2"
