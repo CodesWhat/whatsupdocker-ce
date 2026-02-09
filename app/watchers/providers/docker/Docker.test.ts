@@ -133,6 +133,27 @@ describe('Docker Watcher', () => {
             };
             expect(() => docker.validateConfiguration(config)).not.toThrow();
         });
+
+        test('should validate configuration with imgset presets', async () => {
+            const config = {
+                socket: '/var/run/docker.sock',
+                imgset: {
+                    homeassistant: {
+                        image: 'ghcr.io/home-assistant/home-assistant',
+                        tag: {
+                            include: '^\\d+\\.\\d+\\.\\d+$',
+                        },
+                        display: {
+                            icon: 'mdi-home-assistant',
+                        },
+                        link: {
+                            template: 'https://example.com/changelog/${major}',
+                        },
+                    },
+                },
+            };
+            expect(() => docker.validateConfiguration(config)).not.toThrow();
+        });
     });
 
     describe('Initialization', () => {
@@ -1225,6 +1246,193 @@ describe('Docker Watcher', () => {
             );
 
             expect(result.displayName).toBe('WUD CE Custom');
+        });
+
+        test('should apply imgset defaults when labels are missing', async () => {
+            await docker.register('watcher', 'docker', 'test', {
+                imgset: {
+                    homeassistant: {
+                        image: 'ghcr.io/home-assistant/home-assistant',
+                        tag: {
+                            include: '^\\d+\\.\\d+\\.\\d+$',
+                        },
+                        display: {
+                            name: 'Home Assistant',
+                            icon: 'mdi-home-assistant',
+                        },
+                        link: {
+                            template:
+                                'https://www.home-assistant.io/changelogs/core-${major}${minor}${patch}',
+                        },
+                        trigger: {
+                            include: 'ntfy.default:major',
+                        },
+                        registry: {
+                            lookup: {
+                                image: 'ghcr.io/home-assistant/home-assistant',
+                            },
+                        },
+                    },
+                },
+            });
+            const container = {
+                Id: '123',
+                Image: 'ghcr.io/home-assistant/home-assistant:2026.2.1',
+                Names: ['/homeassistant'],
+                State: 'running',
+                Labels: {},
+            };
+            const imageDetails = {
+                Id: 'image123',
+                Architecture: 'amd64',
+                Os: 'linux',
+                Variant: 'v8',
+                Created: '2023-01-01',
+                RepoDigests: [
+                    'ghcr.io/home-assistant/home-assistant@sha256:abc123',
+                ],
+            };
+            mockImage.inspect.mockResolvedValue(imageDetails);
+            mockParse.mockImplementation((value) => {
+                if (value === 'ghcr.io/home-assistant/home-assistant:2026.2.1') {
+                    return {
+                        domain: 'ghcr.io',
+                        path: 'home-assistant/home-assistant',
+                        tag: '2026.2.1',
+                    };
+                }
+                if (value === 'ghcr.io/home-assistant/home-assistant') {
+                    return {
+                        domain: 'ghcr.io',
+                        path: 'home-assistant/home-assistant',
+                    };
+                }
+                return {
+                    domain: 'docker.io',
+                    path: 'library/nginx',
+                    tag: '1.0.0',
+                };
+            });
+            mockTag.parse.mockReturnValue({ major: 2026, minor: 2, patch: 1 });
+            const mockRegistry = {
+                normalizeImage: jest.fn((img) => img),
+                getId: () => 'ghcr',
+                match: () => true,
+            };
+            registry.getState.mockReturnValue({
+                registry: { ghcr: mockRegistry },
+            });
+            const containerModule = await import('../../../model/container.js');
+            const validateContainer = containerModule.validate;
+            // @ts-ignore
+            validateContainer.mockImplementation((c) => c);
+
+            const result = await docker.addImageDetailsToContainer(container);
+
+            expect(result.includeTags).toBe('^\\d+\\.\\d+\\.\\d+$');
+            expect(result.displayName).toBe('Home Assistant');
+            expect(result.displayIcon).toBe('mdi-home-assistant');
+            expect(result.linkTemplate).toBe(
+                'https://www.home-assistant.io/changelogs/core-${major}${minor}${patch}',
+            );
+            expect(result.triggerInclude).toBe('ntfy.default:major');
+            expect(result.image.registry.lookupImage).toBe(
+                'ghcr.io/home-assistant/home-assistant',
+            );
+        });
+
+        test('should let labels override imgset defaults', async () => {
+            await docker.register('watcher', 'docker', 'test', {
+                imgset: {
+                    homeassistant: {
+                        image: 'ghcr.io/home-assistant/home-assistant',
+                        tag: {
+                            include: '^\\d+\\.\\d+\\.\\d+$',
+                        },
+                        display: {
+                            name: 'Home Assistant',
+                            icon: 'mdi-home-assistant',
+                        },
+                        link: {
+                            template:
+                                'https://www.home-assistant.io/changelogs/core-${major}${minor}${patch}',
+                        },
+                        trigger: {
+                            include: 'ntfy.default:major',
+                        },
+                    },
+                },
+            });
+            const container = {
+                Id: '123',
+                Image: 'ghcr.io/home-assistant/home-assistant:2026.2.1',
+                Names: ['/homeassistant'],
+                State: 'running',
+                Labels: {},
+            };
+            const imageDetails = {
+                Id: 'image123',
+                Architecture: 'amd64',
+                Os: 'linux',
+                Variant: 'v8',
+                Created: '2023-01-01',
+                RepoDigests: [
+                    'ghcr.io/home-assistant/home-assistant@sha256:abc123',
+                ],
+            };
+            mockImage.inspect.mockResolvedValue(imageDetails);
+            mockParse.mockImplementation((value) => {
+                if (value === 'ghcr.io/home-assistant/home-assistant:2026.2.1') {
+                    return {
+                        domain: 'ghcr.io',
+                        path: 'home-assistant/home-assistant',
+                        tag: '2026.2.1',
+                    };
+                }
+                if (value === 'ghcr.io/home-assistant/home-assistant') {
+                    return {
+                        domain: 'ghcr.io',
+                        path: 'home-assistant/home-assistant',
+                    };
+                }
+                return {
+                    domain: 'docker.io',
+                    path: 'library/nginx',
+                    tag: '1.0.0',
+                };
+            });
+            mockTag.parse.mockReturnValue({ major: 2026, minor: 2, patch: 1 });
+            const mockRegistry = {
+                normalizeImage: jest.fn((img) => img),
+                getId: () => 'ghcr',
+                match: () => true,
+            };
+            registry.getState.mockReturnValue({
+                registry: { ghcr: mockRegistry },
+            });
+            const containerModule = await import('../../../model/container.js');
+            const validateContainer = containerModule.validate;
+            // @ts-ignore
+            validateContainer.mockImplementation((c) => c);
+
+            const result = await docker.addImageDetailsToContainer(
+                container,
+                '^stable$',
+                undefined,
+                undefined,
+                undefined,
+                'HA Label Name',
+                'mdi-docker',
+                'discord.default:major',
+            );
+
+            expect(result.includeTags).toBe('^stable$');
+            expect(result.displayName).toBe('HA Label Name');
+            expect(result.displayIcon).toBe('mdi-docker');
+            expect(result.triggerInclude).toBe('discord.default:major');
+            expect(result.linkTemplate).toBe(
+                'https://www.home-assistant.io/changelogs/core-${major}${minor}${patch}',
+            );
         });
 
         test('should use lookup image label for registry matching', async () => {

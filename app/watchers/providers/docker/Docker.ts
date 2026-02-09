@@ -63,6 +63,7 @@ export interface DockerWatcherConfiguration extends ComponentConfiguration {
     watchdigest?: any;
     watchevents: boolean;
     watchatstart: boolean;
+    imgset?: Record<string, any>;
 }
 
 // The delay before starting the watcher when the app is started
@@ -71,6 +72,20 @@ const START_WATCHER_DELAY_MS = 1000;
 // Debounce delay used when performing a watch after a docker event has been received
 const DEBOUNCED_WATCH_CRON_MS = 5000;
 const SWARM_SERVICE_ID_LABEL = 'com.docker.swarm.service.id';
+
+interface ResolvedImgset {
+    name: string;
+    includeTags?: string;
+    excludeTags?: string;
+    transformTags?: string;
+    linkTemplate?: string;
+    displayName?: string;
+    displayIcon?: string;
+    triggerInclude?: string;
+    triggerExclude?: string;
+    registryLookupImage?: string;
+    registryLookupUrl?: string;
+}
 
 /**
  * Return all supported registries
@@ -384,6 +399,171 @@ function getContainerDisplayName(
     return containerName;
 }
 
+function normalizeConfigStringValue(value: any) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const valueTrimmed = value.trim();
+    return valueTrimmed === '' ? undefined : valueTrimmed;
+}
+
+function getNestedValue(value: any, path: string) {
+    return path
+        .split('.')
+        .filter((item) => item !== '')
+        .reduce((nestedValue, item) => {
+            if (
+                nestedValue === undefined ||
+                nestedValue === null ||
+                typeof nestedValue !== 'object'
+            ) {
+                return undefined;
+            }
+            return nestedValue[item];
+        }, value);
+}
+
+function getFirstConfigString(value: any, paths: string[]) {
+    for (const path of paths) {
+        const pathValue = normalizeConfigStringValue(getNestedValue(value, path));
+        if (pathValue !== undefined) {
+            return pathValue;
+        }
+    }
+    return undefined;
+}
+
+function getImageReferenceCandidates(path: string, domain?: string) {
+    const pathNormalized = normalizeConfigStringValue(path)?.toLowerCase();
+    if (!pathNormalized) {
+        return [];
+    }
+    const domainNormalized = normalizeConfigStringValue(domain)?.toLowerCase();
+    const pathWithoutLibraryPrefix = pathNormalized.startsWith('library/')
+        ? pathNormalized.substring('library/'.length)
+        : pathNormalized;
+    const candidates = new Set<string>([
+        pathNormalized,
+        pathWithoutLibraryPrefix,
+        `docker.io/${pathNormalized}`,
+        `docker.io/${pathWithoutLibraryPrefix}`,
+        `registry-1.docker.io/${pathNormalized}`,
+        `registry-1.docker.io/${pathWithoutLibraryPrefix}`,
+    ]);
+    if (domainNormalized) {
+        candidates.add(`${domainNormalized}/${pathNormalized}`);
+        candidates.add(`${domainNormalized}/${pathWithoutLibraryPrefix}`);
+    }
+    return Array.from(candidates).filter((candidate) => candidate !== '');
+}
+
+function getImageReferenceCandidatesFromPattern(pattern: string) {
+    const patternNormalized = normalizeConfigStringValue(pattern);
+    if (!patternNormalized) {
+        return [];
+    }
+    try {
+        const parsedPattern = parse(patternNormalized.toLowerCase());
+        if (!parsedPattern.path) {
+            return [patternNormalized.toLowerCase()];
+        }
+        return getImageReferenceCandidates(
+            parsedPattern.path,
+            parsedPattern.domain,
+        );
+    } catch (e) {
+        return [patternNormalized.toLowerCase()];
+    }
+}
+
+function getImageReferenceCandidatesFromParsedImage(parsedImage: any) {
+    return getImageReferenceCandidates(parsedImage?.path, parsedImage?.domain);
+}
+
+function getImgsetSpecificity(imagePattern: string, parsedImage: any) {
+    const patternCandidates = getImageReferenceCandidatesFromPattern(imagePattern);
+    if (patternCandidates.length === 0) {
+        return -1;
+    }
+    const imageCandidates = getImageReferenceCandidatesFromParsedImage(parsedImage);
+    if (imageCandidates.length === 0) {
+        return -1;
+    }
+
+    const hasMatch = patternCandidates.some((patternCandidate) =>
+        imageCandidates.includes(patternCandidate),
+    );
+    if (!hasMatch) {
+        return -1;
+    }
+    return patternCandidates.reduce(
+        (maxSpecificity, patternCandidate) =>
+            Math.max(maxSpecificity, patternCandidate.length),
+        0,
+    );
+}
+
+function getResolvedImgsetConfiguration(name: string, imgsetConfiguration: any) {
+    return {
+        name,
+        includeTags: getFirstConfigString(imgsetConfiguration, [
+            'tag.include',
+            'includeTags',
+            'include',
+        ]),
+        excludeTags: getFirstConfigString(imgsetConfiguration, [
+            'tag.exclude',
+            'excludeTags',
+            'exclude',
+        ]),
+        transformTags: getFirstConfigString(imgsetConfiguration, [
+            'tag.transform',
+            'transformTags',
+            'transform',
+        ]),
+        linkTemplate: getFirstConfigString(imgsetConfiguration, [
+            'link.template',
+            'linkTemplate',
+        ]),
+        displayName: getFirstConfigString(imgsetConfiguration, [
+            'display.name',
+            'displayName',
+        ]),
+        displayIcon: getFirstConfigString(imgsetConfiguration, [
+            'display.icon',
+            'displayIcon',
+        ]),
+        triggerInclude: getFirstConfigString(imgsetConfiguration, [
+            'trigger.include',
+            'triggerInclude',
+        ]),
+        triggerExclude: getFirstConfigString(imgsetConfiguration, [
+            'trigger.exclude',
+            'triggerExclude',
+        ]),
+        registryLookupImage: getFirstConfigString(imgsetConfiguration, [
+            'registry.lookup.image',
+            'registryLookupImage',
+            'lookupImage',
+        ]),
+        registryLookupUrl: getFirstConfigString(imgsetConfiguration, [
+            'registry.lookup.url',
+            'registryLookupUrl',
+            'lookupUrl',
+        ]),
+    } as ResolvedImgset;
+}
+
+function getContainerConfigValue(
+    labelValue: string | undefined,
+    imgsetValue: string | undefined,
+) {
+    return (
+        normalizeConfigStringValue(labelValue) ||
+        normalizeConfigStringValue(imgsetValue)
+    );
+}
+
 /**
  * Get image repo digest.
  * @param containerImage
@@ -550,6 +730,40 @@ class Docker extends Watcher {
             watchdigest: this.joi.any(),
             watchevents: this.joi.boolean().default(true),
             watchatstart: this.joi.boolean().default(true),
+            imgset: this.joi
+                .object()
+                .pattern(
+                    this.joi.string(),
+                    this.joi.object({
+                        image: this.joi.string().required(),
+                        include: this.joi.string(),
+                        exclude: this.joi.string(),
+                        transform: this.joi.string(),
+                        tag: this.joi.object({
+                            include: this.joi.string(),
+                            exclude: this.joi.string(),
+                            transform: this.joi.string(),
+                        }),
+                        link: this.joi.object({
+                            template: this.joi.string(),
+                        }),
+                        display: this.joi.object({
+                            name: this.joi.string(),
+                            icon: this.joi.string(),
+                        }),
+                        trigger: this.joi.object({
+                            include: this.joi.string(),
+                            exclude: this.joi.string(),
+                        }),
+                        registry: this.joi.object({
+                            lookup: this.joi.object({
+                                image: this.joi.string(),
+                                url: this.joi.string(),
+                            }),
+                        }),
+                    }),
+                )
+                .default({}),
         });
     }
 
@@ -1175,6 +1389,49 @@ class Docker extends Watcher {
         };
     }
 
+    getMatchingImgsetConfiguration(parsedImage: any): ResolvedImgset | undefined {
+        const configuredImgsets = this.configuration.imgset;
+        if (!configuredImgsets || typeof configuredImgsets !== 'object') {
+            return undefined;
+        }
+
+        const matchingImgsets = Object.entries(configuredImgsets)
+            .map(([imgsetName, imgsetConfiguration]: any) => {
+                const imagePattern = getFirstConfigString(imgsetConfiguration, [
+                    'image',
+                    'match',
+                ]);
+                if (!imagePattern) {
+                    return undefined;
+                }
+                const specificity = getImgsetSpecificity(imagePattern, parsedImage);
+                if (specificity < 0) {
+                    return undefined;
+                }
+                return {
+                    specificity,
+                    imgset: getResolvedImgsetConfiguration(
+                        imgsetName,
+                        imgsetConfiguration,
+                    ),
+                };
+            })
+            .filter((imgsetMatch: any) => imgsetMatch !== undefined)
+            .sort((imgsetMatch1: any, imgsetMatch2: any) => {
+                if (imgsetMatch1.specificity !== imgsetMatch2.specificity) {
+                    return imgsetMatch2.specificity - imgsetMatch1.specificity;
+                }
+                return imgsetMatch1.imgset.name.localeCompare(
+                    imgsetMatch2.imgset.name,
+                );
+            });
+
+        if (matchingImgsets.length === 0) {
+            return undefined;
+        }
+        return matchingImgsets[0].imgset;
+    }
+
     /**
      * Find new version for a Container.
      */
@@ -1274,7 +1531,21 @@ class Docker extends Watcher {
     ) {
         const containerId = container.Id;
         const containerLabels = container.Labels || {};
-        const lookupImageValue =
+        const includeTagsFromLabel = includeTags || containerLabels[wudTagInclude];
+        const excludeTagsFromLabel = excludeTags || containerLabels[wudTagExclude];
+        const transformTagsFromLabel =
+            transformTags || containerLabels[wudTagTransform];
+        const linkTemplateFromLabel =
+            linkTemplate || containerLabels[wudLinkTemplate];
+        const displayNameFromLabel =
+            displayName || containerLabels[wudDisplayName];
+        const displayIconFromLabel =
+            displayIcon || containerLabels[wudDisplayIcon];
+        const triggerIncludeFromLabel =
+            triggerInclude || containerLabels[wudTriggerInclude];
+        const triggerExcludeFromLabel =
+            triggerExclude || containerLabels[wudTriggerExclude];
+        const lookupImageFromLabel =
             registryLookupImage ||
             containerLabels[wudRegistryLookupImage] ||
             registryLookupUrl ||
@@ -1331,7 +1602,7 @@ class Docker extends Watcher {
             const semverTagFromInspect = getSemverTagFromInspectPath(
                 image,
                 inspectTagPath,
-                transformTags,
+                transformTagsFromLabel,
             );
             if (semverTagFromInspect) {
                 tagName = semverTagFromInspect;
@@ -1342,7 +1613,56 @@ class Docker extends Watcher {
                 );
             }
         }
-        const parsedTag = parseSemver(transformTag(transformTags, tagName));
+        const matchingImgset = this.getMatchingImgsetConfiguration(parsedImage);
+        if (matchingImgset) {
+            this.ensureLogger();
+            this.log.debug(
+                `Apply imgset "${matchingImgset.name}" to container ${containerId}`,
+            );
+        }
+
+        const includeTagsValue = getContainerConfigValue(
+            includeTagsFromLabel,
+            matchingImgset?.includeTags,
+        );
+        const excludeTagsValue = getContainerConfigValue(
+            excludeTagsFromLabel,
+            matchingImgset?.excludeTags,
+        );
+        const transformTagsValue = getContainerConfigValue(
+            transformTagsFromLabel,
+            matchingImgset?.transformTags,
+        );
+        const linkTemplateValue = getContainerConfigValue(
+            linkTemplateFromLabel,
+            matchingImgset?.linkTemplate,
+        );
+        const displayNameValue = getContainerConfigValue(
+            displayNameFromLabel,
+            matchingImgset?.displayName,
+        );
+        const displayIconValue = getContainerConfigValue(
+            displayIconFromLabel,
+            matchingImgset?.displayIcon,
+        );
+        const triggerIncludeValue = getContainerConfigValue(
+            triggerIncludeFromLabel,
+            matchingImgset?.triggerInclude,
+        );
+        const triggerExcludeValue = getContainerConfigValue(
+            triggerExcludeFromLabel,
+            matchingImgset?.triggerExclude,
+        );
+        const lookupImageValue =
+            getContainerConfigValue(
+                lookupImageFromLabel,
+                matchingImgset?.registryLookupImage,
+            ) ||
+            getContainerConfigValue(undefined, matchingImgset?.registryLookupUrl);
+
+        const parsedTag = parseSemver(
+            transformTag(transformTagsValue, tagName),
+        );
         const isSemver = parsedTag !== null && parsedTag !== undefined;
         const watchDigest = isDigestToWatch(
             containerLabels[wudWatchDigest],
@@ -1360,18 +1680,18 @@ class Docker extends Watcher {
             name: containerName,
             status,
             watcher: this.name,
-            includeTags,
-            excludeTags,
-            transformTags,
-            linkTemplate,
+            includeTags: includeTagsValue,
+            excludeTags: excludeTagsValue,
+            transformTags: transformTagsValue,
+            linkTemplate: linkTemplateValue,
             displayName: getContainerDisplayName(
                 containerName,
                 parsedImage.path,
-                displayName,
+                displayNameValue,
             ),
-            displayIcon,
-            triggerInclude,
-            triggerExclude,
+            displayIcon: displayIconValue,
+            triggerInclude: triggerIncludeValue,
+            triggerExclude: triggerExcludeValue,
             image: {
                 id: imageId,
                 registry: {

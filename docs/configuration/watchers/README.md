@@ -26,6 +26,7 @@ The `docker` watcher lets you configure the Docker hosts you want to watch.
 | `WUD_WATCHER_{watcher_name}_WATCHATSTART` (deprecated)    | :white_circle: | If WUD must check for image updates during startup                                                                     | `true`, `false`                                | `true` if this watcher store is empty                           |
 | `WUD_WATCHER_{watcher_name}_WATCHBYDEFAULT`               | :white_circle: | If WUD must monitor all containers by default                                                                          | `true`, `false`                                | `true`                                                          |
 | `WUD_WATCHER_{watcher_name}_WATCHEVENTS`                  | :white_circle: | If WUD must monitor docker events                                                                                      | `true`, `false`                                | `true`                                                          |
+| `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_*`       | :white_circle: | Shared per-image defaults (image match + include/exclude/transform/link/display/trigger/lookup)                       | See **Image Set Presets** section below        |                                                                 |
 
 ?> If no watcher is configured, a default one named `local` will be automatically created (reading the Docker socket).
 
@@ -211,6 +212,43 @@ docker run \
   ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
+
+## Image Set Presets
+
+Use `IMGSET` to define reusable defaults by image reference. This is useful when many containers need the same tag filters, link template, icon, or trigger routing.
+
+### Supported imgset keys
+
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_IMAGE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_TAG_INCLUDE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_TAG_EXCLUDE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_TAG_TRANSFORM`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_LINK_TEMPLATE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_DISPLAY_NAME`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_DISPLAY_ICON`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_TRIGGER_INCLUDE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_TRIGGER_EXCLUDE`
+- `WUD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_REGISTRY_LOOKUP_IMAGE`
+
+### Imgset precedence
+
+- `wud.*` labels on the container (or swarm service/container merged labels) are highest priority.
+- `IMGSET` values are defaults applied only when the corresponding label is not set.
+
+### Imgset example
+
+```yaml
+services:
+  whatsupdocker:
+    image: ghcr.io/codeswhat/wud-ce
+    environment:
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_IMAGE=ghcr.io/home-assistant/home-assistant
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_TAG_INCLUDE=^\\d+\\.\\d+\\.\\d+$$
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_DISPLAY_NAME=Home Assistant
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_DISPLAY_ICON=mdi-home-assistant
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_LINK_TEMPLATE=https://www.home-assistant.io/changelogs/core-$${major}$${minor}$${patch}
+      - WUD_WATCHER_LOCAL_IMGSET_HOMEASSISTANT_TRIGGER_INCLUDE=ntfy.default:major
+```
 
 ## Labels
 
