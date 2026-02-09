@@ -334,11 +334,38 @@ describe('Docker Watcher', () => {
             const mockLog = { debug: jest.fn() };
             docker.log = mockLog;
 
-            await docker.onDockerEvent(Buffer.from('{invalid-json'));
+            await docker.onDockerEvent(Buffer.from('{invalid-json\n'));
 
             expect(mockLog.debug).toHaveBeenCalledWith(
                 expect.stringContaining('Unable to process Docker event'),
             );
+        });
+
+        test('should buffer split docker event payloads until complete', async () => {
+            docker.watchCronDebounced = jest.fn();
+            await docker.onDockerEvent(
+                Buffer.from('{"Action":"create","id":"container'),
+            );
+
+            expect(docker.watchCronDebounced).not.toHaveBeenCalled();
+            expect(docker.dockerEventsBuffer).toContain('"container');
+
+            await docker.onDockerEvent(Buffer.from('123"}\n'));
+
+            expect(docker.watchCronDebounced).toHaveBeenCalledTimes(1);
+            expect(docker.dockerEventsBuffer).toBe('');
+        });
+
+        test('should process multiple docker events from a single chunk', async () => {
+            docker.watchCronDebounced = jest.fn();
+
+            await docker.onDockerEvent(
+                Buffer.from(
+                    '{"Action":"create","id":"container123"}\n{"Action":"destroy","id":"container456"}\n',
+                ),
+            );
+
+            expect(docker.watchCronDebounced).toHaveBeenCalledTimes(2);
         });
     });
 

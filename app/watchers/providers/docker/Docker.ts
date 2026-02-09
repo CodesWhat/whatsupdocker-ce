@@ -474,6 +474,7 @@ class Docker extends Watcher {
     public watchCronTimeout: any;
     public watchCronDebounced: any;
     public listenDockerEventsTimeout: any;
+    public dockerEventsBuffer = '';
 
     ensureLogger() {
         if (!this.log) {
@@ -606,6 +607,7 @@ class Docker extends Watcher {
         if (!this.log || typeof this.log.info !== 'function') {
             return;
         }
+        this.dockerEventsBuffer = '';
         this.log.info('Listening to docker events');
         const options: Dockerode.GetEventsOptions = {
             filters: {
@@ -636,6 +638,74 @@ class Docker extends Watcher {
         });
     }
 
+    isRecoverableDockerEventParseError(error: any) {
+        const message = `${error?.message || ''}`.toLowerCase();
+        return (
+            message.includes('unexpected end of json input') ||
+            message.includes('unterminated string in json')
+        );
+    }
+
+    async processDockerEventPayload(
+        dockerEventPayload: string,
+        shouldTreatRecoverableErrorsAsPartial = false,
+    ) {
+        const payloadTrimmed = dockerEventPayload.trim();
+        if (payloadTrimmed === '') {
+            return true;
+        }
+        try {
+            const dockerEvent = JSON.parse(payloadTrimmed);
+            await this.processDockerEvent(dockerEvent);
+            return true;
+        } catch (e: any) {
+            if (
+                shouldTreatRecoverableErrorsAsPartial &&
+                this.isRecoverableDockerEventParseError(e)
+            ) {
+                return false;
+            }
+            this.log.debug(`Unable to process Docker event (${e.message})`);
+            return true;
+        }
+    }
+
+    async processDockerEvent(dockerEvent: any) {
+        const action = dockerEvent.Action;
+        const containerId = dockerEvent.id;
+
+        // If the container was created or destroyed => perform a watch
+        if (action === 'destroy' || action === 'create') {
+            await this.watchCronDebounced();
+        } else {
+            // Update container state in db if so
+            try {
+                const container = await this.dockerApi.getContainer(containerId);
+                const containerInspect = await container.inspect();
+                const newStatus = containerInspect.State.Status;
+                const containerFound = storeContainer.getContainer(containerId);
+                if (containerFound) {
+                    // Child logger for the container to process
+                    const logContainer = this.log.child({
+                        container: fullName(containerFound),
+                    });
+                    const oldStatus = containerFound.status;
+                    containerFound.status = newStatus;
+                    if (oldStatus !== newStatus) {
+                        storeContainer.updateContainer(containerFound);
+                        logContainer.info(
+                            `Status changed from ${oldStatus} to ${newStatus}`,
+                        );
+                    }
+                }
+            } catch (e: any) {
+                this.log.debug(
+                    `Unable to get container details for container id=[${containerId}] (${e.message})`,
+                );
+            }
+        }
+    }
+
     /**
      * Process a docker event.
      * @param dockerEventChunk
@@ -643,45 +713,28 @@ class Docker extends Watcher {
      */
     async onDockerEvent(dockerEventChunk: any) {
         this.ensureLogger();
-        try {
-            const dockerEvent = JSON.parse(dockerEventChunk.toString());
-            const action = dockerEvent.Action;
-            const containerId = dockerEvent.id;
+        this.dockerEventsBuffer += dockerEventChunk.toString();
+        const dockerEventPayloads = this.dockerEventsBuffer.split('\n');
+        const lastPayload = dockerEventPayloads.pop();
+        this.dockerEventsBuffer = lastPayload === undefined ? '' : lastPayload;
 
-            // If the container was created or destroyed => perform a watch
-            if (action === 'destroy' || action === 'create') {
-                await this.watchCronDebounced();
-            } else {
-                // Update container state in db if so
-                try {
-                    const container =
-                        await this.dockerApi.getContainer(containerId);
-                    const containerInspect = await container.inspect();
-                    const newStatus = containerInspect.State.Status;
-                    const containerFound =
-                        storeContainer.getContainer(containerId);
-                    if (containerFound) {
-                        // Child logger for the container to process
-                        const logContainer = this.log.child({
-                            container: fullName(containerFound),
-                        });
-                        const oldStatus = containerFound.status;
-                        containerFound.status = newStatus;
-                        if (oldStatus !== newStatus) {
-                            storeContainer.updateContainer(containerFound);
-                            logContainer.info(
-                                `Status changed from ${oldStatus} to ${newStatus}`,
-                            );
-                        }
-                    }
-                } catch (e: any) {
-                    this.log.debug(
-                        `Unable to get container details for container id=[${containerId}] (${e.message})`,
-                    );
-                }
+        for (const dockerEventPayload of dockerEventPayloads) {
+            await this.processDockerEventPayload(dockerEventPayload);
+        }
+
+        const bufferedPayload = this.dockerEventsBuffer.trim();
+        if (
+            bufferedPayload !== '' &&
+            bufferedPayload.startsWith('{') &&
+            bufferedPayload.endsWith('}')
+        ) {
+            const processed = await this.processDockerEventPayload(
+                bufferedPayload,
+                true,
+            );
+            if (processed) {
+                this.dockerEventsBuffer = '';
             }
-        } catch (e: any) {
-            this.log.debug(`Unable to process Docker event (${e.message})`);
         }
     }
 
