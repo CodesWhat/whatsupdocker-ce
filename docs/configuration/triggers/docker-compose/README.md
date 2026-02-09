@@ -11,6 +11,7 @@ The trigger will:
 - Remove the existing container
 - Create the new container
 - Start the new container (if the previous one was running)
+- Run `post_start` hooks declared on the updated service (if any)
 - Remove the previous image (optionally)
 
 ### Variables

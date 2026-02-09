@@ -5,6 +5,47 @@ import yaml from 'yaml';
 import Docker from '../docker/Docker';
 import { getState } from '../../../registry';
 
+function getServiceKey(compose, container, currentImage) {
+    const composeServiceName = container.labels?.['com.docker.compose.service'];
+    if (composeServiceName && compose.services?.[composeServiceName]) {
+        return composeServiceName;
+    }
+
+    return Object.keys(compose.services).find((serviceKey) => {
+        const service = compose.services[serviceKey];
+        return service.image?.includes(currentImage) ?? false;
+    });
+}
+
+function normalizePostStartHooks(postStart) {
+    if (!postStart) {
+        return [];
+    }
+    if (Array.isArray(postStart)) {
+        return postStart;
+    }
+    return [postStart];
+}
+
+function normalizePostStartCommand(command) {
+    if (Array.isArray(command)) {
+        return command.map((value) => `${value}`);
+    }
+    return ['sh', '-c', `${command}`];
+}
+
+function normalizePostStartEnvironment(environment) {
+    if (!environment) {
+        return undefined;
+    }
+    if (Array.isArray(environment)) {
+        return environment.map((value) => `${value}`);
+    }
+    return Object.entries(environment).map(
+        ([key, value]) => `${key}=${value ?? ''}`,
+    );
+}
+
 /**
  * Return true if the container belongs to the compose file.
  * @param compose
@@ -20,10 +61,7 @@ function doesContainerBelongToCompose(compose, container) {
         container.image,
         container.image.tag.value,
     );
-    return Object.keys(compose.services).some((key) => {
-        const service = compose.services[key];
-        return service.image?.includes(currentImage) ?? false;
-    });
+    return Boolean(getServiceKey(compose, container, currentImage));
 }
 
 /**
@@ -215,8 +253,101 @@ class Dockercompose extends Docker {
         // Update only containers requiring an image change
         // (super.notify will take care of the dry-run mode for each container as well)
         await Promise.all(
-            mappingsNeedingUpdate.map(({ container }) => super.trigger(container)),
+            mappingsNeedingUpdate.map(async ({ container, service }) => {
+                await super.trigger(container);
+                await this.runServicePostStartHooks(
+                    container,
+                    service,
+                    compose.services[service],
+                );
+            }),
         );
+    }
+
+    async runServicePostStartHooks(container, serviceKey, service) {
+        if (this.configuration.dryrun || !service?.post_start) {
+            return;
+        }
+
+        const hooks = normalizePostStartHooks(service.post_start);
+        if (hooks.length === 0) {
+            return;
+        }
+
+        const watcher = this.getWatcher(container);
+        const { dockerApi } = watcher;
+        const containerToUpdate = dockerApi.getContainer(container.name);
+        const containerState = await containerToUpdate.inspect();
+
+        if (!containerState?.State?.Running) {
+            this.log.info(
+                `Skip compose post_start hooks for ${container.name} (${serviceKey}) because container is not running`,
+            );
+            return;
+        }
+
+        for (const hook of hooks) {
+            const hookConfiguration =
+                typeof hook === 'string' ? { command: hook } : hook;
+            if (!hookConfiguration?.command) {
+                this.log.warn(
+                    `Skip invalid compose post_start hook for ${container.name} (${serviceKey}) because command is missing`,
+                );
+                // eslint-disable-next-line no-continue
+                continue;
+            }
+
+            const execOptions = {
+                AttachStdout: true,
+                AttachStderr: true,
+                Cmd: normalizePostStartCommand(hookConfiguration.command),
+                User: hookConfiguration.user,
+                WorkingDir: hookConfiguration.working_dir,
+                Privileged: hookConfiguration.privileged,
+                Env: normalizePostStartEnvironment(hookConfiguration.environment),
+            };
+
+            this.log.info(
+                `Run compose post_start hook for ${container.name} (${serviceKey})`,
+            );
+
+            const exec = await containerToUpdate.exec(execOptions);
+            const execStream = await exec.start({
+                Detach: false,
+                Tty: false,
+            });
+            if (execStream?.resume) {
+                execStream.resume();
+            }
+
+            await new Promise((resolve, reject) => {
+                if (!execStream?.once) {
+                    resolve(undefined);
+                    return;
+                }
+                const onError = (e) => {
+                    execStream.removeListener('end', onDone);
+                    execStream.removeListener('close', onDone);
+                    reject(e);
+                };
+                const onDone = () => {
+                    execStream.removeListener('end', onDone);
+                    execStream.removeListener('close', onDone);
+                    execStream.removeListener('error', onError);
+                    resolve(undefined);
+                };
+                execStream.once('end', onDone);
+                execStream.once('close', onDone);
+                execStream.once('error', onError);
+            });
+
+            const execResult = await exec.inspect();
+            if (execResult.ExitCode !== 0) {
+                throw new Error(
+                    `Compose post_start hook failed for ${container.name} (${serviceKey}) with exit code ${execResult.ExitCode}`,
+                );
+            }
+        }
     }
 
     /**
@@ -242,7 +373,7 @@ class Dockercompose extends Docker {
      * and the image declaration with the update version.
      * @param compose
      * @param container
-     * @returns {{current, update}|undefined}
+     * @returns {{service, current, update}|undefined}
      */
     mapCurrentVersionToUpdateVersion(compose, container) {
         // Get registry configuration
@@ -255,12 +386,7 @@ class Dockercompose extends Docker {
             container.image.tag.value,
         );
 
-        const serviceKeyToUpdate = Object.keys(compose.services).find(
-            (serviceKey) => {
-                const service = compose.services[serviceKey];
-                return service.image?.includes(currentImage) ?? false;
-            },
-        );
+        const serviceKeyToUpdate = getServiceKey(compose, container, currentImage);
 
         if (!serviceKeyToUpdate) {
             this.log.warn(
@@ -268,10 +394,18 @@ class Dockercompose extends Docker {
             );
             return undefined;
         }
+        const serviceToUpdate = compose.services[serviceKeyToUpdate];
+        if (!serviceToUpdate?.image) {
+            this.log.warn(
+                `Could not update service ${serviceKeyToUpdate} for container ${container.name} because image is missing`,
+            );
+            return undefined;
+        }
 
         // Rebuild image definition string
         return {
-            current: compose.services[serviceKeyToUpdate].image,
+            service: serviceKeyToUpdate,
+            current: serviceToUpdate.image,
             update: this.getNewImageFullName(registry, container),
         };
     }

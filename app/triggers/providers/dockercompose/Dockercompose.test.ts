@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { EventEmitter } from 'events';
 import Docker from '../docker/Docker';
 import Dockercompose from './Dockercompose';
 import { getState } from '../../../registry';
@@ -10,6 +11,7 @@ jest.mock('../../../registry', () => ({
 describe('Dockercompose Trigger', () => {
     let trigger;
     let mockLog;
+    let mockDockerApi;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -30,10 +32,22 @@ describe('Dockercompose Trigger', () => {
             composeFileLabel: 'wud.compose.file',
         };
 
+        mockDockerApi = {
+            modem: {
+                socketPath: '/var/run/docker.sock',
+            },
+            getContainer: jest.fn(),
+        };
+
         getState.mockReturnValue({
             registry: {
                 hub: {
                     getImageFullName: (image, tag) => `${image.name}:${tag}`,
+                },
+            },
+            watcher: {
+                'docker.local': {
+                    dockerApi: mockDockerApi,
                 },
             },
         });
@@ -69,9 +83,45 @@ describe('Dockercompose Trigger', () => {
         );
 
         expect(result).toEqual({
+            service: 'portainer',
             current: 'portainer/portainer-ce:2.27.4',
             update: 'portainer/portainer-ce:2.27.5',
         });
+    });
+
+    test('mapCurrentVersionToUpdateVersion should prefer compose service label', () => {
+        const compose = {
+            services: {
+                alpha: {
+                    image: 'nginx:1.0.0',
+                },
+                beta: {
+                    image: 'nginx:1.0.0',
+                },
+            },
+        };
+        const container = {
+            name: 'nginx',
+            labels: {
+                'com.docker.compose.service': 'beta',
+            },
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: {
+                kind: 'tag',
+                remoteValue: '1.1.0',
+            },
+        };
+
+        const result = trigger.mapCurrentVersionToUpdateVersion(
+            compose,
+            container,
+        );
+
+        expect(result?.service).toBe('beta');
     });
 
     test('processComposeFile should not fail when compose has partial services', async () => {
@@ -188,6 +238,93 @@ describe('Dockercompose Trigger', () => {
         expect(dockerTriggerSpy).not.toHaveBeenCalled();
         expect(mockLog.info).toHaveBeenCalledWith(
             expect.stringContaining('already up to date'),
+        );
+    });
+
+    test('runServicePostStartHooks should execute configured hooks on recreated container', async () => {
+        trigger.configuration.dryrun = false;
+        const container = {
+            name: 'netbox',
+            watcher: 'local',
+        };
+        const startStream = new EventEmitter();
+        startStream.resume = jest.fn();
+        const mockExec = {
+            start: jest.fn().mockImplementation(async () => {
+                setImmediate(() => startStream.emit('close'));
+                return startStream;
+            }),
+            inspect: jest.fn().mockResolvedValue({ ExitCode: 0 }),
+        };
+        const recreatedContainer = {
+            inspect: jest.fn().mockResolvedValue({
+                State: {
+                    Running: true,
+                },
+            }),
+            exec: jest.fn().mockResolvedValue(mockExec),
+        };
+
+        mockDockerApi.getContainer.mockReturnValue(recreatedContainer);
+
+        await trigger.runServicePostStartHooks(container, 'netbox', {
+            post_start: [
+                {
+                    command: 'echo hello',
+                    user: 'root',
+                    working_dir: '/tmp',
+                    privileged: true,
+                    environment: { TEST: '1' },
+                },
+            ],
+        });
+
+        expect(recreatedContainer.exec).toHaveBeenCalledWith(
+            expect.objectContaining({
+                Cmd: ['sh', '-c', 'echo hello'],
+                User: 'root',
+                WorkingDir: '/tmp',
+                Privileged: true,
+                Env: ['TEST=1'],
+            }),
+        );
+        expect(mockExec.inspect).toHaveBeenCalledTimes(1);
+    });
+
+    test('runServicePostStartHooks should support string hook syntax', async () => {
+        trigger.configuration.dryrun = false;
+        const container = {
+            name: 'netbox',
+            watcher: 'local',
+        };
+        const startStream = new EventEmitter();
+        startStream.resume = jest.fn();
+        const mockExec = {
+            start: jest.fn().mockImplementation(async () => {
+                setImmediate(() => startStream.emit('close'));
+                return startStream;
+            }),
+            inspect: jest.fn().mockResolvedValue({ ExitCode: 0 }),
+        };
+        const recreatedContainer = {
+            inspect: jest.fn().mockResolvedValue({
+                State: {
+                    Running: true,
+                },
+            }),
+            exec: jest.fn().mockResolvedValue(mockExec),
+        };
+
+        mockDockerApi.getContainer.mockReturnValue(recreatedContainer);
+
+        await trigger.runServicePostStartHooks(container, 'netbox', {
+            post_start: ['echo hello'],
+        });
+
+        expect(recreatedContainer.exec).toHaveBeenCalledWith(
+            expect.objectContaining({
+                Cmd: ['sh', '-c', 'echo hello'],
+            }),
         );
     });
 });
