@@ -4,13 +4,12 @@ os: linux
 
 env:
   global:
-    - CC_TEST_REPORTER_ID=46ef31dae5b656e0f4be410a86bd83bdcf73e7d27ab33a704c197e6fe4bf02a0
     - DOCKER_PLATFORMS=linux/arm64/v8,linux/amd64
-    - IMAGE_NAME=wud
     - NODE_VERSION=24
 
 before_install:
 
+  - export PROJECT_IMAGE_NAME=${PROJECT_IMAGE_NAME:-${TRAVIS_REPO_SLUG##*/}}
   - export IMAGE_VERSION=${TRAVIS_BRANCH//\//\_}
   - export IMAGE_VERSION=${IMAGE_VERSION//\#/\_}
   - export IMAGE_VERSION_MINOR=$(echo $IMAGE_VERSION | sed -rn 's/^(v?[[:digit:]]+.[[:digit:]]+).([[:digit:]]+)(.*)/\1/p')
@@ -27,11 +26,6 @@ before_install:
 
   # Install Nodejs
   - nvm install $NODE_VERSION
-
-  # Init Code Climate
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./app/cc-test-reporter
-  - (cd app && chmod +x ./cc-test-reporter)
-#  - (cd app && ./cc-test-reporter before-build)
 
 install:
 
@@ -53,14 +47,11 @@ script:
   - (cd app && npm test)
   - (cd ui && npm run test:unit)
 
-  # Report to Code Climate
-  # - (cd app && ./cc-test-reporter after-build -t lcov --debug --exit-code $TRAVIS_TEST_RESULT)
-
   # Package ui
   - (cd ui && npm run build)
 
-  # Build wud docker image
-  - docker build -t wud --build-arg WUD_VERSION=$IMAGE_VERSION .
+  # Build project docker image
+  - docker build -t ${PROJECT_IMAGE_NAME} --build-arg WUD_VERSION=$IMAGE_VERSION .
 
   # Login to private registries
   - docker login registry.gitlab.com -u "$GITLAB_USERNAME" -p "$GITLAB_TOKEN"
@@ -130,10 +121,10 @@ script:
   # QUAY
   - docker run -d --name quay_prometheus          --label 'wud.watch=true' --label 'wud.tag.include=^v\d+\.\d+\.\d+$'                         quay.io/prometheus/prometheus:v2.52.0
 
-  # Run wud docker image
+  # Run project docker image
   - >
     docker run -d
-    --name wud
+    --name ${PROJECT_IMAGE_NAME}
     --publish 3000:3000
     --volume /var/run/docker.sock:/var/run/docker.sock
     --env WUD_TRIGGER_MOCK_EXAMPLE_MOCK=mock
@@ -152,22 +143,22 @@ script:
     --env WUD_REGISTRY_LSCR_PRIVATE_TOKEN="$GITHUB_TOKEN"
     --env WUD_AUTH_BASIC_JOHN_USER="john"
     --env WUD_AUTH_BASIC_JOHN_HASH='$apr1$8zDVtSAY$62WBh9DspNbUKMZXYRsjS/'
-    wud
+    ${PROJECT_IMAGE_NAME}
 
-  # Give wud a little time to fetch all available updates
+  # Give the app a little time to fetch all available updates
   - sleep 20
 
   # Run E2E Tests
   - (cd e2e && npm run cucumber)
 
   # Override image version with tag name if any
-  - export DOCKER_TAGS="-t ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION} -t ghcr.io/${GITHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION}"
+  - export DOCKER_TAGS="-t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION}"
   - |
     if [ ! -z "$TRAVIS_TAG" ]
     then
-      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION_MAJOR} -t ghcr.io/${GITHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION_MAJOR}"
-      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION_MINOR} -t ghcr.io/${GITHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_VERSION_MINOR}"
-      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${IMAGE_NAME}:latest -t ghcr.io/${GITHUB_USERNAME}/${IMAGE_NAME}:latest"
+      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MAJOR} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MAJOR}"
+      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MINOR} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MINOR}"
+      export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:latest -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:latest"
     fi
 
   # Build & push image
