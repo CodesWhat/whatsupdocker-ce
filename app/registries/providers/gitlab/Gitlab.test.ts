@@ -9,7 +9,7 @@ gitlab.configuration = {
     token: 'abcdef',
 };
 
-jest.mock('axios');
+vi.mock('axios');
 
 test('validatedConfiguration should initialize when configuration is valid', async () => {
     expect(

@@ -2,7 +2,7 @@
 import joi from 'joi';
 import axios from 'axios';
 
-jest.mock('axios');
+vi.mock('axios');
 import Apprise from './Apprise.js';
 
 const apprise = new Apprise();
@@ -26,7 +26,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {

@@ -22,7 +22,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -50,7 +50,7 @@ test('validateConfiguration should throw error when invalid', async () => {
 test('should trigger with container', async () => {
     const cmd = new Command();
     await cmd.register('trigger', 'command', 'test', { cmd: 'echo test' });
-    const logSpy = jest.spyOn(cmd.log, 'info');
+    const logSpy = vi.spyOn(cmd.log, 'info');
 
     const container = { name: 'test', id: '123' };
     await cmd.trigger(container);
@@ -63,7 +63,7 @@ test('should trigger with container', async () => {
 test('should trigger batch with containers', async () => {
     const cmd = new Command();
     await cmd.register('trigger', 'command', 'test', { cmd: 'echo batch' });
-    const logSpy = jest.spyOn(cmd.log, 'info');
+    const logSpy = vi.spyOn(cmd.log, 'info');
 
     const containers = [{ name: 'test1' }, { name: 'test2' }];
     await cmd.triggerBatch(containers);
@@ -78,7 +78,7 @@ test('should handle command execution error', async () => {
     await cmd.register('trigger', 'command', 'test', {
         cmd: 'invalid-command',
     });
-    const logSpy = jest.spyOn(cmd.log, 'warn');
+    const logSpy = vi.spyOn(cmd.log, 'warn');
 
     const container = { name: 'test' };
     await cmd.trigger(container);
@@ -93,7 +93,7 @@ test('should log stderr when present', async () => {
     await cmd.register('trigger', 'command', 'test', {
         cmd: 'echo warning >&2',
     });
-    const logSpy = jest.spyOn(cmd.log, 'warn');
+    const logSpy = vi.spyOn(cmd.log, 'warn');
 
     const container = { name: 'test' };
     await cmd.trigger(container);

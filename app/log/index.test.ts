@@ -2,8 +2,8 @@
 import log from './index.js';
 
 // Mock the configuration module
-jest.mock('../configuration', () => ({
-    getLogLevel: jest.fn(() => 'info'),
+vi.mock('../configuration', () => ({
+    getLogLevel: vi.fn(() => 'info'),
 }));
 
 describe('Logger', () => {

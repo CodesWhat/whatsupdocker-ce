@@ -2,11 +2,11 @@
 import * as container from './container.js';
 import * as event from '../event/index.js';
 
-jest.mock('./migrate');
-jest.mock('../event');
+vi.mock('./migrate');
+vi.mock('../event');
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('createCollections should create collection containers when not exist', async () => {
@@ -17,7 +17,7 @@ test('createCollections should create collection containers when not exist', asy
             insert: () => {},
         }),
     };
-    const spy = jest.spyOn(db, 'addCollection');
+    const spy = vi.spyOn(db, 'addCollection');
     container.createCollections(db);
     expect(spy).toHaveBeenCalledWith('containers');
 });
@@ -30,7 +30,7 @@ test('createCollections should not create collection containers when already exi
         }),
         addCollection: () => null,
     };
-    const spy = jest.spyOn(db, 'addCollection');
+    const spy = vi.spyOn(db, 'addCollection');
     container.createCollections(db);
     expect(spy).not.toHaveBeenCalled();
 });
@@ -71,8 +71,8 @@ test('insertContainer should insert doc and emit an event', async () => {
             tag: 'version',
         },
     };
-    const spyInsert = jest.spyOn(collection, 'insert');
-    const spyEvent = jest.spyOn(event, 'emitContainerAdded');
+    const spyInsert = vi.spyOn(collection, 'insert');
+    const spyEvent = vi.spyOn(event, 'emitContainerAdded');
     container.createCollections(db);
     container.insertContainer(containerToSave);
     expect(spyInsert).toHaveBeenCalled();
@@ -119,8 +119,8 @@ test('updateContainer should update doc and emit an event', async () => {
             tag: 'version',
         },
     };
-    const spyInsert = jest.spyOn(collection, 'insert');
-    const spyEvent = jest.spyOn(event, 'emitContainerUpdated');
+    const spyInsert = vi.spyOn(collection, 'insert');
+    const spyEvent = vi.spyOn(event, 'emitContainerUpdated');
     container.createCollections(db);
     container.updateContainer(containerToSave);
     expect(spyInsert).toHaveBeenCalled();
@@ -448,7 +448,7 @@ test('deleteContainer should delete doc and emit an event', async () => {
         getCollection: () => collection,
         addCollection: () => null,
     };
-    const spyEvent = jest.spyOn(event, 'emitContainerRemoved');
+    const spyEvent = vi.spyOn(event, 'emitContainerRemoved');
     container.createCollections(db);
     container.deleteContainer(containerExample);
     expect(spyEvent).toHaveBeenCalled();

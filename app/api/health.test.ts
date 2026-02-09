@@ -1,20 +1,22 @@
 // @ts-nocheck
 // Mock express modules
-jest.mock('express', () => ({
-    Router: jest.fn(() => ({
-        use: jest.fn(),
-        get: jest.fn(),
-    })),
+vi.mock('express', () => ({
+    default: {
+        Router: vi.fn(() => ({
+            use: vi.fn(),
+            get: vi.fn(),
+        })),
+    },
 }));
 
-jest.mock('nocache', () => jest.fn());
-jest.mock('express-healthcheck', () => jest.fn(() => 'healthcheck-middleware'));
+vi.mock('nocache', () => ({ default: vi.fn() }));
+vi.mock('express-healthcheck', () => ({ default: vi.fn(() => 'healthcheck-middleware') }));
 
 import * as healthRouter from './health.js';
 
 describe('Health Router', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should initialize router with nocache and healthcheck', async () => {
@@ -26,7 +28,7 @@ describe('Health Router', () => {
     });
 
     test('should use express-healthcheck middleware', async () => {
-        const expressHealthcheck = await import('express-healthcheck');
+        const { default: expressHealthcheck } = await import('express-healthcheck');
         healthRouter.init();
 
         expect(expressHealthcheck).toHaveBeenCalled();

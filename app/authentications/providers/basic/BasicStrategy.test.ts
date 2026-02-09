@@ -4,8 +4,8 @@ import BasicStrategy from './BasicStrategy.js';
 const basicStrategy = new BasicStrategy({}, () => {});
 
 beforeEach(async () => {
-    basicStrategy.success = jest.fn();
-    basicStrategy.fail = jest.fn();
+    basicStrategy.success = vi.fn();
+    basicStrategy.fail = vi.fn();
 });
 
 test('_challenge should return appropriate Auth header', async () => {
@@ -18,7 +18,7 @@ test('authenticate should return user from session if so', async () => {
 });
 
 test('authenticate should call super.authenticate when no existing session', async () => {
-    const fail = jest.spyOn(basicStrategy, 'fail');
+    const fail = vi.spyOn(basicStrategy, 'fail');
     basicStrategy.authenticate({
         isAuthenticated: () => false,
         headers: {

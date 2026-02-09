@@ -1,60 +1,62 @@
 // @ts-nocheck
-jest.mock('express', () => ({
-    Router: jest.fn(() => ({
-        use: jest.fn(),
-        get: jest.fn(),
-        post: jest.fn(),
-        delete: jest.fn(),
-        patch: jest.fn(),
-    })),
+vi.mock('express', () => ({
+    default: {
+        Router: vi.fn(() => ({
+            use: vi.fn(),
+            get: vi.fn(),
+            post: vi.fn(),
+            delete: vi.fn(),
+            patch: vi.fn(),
+        })),
+    },
 }));
 
-jest.mock('nocache', () => jest.fn(() => 'nocache-middleware'));
+vi.mock('nocache', () => ({ default: vi.fn(() => 'nocache-middleware') }));
 
-jest.mock('../store/container', () => ({
-    getContainers: jest.fn(() => []),
-    getContainer: jest.fn(),
-    updateContainer: jest.fn((container) => container),
-    deleteContainer: jest.fn(),
+vi.mock('../store/container', () => ({
+    getContainers: vi.fn(() => []),
+    getContainer: vi.fn(),
+    updateContainer: vi.fn((container) => container),
+    deleteContainer: vi.fn(),
 }));
 
-jest.mock('../registry', () => ({
-    getState: jest.fn(() => ({
+vi.mock('../registry', () => ({
+    getState: vi.fn(() => ({
         watcher: {},
         trigger: {},
     })),
 }));
 
-jest.mock('../configuration', () => ({
-    getServerConfiguration: jest.fn(() => ({
+vi.mock('../configuration', () => ({
+    getServerConfiguration: vi.fn(() => ({
         feature: { delete: true },
     })),
 }));
 
-jest.mock('./component', () => ({
-    mapComponentsToList: jest.fn(() => []),
+vi.mock('./component', () => ({
+    mapComponentsToList: vi.fn(() => []),
 }));
 
-jest.mock('../triggers/providers/Trigger', () => ({
+vi.mock('../triggers/providers/Trigger', () => ({
     __esModule: true,
     default: {
-        parseIncludeOrIncludeTriggerString: jest.fn(),
-        doesReferenceMatchId: jest.fn(() => false),
+        parseIncludeOrIncludeTriggerString: vi.fn(),
+        doesReferenceMatchId: vi.fn(() => false),
     },
 }));
 
-jest.mock('../log', () => ({
+vi.mock('../log', () => ({
     __esModule: true,
     default: {
-        child: jest.fn(() => ({
-            info: jest.fn(),
-            warn: jest.fn(),
+        child: vi.fn(() => ({
+            info: vi.fn(),
+            warn: vi.fn(),
         })),
     },
 }));
 
-jest.mock('../agent/manager', () => ({
-    getAgent: jest.fn(),
+vi.mock('../agent/manager', () => ({
+    getAgent: vi.fn(),
 }));
 
 import * as storeContainer from '../store/container.js';
@@ -70,15 +72,15 @@ function getUpdatePolicyHandler() {
 
 function createResponse() {
     return {
-        sendStatus: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
+        sendStatus: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
     };
 }
 
 describe('Container Router', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should register update policy route', async () => {

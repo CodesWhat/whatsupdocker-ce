@@ -23,7 +23,7 @@ const docker = new Docker();
 docker.configuration = configurationValid;
 docker.log = log;
 
-jest.mock('../../../registry', () => ({
+vi.mock('../../../registry', () => ({
     getState() {
         return {
             watcher: {
@@ -111,7 +111,7 @@ jest.mock('../../../registry', () => ({
 }));
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -312,14 +312,14 @@ test('createContainer should throw error when error occurs', async () => {
 });
 
 test('createContainer should connect additional networks after create', async () => {
-    const connect = jest.fn().mockResolvedValue(undefined);
-    const getNetwork = jest.fn().mockReturnValue({ connect });
-    const createContainer = jest.fn().mockResolvedValue({
+    const connect = vi.fn().mockResolvedValue(undefined);
+    const getNetwork = vi.fn().mockReturnValue({ connect });
+    const createContainer = vi.fn().mockResolvedValue({
         start: () => Promise.resolve(),
     });
     const logContainer = {
-        info: jest.fn(),
-        warn: jest.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
     };
 
     const containerToCreate = {
@@ -391,9 +391,9 @@ test('pull should throw error when error occurs', async () => {
 
 test('pull should emit progress logs from followProgress events', async () => {
     const dockerApi = {
-        pull: jest.fn().mockResolvedValue({}),
+        pull: vi.fn().mockResolvedValue({}),
         modem: {
-            followProgress: jest.fn((pullStream, done, onProgress) => {
+            followProgress: vi.fn((pullStream, done, onProgress) => {
                 onProgress({
                     id: 'layer-1',
                     status: 'Downloading',
@@ -412,9 +412,9 @@ test('pull should emit progress logs from followProgress events', async () => {
         },
     };
     const logContainer = {
-        info: jest.fn(),
-        warn: jest.fn(),
-        debug: jest.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
     };
 
     await docker.pullImage(
@@ -434,17 +434,17 @@ test('pull should emit progress logs from followProgress events', async () => {
 
 test('pull should throw error when followProgress reports an error', async () => {
     const dockerApi = {
-        pull: jest.fn().mockResolvedValue({}),
+        pull: vi.fn().mockResolvedValue({}),
         modem: {
-            followProgress: jest.fn((pullStream, done) => {
+            followProgress: vi.fn((pullStream, done) => {
                 done(new Error('Pull progress failed'));
             }),
         },
     };
     const logContainer = {
-        info: jest.fn(),
-        warn: jest.fn(),
-        debug: jest.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
     };
 
     await expect(

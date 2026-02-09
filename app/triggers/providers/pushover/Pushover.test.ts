@@ -1,15 +1,13 @@
 // @ts-nocheck
 import joi from 'joi';
 
-jest.mock(
-    'pushover-notifications',
-    () =>
-        class Push {
-            send(message, cb) {
-                cb(undefined, message);
-            }
-        },
-);
+vi.mock('pushover-notifications', () => ({
+    default: class Push {
+        send(message, cb) {
+            cb(undefined, message);
+        }
+    },
+}));
 
 import Pushover from './Pushover.js';
 

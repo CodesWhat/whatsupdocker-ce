@@ -1,8 +1,8 @@
 // @ts-nocheck
 import joi from 'joi';
-const { Kafka: KafkaClient } = require('kafkajs');
+import { Kafka as KafkaClient } from 'kafkajs';
 
-jest.mock('kafkajs');
+vi.mock('kafkajs');
 
 import Kafka from './Kafka.js';
 
@@ -28,7 +28,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {

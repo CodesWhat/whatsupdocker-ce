@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Mock the configuration module
-jest.mock('../configuration', () => ({
-    getServerConfiguration: jest.fn(() => ({
+vi.mock('../configuration', () => ({
+    getServerConfiguration: vi.fn(() => ({
         port: 3000,
         cors: {},
         enabled: true,
@@ -11,20 +11,22 @@ jest.mock('../configuration', () => ({
 }));
 
 // Mock express modules
-jest.mock('express', () => ({
-    Router: jest.fn(() => ({
-        use: jest.fn(),
-        get: jest.fn(),
-    })),
+vi.mock('express', () => ({
+    default: {
+        Router: vi.fn(() => ({
+            use: vi.fn(),
+            get: vi.fn(),
+        })),
+    },
 }));
 
-jest.mock('nocache', () => jest.fn());
+vi.mock('nocache', () => ({ default: vi.fn() }));
 
 import * as serverRouter from './server.js';
 
 describe('Server Router', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should initialize router with nocache and route', async () => {
@@ -42,8 +44,8 @@ describe('Server Router', () => {
         // Get the route handler function
         const routeHandler = router.get.mock.calls[0][1];
         const mockRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn(),
         };
 
         routeHandler({}, mockRes);

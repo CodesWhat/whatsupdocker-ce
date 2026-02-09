@@ -4,7 +4,7 @@ import mqttClient from 'mqtt';
 import log from '../../../log/index.js';
 import { flatten } from '../../../model/container.js';
 
-jest.mock('mqtt');
+vi.mock('mqtt');
 import Mqtt from './Mqtt.js';
 
 const mqtt = new Mqtt();
@@ -57,9 +57,9 @@ const containerData = [
 ];
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mqtt.client = {
-        publish: jest.fn(() => {}),
+        publish: vi.fn(() => {}),
     };
 });
 
@@ -121,7 +121,7 @@ test('initTrigger should init Mqtt client', async () => {
             prefix: 'homeassistant',
         },
     };
-    const spy = jest.spyOn(mqttClient, 'connectAsync');
+    const spy = vi.spyOn(mqttClient, 'connectAsync');
     await mqtt.initTrigger();
     expect(spy).toHaveBeenCalledWith('mqtt://host:1883', {
         clientId: 'wud',

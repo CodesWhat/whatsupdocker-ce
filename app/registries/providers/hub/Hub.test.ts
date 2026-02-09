@@ -2,7 +2,7 @@
 import Hub from './Hub.js';
 
 // Mock axios
-jest.mock('axios', () => jest.fn());
+vi.mock('axios', () => ({ default: vi.fn() }));
 
 describe('Docker Hub Registry', () => {
     let hub;
@@ -10,7 +10,7 @@ describe('Docker Hub Registry', () => {
     beforeEach(async () => {
         hub = new Hub();
         await hub.register('registry', 'hub', 'test', {});
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should create instance', async () => {
@@ -84,7 +84,7 @@ describe('Docker Hub Registry', () => {
         const { default: axios } = await import('axios');
         axios.mockResolvedValue({ data: { token: 'auth-token' } });
 
-        hub.getAuthCredentials = jest.fn().mockReturnValue('base64credentials');
+        hub.getAuthCredentials = vi.fn().mockReturnValue('base64credentials');
 
         const image = { name: 'library/nginx' };
         const requestOptions = { headers: {} };
@@ -106,7 +106,7 @@ describe('Docker Hub Registry', () => {
         const { default: axios } = await import('axios');
         axios.mockResolvedValue({ data: { token: 'public-token' } });
 
-        hub.getAuthCredentials = jest.fn().mockReturnValue(null);
+        hub.getAuthCredentials = vi.fn().mockReturnValue(null);
 
         const image = { name: 'library/nginx' };
         const requestOptions = { headers: {} };

@@ -31,9 +31,9 @@ let hass;
 let mqttClientMock;
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mqttClientMock = {
-        publish: jest.fn(() => {}),
+        publish: vi.fn(() => {}),
     };
     hass = new Hass({
         client: mqttClientMock,

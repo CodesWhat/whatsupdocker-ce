@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Mock the store module
-jest.mock('../store/app', () => ({
-    getAppInfos: jest.fn(() => ({
+vi.mock('../store/app', () => ({
+    getAppInfos: vi.fn(() => ({
         version: '1.0.0',
         name: 'wud',
         description: "What's up Docker?",
@@ -9,20 +9,22 @@ jest.mock('../store/app', () => ({
 }));
 
 // Mock express and nocache
-jest.mock('express', () => ({
-    Router: jest.fn(() => ({
-        use: jest.fn(),
-        get: jest.fn(),
-    })),
+vi.mock('express', () => ({
+    default: {
+        Router: vi.fn(() => ({
+            use: vi.fn(),
+            get: vi.fn(),
+        })),
+    },
 }));
 
-jest.mock('nocache', () => jest.fn());
+vi.mock('nocache', () => ({ default: vi.fn() }));
 
 import * as appRouter from './app.js';
 
 describe('App Router', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should initialize router with nocache and route', async () => {
@@ -40,8 +42,8 @@ describe('App Router', () => {
         // Get the route handler function
         const routeHandler = router.get.mock.calls[0][1];
         const mockRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn(),
         };
 
         routeHandler({}, mockRes);

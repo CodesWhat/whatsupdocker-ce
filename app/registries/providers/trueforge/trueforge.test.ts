@@ -1,7 +1,7 @@
 // @ts-nocheck
 import Trueforge from './trueforge.js';
 
-jest.mock('axios');
+vi.mock('axios');
 
 const trueforge = new Trueforge();
 trueforge.configuration = {
@@ -10,7 +10,7 @@ trueforge.configuration = {
     token: 'token',
 };
 
-jest.mock('axios');
+vi.mock('axios');
 
 test('validatedConfiguration should initialize when auth configuration is valid', async () => {
     expect(

@@ -3,7 +3,7 @@ import joi from 'joi';
 import axios from 'axios';
 import Ntfy from './Ntfy.js';
 
-jest.mock('axios');
+vi.mock('axios');
 
 const ntfy = new Ntfy();
 
@@ -26,7 +26,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {

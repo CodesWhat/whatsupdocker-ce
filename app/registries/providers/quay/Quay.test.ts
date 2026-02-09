@@ -3,7 +3,7 @@ import axios from 'axios';
 import Quay from './Quay.js';
 import log from '../../../log/index.js';
 
-jest.mock('axios');
+vi.mock('axios');
 axios.mockImplementation(() => ({
     token: 'token',
 }));

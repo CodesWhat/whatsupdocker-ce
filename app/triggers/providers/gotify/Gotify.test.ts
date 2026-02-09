@@ -2,7 +2,7 @@
 import joi from 'joi';
 import axios from 'axios';
 
-jest.mock('axios');
+vi.mock('axios');
 import Gotify from './Gotify.js';
 
 const gotify = new Gotify();
@@ -25,7 +25,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -73,7 +73,7 @@ test('trigger should send POST request to Gotify API', async () => {
     gotify.configuration = configurationValid;
     gotify.client = {
         message: {
-            createMessage: jest.fn().mockResolvedValue({}),
+            createMessage: vi.fn().mockResolvedValue({}),
         },
     };
     const container = {
@@ -107,7 +107,7 @@ test('triggerBatch should send batch notification', async () => {
     gotify.configuration = configurationValid;
     gotify.client = {
         message: {
-            createMessage: jest.fn().mockResolvedValue({}),
+            createMessage: vi.fn().mockResolvedValue({}),
         },
     };
 

@@ -1,13 +1,13 @@
 // @ts-nocheck
-jest.mock('../store/container');
-jest.mock('../log');
+vi.mock('../store/container');
+vi.mock('../log');
 
 import * as store from '../store/container.js';
 import * as container from './container.js';
 import log from '../log/index.js';
 
 test('gauge must be populated when containers are in the store', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     store.getContainers = () => [
         {
             id: 'container-123456789',
@@ -39,8 +39,8 @@ test('gauge must be populated when containers are in the store', async () => {
         },
     ];
     const gauge = container.init();
-    const spySet = jest.spyOn(gauge, 'set');
-    jest.runOnlyPendingTimers();
+    const spySet = vi.spyOn(gauge, 'set');
+    vi.runOnlyPendingTimers();
     expect(spySet).toHaveBeenCalledWith(
         {
             id: 'container-123456789',
@@ -70,7 +70,7 @@ test("gauge must warn when data don't match expected labels", async () => {
             extra: 'extra',
         },
     ];
-    const spyLog = jest.spyOn(log, 'warn');
+    const spyLog = vi.spyOn(log, 'warn');
     container.init();
     expect(spyLog).toHaveBeenCalled();
 });

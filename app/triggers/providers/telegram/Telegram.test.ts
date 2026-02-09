@@ -24,7 +24,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -67,7 +67,7 @@ test('should send message with correct text', async () => {
         simpletitle: 'Test Title',
         simplebody: 'Test Body',
     };
-    telegram.sendMessage = jest.fn();
+    telegram.sendMessage = vi.fn();
     await telegram.trigger({});
     expect(telegram.sendMessage).toHaveBeenCalledWith(
         '*Test Title*\n\nTest Body',
@@ -86,7 +86,7 @@ test.each([
             simplebody: 'Test Body',
             messageformat: messageformat,
         };
-        telegram.sendMessage = jest.fn();
+        telegram.sendMessage = vi.fn();
         await telegram.trigger({});
         expect(telegram.sendMessage).toHaveBeenCalledWith(expected);
     },
@@ -100,7 +100,7 @@ test('disabletitle should result in no title in message', async () => {
         disabletitle: true,
     };
 
-    telegram.sendMessage = jest.fn();
+    telegram.sendMessage = vi.fn();
     await telegram.trigger({});
 
     expect(telegram.sendMessage).toHaveBeenCalledWith('Test Body');
@@ -108,7 +108,7 @@ test('disabletitle should result in no title in message', async () => {
 
 test('triggerBatch should send batch notification', async () => {
     telegram.configuration = configurationValid;
-    telegram.sendMessage = jest.fn();
+    telegram.sendMessage = vi.fn();
     const containers = [
         {
             name: 'container1',

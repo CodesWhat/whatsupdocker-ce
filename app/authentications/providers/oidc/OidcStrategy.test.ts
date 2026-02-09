@@ -20,8 +20,8 @@ const oidcStrategy = new OidcStrategy(
 );
 
 beforeEach(async () => {
-    oidcStrategy.success = jest.fn();
-    oidcStrategy.fail = jest.fn();
+    oidcStrategy.success = vi.fn();
+    oidcStrategy.fail = vi.fn();
 });
 
 test('authenticate should return user from session if so', async () => {
@@ -30,13 +30,13 @@ test('authenticate should return user from session if so', async () => {
 });
 
 test('authenticate should call super.authenticate when no existing session', async () => {
-    const fail = jest.spyOn(oidcStrategy, 'fail');
+    const fail = vi.spyOn(oidcStrategy, 'fail');
     oidcStrategy.authenticate({ isAuthenticated: () => false, headers: {} });
     expect(fail).toHaveBeenCalled();
 });
 
 test('authenticate should get & validate Bearer token', async () => {
-    const verify = jest.spyOn(oidcStrategy, 'verify');
+    const verify = vi.spyOn(oidcStrategy, 'verify');
     oidcStrategy.authenticate({
         isAuthenticated: () => false,
         headers: {

@@ -1,19 +1,17 @@
 // @ts-nocheck
 import Gcr from './Gcr.js';
 
-jest.mock('axios', () =>
-    jest.fn().mockImplementation(() => ({
+vi.mock('axios', () => ({
+    default: vi.fn().mockImplementation(() => ({
         data: { token: 'xxxxx' },
     })),
-);
+}));
 
 const gcr = new Gcr();
 gcr.configuration = {
     clientemail: 'accesskeyid',
     privatekey: 'secretaccesskey',
 };
-
-jest.mock('axios');
 
 test('validatedConfiguration should initialize when configuration is valid', async () => {
     expect(

@@ -2,14 +2,14 @@
 import Http from './Http.js';
 
 // Mock axios
-jest.mock('axios', () => jest.fn());
+vi.mock('axios', () => ({ default: vi.fn() }));
 
 describe('HTTP Trigger', () => {
     let http;
 
     beforeEach(async () => {
         http = new Http();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should create instance', async () => {

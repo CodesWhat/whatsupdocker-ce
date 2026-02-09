@@ -1,44 +1,46 @@
 // @ts-nocheck
 // Mock all the router modules
-jest.mock('express', () => ({
-    Router: jest.fn(() => ({
-        use: jest.fn(),
-        get: jest.fn(),
-    })),
+vi.mock('express', () => ({
+    default: {
+        Router: vi.fn(() => ({
+            use: vi.fn(),
+            get: vi.fn(),
+        })),
+    },
 }));
 
-jest.mock('./app', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./app', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./container', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./container', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./watcher', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./watcher', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./trigger', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./trigger', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./registry', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./registry', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./authentication', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./authentication', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./log', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./log', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./store', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./store', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./server', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./server', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./agent', () => ({
-    init: jest.fn(() => ({ use: jest.fn(), get: jest.fn() })),
+vi.mock('./agent', () => ({
+    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
 }));
-jest.mock('./auth', () => ({
-    requireAuthentication: jest.fn((req, res, next) => next()),
+vi.mock('./auth', () => ({
+    requireAuthentication: vi.fn((req, res, next) => next()),
 }));
 
 import * as api from './api.js';
@@ -47,7 +49,7 @@ describe('API Router', () => {
     let router;
 
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         router = api.init();
     });
 

@@ -2,7 +2,7 @@
 import joi from 'joi';
 import { WebClient } from '@slack/web-api';
 
-jest.mock('@slack/web-api');
+vi.mock('@slack/web-api');
 import Slack from './Slack.js';
 
 const slack = new Slack();
@@ -104,7 +104,7 @@ test('should send message with correct text', async () => {
         simpletitle: 'Test Title',
         simplebody: 'Test Body',
     };
-    slack.sendMessage = jest.fn();
+    slack.sendMessage = vi.fn();
     await slack.trigger({});
     expect(slack.sendMessage).toHaveBeenCalledWith('*Test Title*\n\nTest Body');
 });
@@ -117,7 +117,7 @@ test('disabletitle should result in no title in message', async () => {
         disabletitle: true,
     };
 
-    slack.sendMessage = jest.fn();
+    slack.sendMessage = vi.fn();
     await slack.trigger({});
 
     expect(slack.sendMessage).toHaveBeenCalledWith('Test Body');
@@ -125,7 +125,7 @@ test('disabletitle should result in no title in message', async () => {
 
 test('triggerBatch should send batch notification', async () => {
     slack.configuration = configurationValid;
-    slack.sendMessage = jest.fn();
+    slack.sendMessage = vi.fn();
     const containers = [
         {
             name: 'container1',

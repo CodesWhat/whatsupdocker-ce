@@ -2,8 +2,10 @@
 import Rocketchat from './Rocketchat.js';
 
 // Mock axios
-jest.mock('axios', () => ({
-    post: jest.fn().mockResolvedValue({ data: {} }),
+vi.mock('axios', () => ({
+    default: {
+        post: vi.fn().mockResolvedValue({ data: {} }),
+    },
 }));
 
 describe('Rocketchat Trigger', () => {
@@ -11,7 +13,7 @@ describe('Rocketchat Trigger', () => {
 
     beforeEach(async () => {
         rocketchat = new Rocketchat();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should create instance', async () => {
@@ -97,8 +99,8 @@ describe('Rocketchat Trigger', () => {
             auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
             channel: '#general',
         };
-        rocketchat.renderSimpleTitle = jest.fn().mockReturnValue('Title');
-        rocketchat.renderSimpleBody = jest.fn().mockReturnValue('Body');
+        rocketchat.renderSimpleTitle = vi.fn().mockReturnValue('Title');
+        rocketchat.renderSimpleBody = vi.fn().mockReturnValue('Body');
         const container = { name: 'test' };
 
         await rocketchat.trigger(container);
@@ -114,8 +116,8 @@ describe('Rocketchat Trigger', () => {
             auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
             channel: '#general',
         };
-        rocketchat.renderBatchTitle = jest.fn().mockReturnValue('Batch Title');
-        rocketchat.renderBatchBody = jest.fn().mockReturnValue('Batch Body');
+        rocketchat.renderBatchTitle = vi.fn().mockReturnValue('Batch Title');
+        rocketchat.renderBatchBody = vi.fn().mockReturnValue('Batch Body');
         const containers = [{ name: 'test1' }, { name: 'test2' }];
 
         await rocketchat.triggerBatch(containers);

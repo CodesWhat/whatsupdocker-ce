@@ -18,23 +18,23 @@ let oidc;
 let openidClientMock;
 
 beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     oidc = new Oidc();
     oidc.configuration = configurationValid;
     openidClientMock = {
-        randomPKCECodeVerifier: jest.fn().mockReturnValue('code-verifier'),
-        calculatePKCECodeChallenge: jest
+        randomPKCECodeVerifier: vi.fn().mockReturnValue('code-verifier'),
+        calculatePKCECodeChallenge: vi
             .fn()
             .mockResolvedValue('code-challenge'),
-        buildAuthorizationUrl: jest
+        buildAuthorizationUrl: vi
             .fn()
             .mockReturnValue(new URL('https://idp/auth')),
-        authorizationCodeGrant: jest.fn(),
-        fetchUserInfo: jest.fn(),
+        authorizationCodeGrant: vi.fn(),
+        fetchUserInfo: vi.fn(),
         skipSubjectCheck: Symbol('skip-subject-check'),
-        ClientSecretPost: jest.fn(),
-        discovery: jest.fn(),
-        buildEndSessionUrl: jest.fn(),
+        ClientSecretPost: vi.fn(),
+        discovery: vi.fn(),
+        buildEndSessionUrl: vi.fn(),
     };
     oidc.openidClient = openidClientMock;
     oidc.client = new Configuration(
@@ -45,8 +45,8 @@ beforeEach(() => {
     );
     oidc.name = '';
     oidc.log = {
-        debug: jest.fn(),
-        warn: jest.fn(),
+        debug: vi.fn(),
+        warn: vi.fn(),
     };
 });
 
@@ -90,21 +90,21 @@ test('getStrategyDescription should return strategy description', async () => {
 
 test('verify should return user on valid token', async () => {
     const mockUserInfo = { email: 'test@example.com' };
-    openidClientMock.fetchUserInfo = jest.fn().mockResolvedValue(mockUserInfo);
+    openidClientMock.fetchUserInfo = vi.fn().mockResolvedValue(mockUserInfo);
 
-    const done = jest.fn();
+    const done = vi.fn();
     await oidc.verify('valid-token', done);
 
     expect(done).toHaveBeenCalledWith(null, { username: 'test@example.com' });
 });
 
 test('verify should return false on invalid token', async () => {
-    openidClientMock.fetchUserInfo = jest
+    openidClientMock.fetchUserInfo = vi
         .fn()
         .mockRejectedValue(new Error('Invalid token'));
-    oidc.log = { warn: jest.fn() };
+    oidc.log = { warn: vi.fn() };
 
-    const done = jest.fn();
+    const done = vi.fn();
     await oidc.verify('invalid-token', done);
 
     expect(done).toHaveBeenCalledWith(null, false);
@@ -112,7 +112,7 @@ test('verify should return false on invalid token', async () => {
 
 test('getUserFromAccessToken should return user with email', async () => {
     const mockUserInfo = { email: 'user@example.com' };
-    openidClientMock.fetchUserInfo = jest
+    openidClientMock.fetchUserInfo = vi
         .fn()
         .mockResolvedValue(mockUserInfo);
 
@@ -122,7 +122,7 @@ test('getUserFromAccessToken should return user with email', async () => {
 
 test('getUserFromAccessToken should return unknown for missing email', async () => {
     const mockUserInfo = {};
-    openidClientMock.fetchUserInfo = jest
+    openidClientMock.fetchUserInfo = vi
         .fn()
         .mockResolvedValue(mockUserInfo);
 
@@ -131,7 +131,7 @@ test('getUserFromAccessToken should return unknown for missing email', async () 
 });
 
 test('redirect should persist oidc checks in session before responding', async () => {
-    const save = jest.fn((cb) => cb());
+    const save = vi.fn((cb) => cb());
     const req = {
         protocol: 'https',
         hostname: 'wud.example.com',
@@ -140,9 +140,9 @@ test('redirect should persist oidc checks in session before responding', async (
         },
     };
     const res = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await oidc.redirect(req, res);
@@ -161,7 +161,7 @@ test('redirect should persist oidc checks in session before responding', async (
 });
 
 test('redirect should preserve pending checks from concurrent requests on the same session', async () => {
-    openidClientMock.randomPKCECodeVerifier = jest
+    openidClientMock.randomPKCECodeVerifier = vi
         .fn()
         .mockReturnValueOnce('code-verifier-1')
         .mockReturnValueOnce('code-verifier-2');
@@ -171,7 +171,7 @@ test('redirect should preserve pending checks from concurrent requests on the sa
         const session: any = {
             oidc: JSON.parse(JSON.stringify(persistedOidcState.oidc || {})),
         };
-        session.reload = jest.fn((cb) => {
+        session.reload = vi.fn((cb) => {
             setTimeout(() => {
                 session.oidc = JSON.parse(
                     JSON.stringify(persistedOidcState.oidc || {}),
@@ -179,7 +179,7 @@ test('redirect should preserve pending checks from concurrent requests on the sa
                 cb();
             }, 0);
         });
-        session.save = jest.fn((cb) => {
+        session.save = vi.fn((cb) => {
             setTimeout(() => {
                 persistedOidcState.oidc = JSON.parse(
                     JSON.stringify(session.oidc || {}),
@@ -203,14 +203,14 @@ test('redirect should preserve pending checks from concurrent requests on the sa
         session: createSession(),
     };
     const res1 = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
     const res2 = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await Promise.all([oidc.redirect(req1, res1), oidc.redirect(req2, res2)]);
@@ -237,11 +237,11 @@ test('callback should fail with explicit message when callback state is missing'
                 },
             },
         },
-        login: jest.fn(),
+        login: vi.fn(),
     };
     const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await oidc.callback(req, res);
@@ -254,17 +254,17 @@ test('callback should fail with explicit message when callback state is missing'
 });
 
 test('callback should return explicit error when oidc checks are missing', async () => {
-    openidClientMock.authorizationCodeGrant = jest.fn();
+    openidClientMock.authorizationCodeGrant = vi.fn();
 
     const req = {
         protocol: 'https',
         hostname: 'wud.example.com',
         session: {},
-        login: jest.fn(),
+        login: vi.fn(),
     };
     const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await oidc.callback(req, res);
@@ -277,23 +277,23 @@ test('callback should return explicit error when oidc checks are missing', async
 });
 
 test('callback should authenticate using matching state when multiple auth redirects are pending', async () => {
-    openidClientMock.randomPKCECodeVerifier = jest
+    openidClientMock.randomPKCECodeVerifier = vi
         .fn()
         .mockReturnValueOnce('code-verifier-1')
         .mockReturnValueOnce('code-verifier-2');
-    openidClientMock.authorizationCodeGrant = jest
+    openidClientMock.authorizationCodeGrant = vi
         .fn()
         .mockResolvedValue({ access_token: 'token' });
-    openidClientMock.fetchUserInfo = jest
+    openidClientMock.fetchUserInfo = vi
         .fn()
         .mockResolvedValue({ email: 'user@example.com' });
     const session = {
-        save: jest.fn((cb) => cb()),
+        save: vi.fn((cb) => cb()),
     };
     const resRedirect = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await oidc.redirect(
@@ -318,12 +318,12 @@ test('callback should authenticate using matching state when multiple auth redir
         hostname: 'wud.example.com',
         originalUrl: `/auth/oidc/default/cb?code=abc&state=${firstState}`,
         session,
-        login: jest.fn((user, done) => done()),
+        login: vi.fn((user, done) => done()),
     };
     const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-        redirect: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+        redirect: vi.fn(),
     };
 
     await oidc.callback(req, res);
@@ -342,10 +342,10 @@ test('callback should authenticate using matching state when multiple auth redir
 });
 
 test('callback should support legacy single-check session shape', async () => {
-    openidClientMock.authorizationCodeGrant = jest
+    openidClientMock.authorizationCodeGrant = vi
         .fn()
         .mockResolvedValue({ access_token: 'token' });
-    openidClientMock.fetchUserInfo = jest
+    openidClientMock.fetchUserInfo = vi
         .fn()
         .mockResolvedValue({ email: 'user@example.com' });
 
@@ -361,12 +361,12 @@ test('callback should support legacy single-check session shape', async () => {
                 },
             },
         },
-        login: jest.fn((user, done) => done()),
+        login: vi.fn((user, done) => done()),
     };
     const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-        redirect: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+        redirect: vi.fn(),
     };
 
     await oidc.callback(req, res);
@@ -400,11 +400,11 @@ test('callback should return explicit error when callback state does not match s
                 },
             },
         },
-        login: jest.fn(),
+        login: vi.fn(),
     };
     const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
     };
 
     await oidc.callback(req, res);

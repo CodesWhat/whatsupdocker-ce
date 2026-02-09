@@ -50,7 +50,7 @@ describe('Basic Authentication', () => {
             hash: '$2b$10$test.hash.value',
         };
 
-        passJs.validate = jest.fn((pass, hash, callback) => {
+        passJs.validate = vi.fn((pass, hash, callback) => {
             callback(null, true);
         });
 
@@ -83,7 +83,7 @@ describe('Basic Authentication', () => {
             hash: '$2b$10$test.hash.value',
         };
 
-        passJs.validate = jest.fn((pass, hash, callback) => {
+        passJs.validate = vi.fn((pass, hash, callback) => {
             callback(null, false);
         });
 

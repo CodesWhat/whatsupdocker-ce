@@ -1,8 +1,8 @@
 // @ts-nocheck
 import Lscr from './Lscr.js';
 
-jest.mock('axios', () =>
-    jest.fn().mockImplementation(() => ({
+vi.mock('axios', () =>
+    vi.fn().mockImplementation(() => ({
         data: { token: 'xxxxx' },
     })),
 );
@@ -13,7 +13,7 @@ lscr.configuration = {
     token: 'token',
 };
 
-jest.mock('axios');
+vi.mock('axios');
 
 test('validatedConfiguration should initialize when auth configuration is valid', async () => {
     expect(

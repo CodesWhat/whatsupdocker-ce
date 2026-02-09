@@ -33,7 +33,7 @@ describe('Mock Trigger', () => {
     });
 
     test('should trigger with container', async () => {
-        const logSpy = jest.spyOn(mock.log, 'info');
+        const logSpy = vi.spyOn(mock.log, 'info');
         const container = {
             name: 'test-container',
             updateKind: {
@@ -55,7 +55,7 @@ describe('Mock Trigger', () => {
     });
 
     test('should trigger batch with containers', async () => {
-        const logSpy = jest.spyOn(mock.log, 'info');
+        const logSpy = vi.spyOn(mock.log, 'info');
         const containers = [
             {
                 name: 'test1',

@@ -4,8 +4,8 @@ import Docker from '../docker/Docker.js';
 import Dockercompose from './Dockercompose.js';
 import { getState } from '../../../registry/index.js';
 
-jest.mock('../../../registry', () => ({
-    getState: jest.fn(),
+vi.mock('../../../registry', () => ({
+    getState: vi.fn(),
 }));
 
 describe('Dockercompose Trigger', () => {
@@ -14,14 +14,14 @@ describe('Dockercompose Trigger', () => {
     let mockDockerApi;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         mockLog = {
-            info: jest.fn(),
-            warn: jest.fn(),
-            debug: jest.fn(),
-            error: jest.fn(),
-            child: jest.fn().mockReturnThis(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            debug: vi.fn(),
+            error: vi.fn(),
+            child: vi.fn().mockReturnThis(),
         };
 
         trigger = new Dockercompose();
@@ -36,7 +36,7 @@ describe('Dockercompose Trigger', () => {
             modem: {
                 socketPath: '/var/run/docker.sock',
             },
-            getContainer: jest.fn(),
+            getContainer: vi.fn(),
         };
 
         getState.mockReturnValue({
@@ -140,7 +140,7 @@ describe('Dockercompose Trigger', () => {
             },
         };
 
-        jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
                 wud: {
                     environment: ['WUD_TRIGGER_DOCKERCOMPOSE_BASE_AUTO=false'],
@@ -151,7 +151,7 @@ describe('Dockercompose Trigger', () => {
             },
         });
 
-        const dockerTriggerSpy = jest
+        const dockerTriggerSpy = vi
             .spyOn(Docker.prototype, 'trigger')
             .mockResolvedValue();
 
@@ -186,14 +186,14 @@ describe('Dockercompose Trigger', () => {
             },
         };
 
-        jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
                 nginx: { image: 'nginx:1.0.0' },
                 redis: { image: 'redis:7.0.0' },
             },
         });
 
-        const dockerTriggerSpy = jest
+        const dockerTriggerSpy = vi
             .spyOn(Docker.prototype, 'trigger')
             .mockResolvedValue();
 
@@ -221,15 +221,15 @@ describe('Dockercompose Trigger', () => {
             },
         };
 
-        jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
                 redis: { image: 'redis:7.0.0' },
             },
         });
 
-        const getComposeFileSpy = jest.spyOn(trigger, 'getComposeFile');
-        const writeComposeFileSpy = jest.spyOn(trigger, 'writeComposeFile');
-        const dockerTriggerSpy = jest
+        const getComposeFileSpy = vi.spyOn(trigger, 'getComposeFile');
+        const writeComposeFileSpy = vi.spyOn(trigger, 'writeComposeFile');
+        const dockerTriggerSpy = vi
             .spyOn(Docker.prototype, 'trigger')
             .mockResolvedValue();
 
@@ -258,15 +258,15 @@ describe('Dockercompose Trigger', () => {
             },
         };
 
-        jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
                 nginx: { image: 'nginx' },
             },
         });
 
-        const getComposeFileSpy = jest.spyOn(trigger, 'getComposeFile');
-        const writeComposeFileSpy = jest.spyOn(trigger, 'writeComposeFile');
-        const dockerTriggerSpy = jest
+        const getComposeFileSpy = vi.spyOn(trigger, 'getComposeFile');
+        const writeComposeFileSpy = vi.spyOn(trigger, 'writeComposeFile');
+        const dockerTriggerSpy = vi
             .spyOn(Docker.prototype, 'trigger')
             .mockResolvedValue();
 
@@ -287,21 +287,21 @@ describe('Dockercompose Trigger', () => {
             watcher: 'local',
         };
         const startStream = new EventEmitter();
-        startStream.resume = jest.fn();
+        startStream.resume = vi.fn();
         const mockExec = {
-            start: jest.fn().mockImplementation(async () => {
+            start: vi.fn().mockImplementation(async () => {
                 setImmediate(() => startStream.emit('close'));
                 return startStream;
             }),
-            inspect: jest.fn().mockResolvedValue({ ExitCode: 0 }),
+            inspect: vi.fn().mockResolvedValue({ ExitCode: 0 }),
         };
         const recreatedContainer = {
-            inspect: jest.fn().mockResolvedValue({
+            inspect: vi.fn().mockResolvedValue({
                 State: {
                     Running: true,
                 },
             }),
-            exec: jest.fn().mockResolvedValue(mockExec),
+            exec: vi.fn().mockResolvedValue(mockExec),
         };
 
         mockDockerApi.getContainer.mockReturnValue(recreatedContainer);
@@ -337,21 +337,21 @@ describe('Dockercompose Trigger', () => {
             watcher: 'local',
         };
         const startStream = new EventEmitter();
-        startStream.resume = jest.fn();
+        startStream.resume = vi.fn();
         const mockExec = {
-            start: jest.fn().mockImplementation(async () => {
+            start: vi.fn().mockImplementation(async () => {
                 setImmediate(() => startStream.emit('close'));
                 return startStream;
             }),
-            inspect: jest.fn().mockResolvedValue({ ExitCode: 0 }),
+            inspect: vi.fn().mockResolvedValue({ ExitCode: 0 }),
         };
         const recreatedContainer = {
-            inspect: jest.fn().mockResolvedValue({
+            inspect: vi.fn().mockResolvedValue({
                 State: {
                     Running: true,
                 },
             }),
-            exec: jest.fn().mockResolvedValue(mockExec),
+            exec: vi.fn().mockResolvedValue(mockExec),
         };
 
         mockDockerApi.getContainer.mockReturnValue(recreatedContainer);

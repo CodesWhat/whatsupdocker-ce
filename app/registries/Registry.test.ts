@@ -1,8 +1,8 @@
 // @ts-nocheck
 import log from '../log/index.js';
 
-jest.mock('axios');
-jest.mock('../prometheus/registry', () => ({
+vi.mock('axios');
+vi.mock('../prometheus/registry', () => ({
     getSummaryTags: () => ({
         observe: () => {},
     }),
@@ -168,7 +168,7 @@ test('getImageManifestDigest should return digest for application/vnd.docker.dis
 test('getImageManifestDigest should return digest for application/vnd.docker.distribution.manifest.v2+json', async () => {
     const registryMocked = new Registry();
     registryMocked.log = log;
-    registryMocked.callRegistry = jest.fn((options) => {
+    registryMocked.callRegistry = vi.fn((options) => {
         if (options.method === 'head') {
             return {
                 headers: {
@@ -283,7 +283,7 @@ test('callRegistry should call authenticate', async () => {
     axios.mockResolvedValue({ data: {} });
     const registryMocked = new Registry();
     registryMocked.log = log;
-    const spyAuthenticate = jest.spyOn(registryMocked, 'authenticate');
+    const spyAuthenticate = vi.spyOn(registryMocked, 'authenticate');
     await registryMocked.callRegistry({
         image: {},
         url: 'url',

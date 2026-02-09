@@ -2,40 +2,38 @@
 import * as prometheus from './index.js';
 
 // Mock prom-client
-jest.mock('prom-client', () => ({
-    collectDefaultMetrics: jest.fn(),
+vi.mock('prom-client', () => ({
+    collectDefaultMetrics: vi.fn(),
     register: {
-        metrics: jest.fn(() => 'mocked_metrics_output'),
+        metrics: vi.fn(() => 'mocked_metrics_output'),
     },
 }));
 
 // Mock child modules
-jest.mock('./container', () => ({
-    init: jest.fn(),
+vi.mock('./container', () => ({
+    init: vi.fn(),
 }));
 
-jest.mock('./trigger', () => ({
-    init: jest.fn(),
+vi.mock('./trigger', () => ({
+    init: vi.fn(),
 }));
 
-jest.mock('./watcher', () => ({
-    init: jest.fn(),
+vi.mock('./watcher', () => ({
+    init: vi.fn(),
 }));
 
-jest.mock('./registry', () => ({
-    init: jest.fn(),
+vi.mock('./registry', () => ({
+    init: vi.fn(),
 }));
 
 // Mock log
-jest.mock('../log', () => ({
-    child: jest.fn(() => ({
-        info: jest.fn(),
-    })),
+vi.mock('../log', () => ({
+    default: { child: vi.fn(() => ({ info: vi.fn() })) },
 }));
 
 describe('Prometheus Module', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should initialize all prometheus components', async () => {

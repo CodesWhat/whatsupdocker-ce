@@ -2,14 +2,17 @@
 import * as app from './app.js';
 import * as migrate from './migrate.js';
 
-jest.mock('../configuration', () => ({
+vi.mock('../log', () => ({
+    default: { child: vi.fn(() => ({ info: vi.fn() })) },
+}));
+vi.mock('../configuration', () => ({
     getVersion: () => '2.0.0',
     getLogLevel: () => 'info',
 }));
-jest.mock('./migrate');
+vi.mock('./migrate');
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('createCollections should create collection app when not exist', async () => {
@@ -20,7 +23,7 @@ test('createCollections should create collection app when not exist', async () =
             insert: () => {},
         }),
     };
-    const spy = jest.spyOn(db, 'addCollection');
+    const spy = vi.spyOn(db, 'addCollection');
     app.createCollections(db);
     expect(spy).toHaveBeenCalledWith('app');
 });
@@ -33,7 +36,7 @@ test('createCollections should not create collection app when already exist', as
         }),
         addCollection: () => null,
     };
-    const spy = jest.spyOn(db, 'addCollection');
+    const spy = vi.spyOn(db, 'addCollection');
     app.createCollections(db);
     expect(spy).not.toHaveBeenCalled();
 });
@@ -50,9 +53,8 @@ test('createCollections should call migrate when versions are different', async 
         }),
         addCollection: () => null,
     };
-    const spy = jest.spyOn(migrate, 'migrate');
     app.createCollections(db);
-    expect(spy).toHaveBeenCalledWith('1.0.0', '2.0.0');
+    expect(migrate.migrate).toHaveBeenCalledWith('1.0.0', '2.0.0');
 });
 
 test('createCollections should not call migrate when versions are identical', async () => {
@@ -67,9 +69,8 @@ test('createCollections should not call migrate when versions are identical', as
         }),
         addCollection: () => null,
     };
-    const spy = jest.spyOn(migrate, 'migrate');
     app.createCollections(db);
-    expect(spy).not.toHaveBeenCalledWith();
+    expect(migrate.migrate).not.toHaveBeenCalled();
 });
 
 test('getAppInfos should return collection content', async () => {

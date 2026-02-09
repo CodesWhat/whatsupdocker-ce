@@ -3,44 +3,41 @@ import fs from 'fs';
 import * as store from './index.js';
 
 // Mock dependencies
-jest.mock('lokijs', () => {
-    return jest.fn().mockImplementation(() => ({
-        loadDatabase: jest.fn((options, callback) => {
+vi.mock('lokijs', () => ({
+    default: vi.fn().mockImplementation(() => ({
+        loadDatabase: vi.fn((options, callback) => {
             // Simulate successful database load
             callback(null);
         }),
-    }));
-});
-
-jest.mock('fs', () => ({
-    existsSync: jest.fn(),
-    mkdirSync: jest.fn(),
+    })),
 }));
 
-jest.mock('../configuration', () => ({
-    getStoreConfiguration: jest.fn(() => ({
+vi.mock('fs', () => ({
+    default: { existsSync: vi.fn(), mkdirSync: vi.fn() },
+}));
+
+vi.mock('../configuration', () => ({
+    getStoreConfiguration: vi.fn(() => ({
         path: '/test/store',
         file: 'test.json',
     })),
 }));
 
-jest.mock('./app', () => ({
-    createCollections: jest.fn(),
+vi.mock('./app', () => ({
+    createCollections: vi.fn(),
 }));
 
-jest.mock('./container', () => ({
-    createCollections: jest.fn(),
+vi.mock('./container', () => ({
+    createCollections: vi.fn(),
 }));
 
-jest.mock('../log', () => ({
-    child: jest.fn(() => ({
-        info: jest.fn(),
-    })),
+vi.mock('../log', () => ({
+    default: { child: vi.fn(() => ({ info: vi.fn() })) },
 }));
 
 describe('Store Module', () => {
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should initialize store successfully', async () => {
@@ -74,16 +71,16 @@ describe('Store Module', () => {
 
     test('should handle database load error', async () => {
         // Reset modules to get a fresh instance
-        jest.resetModules();
+        vi.resetModules();
 
         // Mock Loki to simulate error
-        jest.doMock('lokijs', () => {
-            return jest.fn().mockImplementation(() => ({
-                loadDatabase: jest.fn((options, callback) => {
+        vi.doMock('lokijs', () => ({
+            default: vi.fn().mockImplementation(() => ({
+                loadDatabase: vi.fn((options, callback) => {
                     callback(new Error('Database load failed'));
                 }),
-            }));
-        });
+            })),
+        }));
 
         const storeWithError = await import('./index.js');
         await expect(storeWithError.init()).rejects.toThrow(

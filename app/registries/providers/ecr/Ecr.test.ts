@@ -1,8 +1,8 @@
 // @ts-nocheck
 import Ecr from './Ecr.js';
 
-jest.mock('aws-sdk/clients/ecr', () =>
-    jest.fn().mockImplementation(() => ({
+vi.mock('aws-sdk/clients/ecr', () => ({
+    default: vi.fn().mockImplementation(() => ({
         getAuthorizationToken: () => ({
             promise: () =>
                 Promise.resolve({
@@ -10,7 +10,7 @@ jest.mock('aws-sdk/clients/ecr', () =>
                 }),
         }),
     })),
-);
+}));
 
 const ecr = new Ecr();
 ecr.configuration = {
@@ -19,7 +19,7 @@ ecr.configuration = {
     region: 'region',
 };
 
-jest.mock('axios');
+vi.mock('axios', () => ({ default: vi.fn() }));
 
 test('validatedConfiguration should initialize when configuration is valid', async () => {
     expect(

@@ -2,7 +2,7 @@
 import Component from './Component.js';
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 });
 
 test('mask should mask with * when called with defaults', async () => {
@@ -33,11 +33,11 @@ test('getId should return the concatenation $type.$name', async () => {
 
 test('register should call validateConfiguration and init methods of the component', async () => {
     const component = new Component();
-    const spyValidateConsiguration = jest.spyOn(
+    const spyValidateConsiguration = vi.spyOn(
         component,
         'validateConfiguration',
     );
-    const spyInit = jest.spyOn(component, 'init');
+    const spyInit = vi.spyOn(component, 'init');
     component.register('kind', 'type', 'name', { x: 'x' });
     expect(spyValidateConsiguration).toHaveBeenCalledWith({ x: 'x' });
     expect(spyInit).toHaveBeenCalledTimes(1);
@@ -48,7 +48,7 @@ test('register should not call init when validateConfiguration fails', async () 
     component.validateConfiguration = () => {
         throw new Error('validation failed');
     };
-    const spyInit = jest.spyOn(component, 'init');
+    const spyInit = vi.spyOn(component, 'init');
     expect(component.register('type', 'name', { x: 'x' })).rejects.toThrowError(
         'validation failed',
     );

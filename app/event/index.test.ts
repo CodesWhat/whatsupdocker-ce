@@ -39,7 +39,7 @@ test.each(eventTestCases)(
     'the registered $register.name function must execute the handler when the $emitter.name emitter function is called',
     async ({ register, emitter }) => {
         // Register an handler
-        const handlerMock = jest.fn((item) => item);
+        const handlerMock = vi.fn((item) => item);
         register(handlerMock);
 
         // Emit the event

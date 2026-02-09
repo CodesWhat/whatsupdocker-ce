@@ -2,14 +2,14 @@
 import Discord from './Discord.js';
 
 // Mock axios
-jest.mock('axios', () => jest.fn().mockResolvedValue({ data: {} }));
+vi.mock('axios', () => ({ default: vi.fn().mockResolvedValue({ data: {} }) }));
 
 describe('Discord Trigger', () => {
     let discord;
 
     beforeEach(async () => {
         discord = new Discord();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should create instance', async () => {
@@ -49,8 +49,8 @@ describe('Discord Trigger', () => {
         discord.configuration = {
             url: 'https://discord.com/api/webhooks/123/abc',
         };
-        discord.renderSimpleTitle = jest.fn().mockReturnValue('Title');
-        discord.renderSimpleBody = jest.fn().mockReturnValue('Body');
+        discord.renderSimpleTitle = vi.fn().mockReturnValue('Title');
+        discord.renderSimpleBody = vi.fn().mockReturnValue('Body');
         const container = { name: 'test' };
 
         await discord.trigger(container);
@@ -63,8 +63,8 @@ describe('Discord Trigger', () => {
         discord.configuration = {
             url: 'https://discord.com/api/webhooks/123/abc',
         };
-        discord.renderBatchTitle = jest.fn().mockReturnValue('Batch Title');
-        discord.renderBatchBody = jest.fn().mockReturnValue('Batch Body');
+        discord.renderBatchTitle = vi.fn().mockReturnValue('Batch Title');
+        discord.renderBatchBody = vi.fn().mockReturnValue('Batch Body');
         const containers = [{ name: 'test1' }, { name: 'test2' }];
 
         await discord.triggerBatch(containers);

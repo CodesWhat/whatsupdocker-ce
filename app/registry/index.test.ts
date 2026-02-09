@@ -3,13 +3,13 @@ import * as configuration from '../configuration/index.js';
 import Component from './Component.js';
 import * as prometheusWatcher from '../prometheus/watcher.js';
 
-jest.mock('../configuration', () => ({
-    getLogLevel: jest.fn(() => 'info'),
-    getRegistryConfigurations: jest.fn(),
-    getTriggerConfigurations: jest.fn(),
-    getWatcherConfigurations: jest.fn(),
-    getAuthenticationConfigurations: jest.fn(),
-    getAgentConfigurations: jest.fn(),
+vi.mock('../configuration', () => ({
+    getLogLevel: vi.fn(() => 'info'),
+    getRegistryConfigurations: vi.fn(),
+    getTriggerConfigurations: vi.fn(),
+    getWatcherConfigurations: vi.fn(),
+    getAuthenticationConfigurations: vi.fn(),
+    getAgentConfigurations: vi.fn(),
 }));
 
 let registries = {};
@@ -36,7 +36,7 @@ mockGetAgentConfigurations.mockImplementation(() => agents);
 import * as registry from './index.js';
 
 beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     prometheusWatcher.init();
     registries = {};
     triggers = {};
@@ -132,7 +132,7 @@ test('registerRegistries should register all anonymous registries by default', a
 });
 
 test('registerRegistries should warn when registration errors occur', async () => {
-    const spyLog = jest.spyOn(registry.testable_log, 'warn');
+    const spyLog = vi.spyOn(registry.testable_log, 'warn');
     registries = {
         hub: {
             private: {
@@ -245,7 +245,7 @@ test('registerTriggers should let trigger-level threshold override provider-leve
 });
 
 test('registerTriggers should warn when registration errors occur', async () => {
-    const spyLog = jest.spyOn(registry.testable_log, 'warn');
+    const spyLog = vi.spyOn(registry.testable_log, 'warn');
     triggers = {
         trigger1: {
             fail: true,
@@ -281,7 +281,7 @@ test('registerWatchers should register local docker watcher by default', async (
 });
 
 test('registerWatchers should warn when registration errors occur', async () => {
-    const spyLog = jest.spyOn(registry.testable_log, 'warn');
+    const spyLog = vi.spyOn(registry.testable_log, 'warn');
     watchers = {
         watcher1: {
             fail: true,
@@ -314,7 +314,7 @@ test('registerAuthentications should register all auth strategies', async () => 
 });
 
 test('registerAuthentications should warn when registration errors occur', async () => {
-    const spyLog = jest.spyOn(registry.testable_log, 'warn');
+    const spyLog = vi.spyOn(registry.testable_log, 'warn');
     authentications = {
         basic: {
             john: {

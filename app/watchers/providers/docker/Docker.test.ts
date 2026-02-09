@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Mocked } from 'vitest';
 import Docker from './Docker.js';
 import * as event from '../../../event/index.js';
 import * as storeContainer from '../../../store/container.js';
@@ -6,18 +7,18 @@ import * as registry from '../../../registry/index.js';
 import { fullName } from '../../../model/container.js';
 
 // Mock all dependencies
-jest.mock('dockerode');
-jest.mock('node-cron');
-jest.mock('just-debounce');
-jest.mock('../../../event');
-jest.mock('../../../store/container');
-jest.mock('../../../registry');
-jest.mock('../../../model/container');
-jest.mock('../../../tag');
-jest.mock('../../../prometheus/watcher');
-jest.mock('parse-docker-image-name');
-jest.mock('fs');
-jest.mock('axios');
+vi.mock('dockerode');
+vi.mock('node-cron');
+vi.mock('just-debounce');
+vi.mock('../../../event');
+vi.mock('../../../store/container');
+vi.mock('../../../registry');
+vi.mock('../../../model/container');
+vi.mock('../../../tag');
+vi.mock('../../../prometheus/watcher');
+vi.mock('parse-docker-image-name');
+vi.mock('fs');
+vi.mock('axios');
 
 import mockDockerode from 'dockerode';
 import mockCron from 'node-cron';
@@ -28,7 +29,7 @@ import mockParse from 'parse-docker-image-name';
 import * as mockTag from '../../../tag/index.js';
 import * as mockPrometheus from '../../../prometheus/watcher.js';
 
-const mockAxios = axios as jest.Mocked<typeof axios>;
+const mockAxios = axios as Mocked<typeof axios>;
 
 describe('Docker Watcher', () => {
     let docker;
@@ -38,15 +39,15 @@ describe('Docker Watcher', () => {
     let mockImage;
 
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Setup dockerode mock
         mockDockerApi = {
-            listContainers: jest.fn(),
-            getContainer: jest.fn(),
-            getEvents: jest.fn(),
-            getImage: jest.fn(),
-            getService: jest.fn(),
+            listContainers: vi.fn(),
+            getContainer: vi.fn(),
+            getEvents: vi.fn(),
+            getImage: vi.fn(),
+            getService: vi.fn(),
             modem: {
                 headers: {},
             },
@@ -55,7 +56,7 @@ describe('Docker Watcher', () => {
 
         // Setup cron mock
         mockSchedule = {
-            stop: jest.fn(),
+            stop: vi.fn(),
         };
         mockCron.schedule.mockReturnValue(mockSchedule);
 
@@ -64,13 +65,13 @@ describe('Docker Watcher', () => {
 
         // Setup container mock
         mockContainer = {
-            inspect: jest.fn(),
+            inspect: vi.fn(),
         };
         mockDockerApi.getContainer.mockReturnValue(mockContainer);
 
         // Setup image mock
         mockImage = {
-            inspect: jest.fn(),
+            inspect: vi.fn(),
         };
         mockDockerApi.getImage.mockReturnValue(mockImage);
 
@@ -96,7 +97,7 @@ describe('Docker Watcher', () => {
         mockTag.transform.mockImplementation((transform, tag) => tag);
 
         // Setup prometheus mock
-        const mockGauge = { set: jest.fn() };
+        const mockGauge = { set: vi.fn() };
         mockPrometheus.getWatchContainerGauge.mockReturnValue(mockGauge);
 
         // Setup parse mock
@@ -326,7 +327,7 @@ describe('Docker Watcher', () => {
             await docker.register('watcher', 'docker', 'test', {
                 watchdigest: true,
             });
-            const mockLog = { warn: jest.fn(), info: jest.fn() };
+            const mockLog = { warn: vi.fn(), info: vi.fn() };
             docker.log = mockLog;
             docker.init();
             expect(mockLog.warn).toHaveBeenCalledWith(
@@ -471,7 +472,7 @@ describe('Docker Watcher', () => {
 
     describe('Docker Events', () => {
         test('should listen to docker events', async () => {
-            const mockStream = { on: jest.fn() };
+            const mockStream = { on: vi.fn() };
             mockDockerApi.getEvents.mockImplementation((options, callback) => {
                 callback(null, mockStream);
             });
@@ -500,9 +501,9 @@ describe('Docker Watcher', () => {
         test('should handle docker events error', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const mockLog = {
-                warn: jest.fn(),
-                debug: jest.fn(),
-                info: jest.fn(),
+                warn: vi.fn(),
+                debug: vi.fn(),
+                info: vi.fn(),
             };
             docker.log = mockLog;
             mockDockerApi.getEvents.mockImplementation((options, callback) => {
@@ -515,7 +516,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should process create/destroy events', async () => {
-            docker.watchCronDebounced = jest.fn();
+            docker.watchCronDebounced = vi.fn();
             const event = JSON.stringify({
                 Action: 'create',
                 id: 'container123',
@@ -527,8 +528,8 @@ describe('Docker Watcher', () => {
         test('should update container status on other events', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const mockLog = {
-                child: jest.fn().mockReturnValue({ info: jest.fn() }),
-                debug: jest.fn(),
+                child: vi.fn().mockReturnValue({ info: vi.fn() }),
+                debug: vi.fn(),
             };
             docker.log = mockLog;
             mockContainer.inspect.mockResolvedValue({
@@ -550,8 +551,8 @@ describe('Docker Watcher', () => {
         test('should update container name on rename events', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const mockLog = {
-                child: jest.fn().mockReturnValue({ info: jest.fn() }),
-                debug: jest.fn(),
+                child: vi.fn().mockReturnValue({ info: vi.fn() }),
+                debug: vi.fn(),
             };
             docker.log = mockLog;
             mockContainer.inspect.mockResolvedValue({
@@ -583,7 +584,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should handle container not found during event processing', async () => {
-            const mockLog = { debug: jest.fn() };
+            const mockLog = { debug: vi.fn() };
             docker.log = mockLog;
             mockDockerApi.getContainer.mockImplementation(() => {
                 throw new Error('No such container');
@@ -601,7 +602,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should handle malformed docker event payload', async () => {
-            const mockLog = { debug: jest.fn() };
+            const mockLog = { debug: vi.fn() };
             docker.log = mockLog;
 
             await docker.onDockerEvent(Buffer.from('{invalid-json\n'));
@@ -612,7 +613,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should buffer split docker event payloads until complete', async () => {
-            docker.watchCronDebounced = jest.fn();
+            docker.watchCronDebounced = vi.fn();
             await docker.onDockerEvent(
                 Buffer.from('{"Action":"create","id":"container'),
             );
@@ -627,7 +628,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should process multiple docker events from a single chunk', async () => {
-            docker.watchCronDebounced = jest.fn();
+            docker.watchCronDebounced = vi.fn();
 
             await docker.onDockerEvent(
                 Buffer.from(
@@ -644,9 +645,9 @@ describe('Docker Watcher', () => {
             await docker.register('watcher', 'docker', 'test', {
                 cron: '0 * * * *',
             });
-            const mockLog = { info: jest.fn() };
+            const mockLog = { info: vi.fn() };
             docker.log = mockLog;
-            docker.watch = jest.fn().mockResolvedValue([]);
+            docker.watch = vi.fn().mockResolvedValue([]);
 
             await docker.watchFromCron();
 
@@ -663,7 +664,7 @@ describe('Docker Watcher', () => {
             await docker.register('watcher', 'docker', 'test', {
                 cron: '0 * * * *',
             });
-            const mockLog = { info: jest.fn() };
+            const mockLog = { info: vi.fn() };
             docker.log = mockLog;
             const containerReports = [
                 { container: { updateAvailable: true, error: undefined } },
@@ -674,7 +675,7 @@ describe('Docker Watcher', () => {
                     },
                 },
             ];
-            docker.watch = jest.fn().mockResolvedValue(containerReports);
+            docker.watch = vi.fn().mockResolvedValue(containerReports);
 
             await docker.watchFromCron();
 
@@ -686,7 +687,7 @@ describe('Docker Watcher', () => {
         });
 
         test('should emit watcher events during watch', async () => {
-            docker.getContainers = jest.fn().mockResolvedValue([]);
+            docker.getContainers = vi.fn().mockResolvedValue([]);
 
             await docker.watch();
 
@@ -695,9 +696,9 @@ describe('Docker Watcher', () => {
         });
 
         test('should handle error getting containers', async () => {
-            const mockLog = { warn: jest.fn() };
+            const mockLog = { warn: vi.fn() };
             docker.log = mockLog;
-            docker.getContainers = jest
+            docker.getContainers = vi
                 .fn()
                 .mockRejectedValue(new Error('Docker unavailable'));
 
@@ -709,12 +710,12 @@ describe('Docker Watcher', () => {
         });
 
         test('should handle error processing containers', async () => {
-            const mockLog = { warn: jest.fn() };
+            const mockLog = { warn: vi.fn() };
             docker.log = mockLog;
-            docker.getContainers = jest
+            docker.getContainers = vi
                 .fn()
                 .mockResolvedValue([{ id: 'test' }]);
-            docker.watchContainer = jest
+            docker.watchContainer = vi
                 .fn()
                 .mockRejectedValue(new Error('Processing failed'));
 
@@ -731,13 +732,13 @@ describe('Docker Watcher', () => {
         test('should watch individual container', async () => {
             const container = { id: 'test123', name: 'test' };
             const mockLog = {
-                child: jest.fn().mockReturnValue({ debug: jest.fn() }),
+                child: vi.fn().mockReturnValue({ debug: vi.fn() }),
             };
             docker.log = mockLog;
-            docker.findNewVersion = jest
+            docker.findNewVersion = vi
                 .fn()
                 .mockResolvedValue({ tag: '2.0.0' });
-            docker.mapContainerToContainerReport = jest
+            docker.mapContainerToContainerReport = vi
                 .fn()
                 .mockReturnValue({ container, changed: false });
 
@@ -752,13 +753,13 @@ describe('Docker Watcher', () => {
 
         test('should handle container processing error', async () => {
             const container = { id: 'test123', name: 'test' };
-            const mockLogChild = { warn: jest.fn(), debug: jest.fn() };
-            const mockLog = { child: jest.fn().mockReturnValue(mockLogChild) };
+            const mockLogChild = { warn: vi.fn(), debug: vi.fn() };
+            const mockLog = { child: vi.fn().mockReturnValue(mockLogChild) };
             docker.log = mockLog;
-            docker.findNewVersion = jest
+            docker.findNewVersion = vi
                 .fn()
                 .mockRejectedValue(new Error('Registry error'));
-            docker.mapContainerToContainerReport = jest
+            docker.mapContainerToContainerReport = vi
                 .fn()
                 .mockReturnValue({ container, changed: false });
 
@@ -781,7 +782,7 @@ describe('Docker Watcher', () => {
                 },
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
-            docker.addImageDetailsToContainer = jest
+            docker.addImageDetailsToContainer = vi
                 .fn()
                 .mockResolvedValue({ id: '123' });
 
@@ -818,7 +819,7 @@ describe('Docker Watcher', () => {
                 { Id: '3', Labels: {}, Names: ['/test3'] },
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
-            docker.addImageDetailsToContainer = jest
+            docker.addImageDetailsToContainer = vi
                 .fn()
                 .mockResolvedValue({ id: '1' });
 
@@ -843,7 +844,7 @@ describe('Docker Watcher', () => {
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
             mockDockerApi.getService.mockReturnValue({
-                inspect: jest.fn().mockResolvedValue({
+                inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
                             'wud.watch': 'true',
@@ -852,7 +853,7 @@ describe('Docker Watcher', () => {
                     },
                 }),
             });
-            docker.addImageDetailsToContainer = jest
+            docker.addImageDetailsToContainer = vi
                 .fn()
                 .mockResolvedValue({ id: 'swarm-task-1' });
 
@@ -884,7 +885,7 @@ describe('Docker Watcher', () => {
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
             mockDockerApi.getService.mockReturnValue({
-                inspect: jest.fn().mockResolvedValue({
+                inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
                             'wud.watch': 'false',
@@ -893,7 +894,7 @@ describe('Docker Watcher', () => {
                     },
                 }),
             });
-            docker.addImageDetailsToContainer = jest
+            docker.addImageDetailsToContainer = vi
                 .fn()
                 .mockResolvedValue({ id: 'swarm-task-2' });
 
@@ -929,7 +930,7 @@ describe('Docker Watcher', () => {
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
             mockDockerApi.getService.mockReturnValue({
-                inspect: jest.fn().mockResolvedValue({
+                inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
                             'wud.watch': 'true',
@@ -937,7 +938,7 @@ describe('Docker Watcher', () => {
                     },
                 }),
             });
-            docker.addImageDetailsToContainer = jest
+            docker.addImageDetailsToContainer = vi
                 .fn()
                 .mockResolvedValue({ id: 'ok' });
 
@@ -964,7 +965,7 @@ describe('Docker Watcher', () => {
 
         test('should handle pruning error', async () => {
             await docker.register('watcher', 'docker', 'test', {});
-            const mockLog = { warn: jest.fn() };
+            const mockLog = { warn: vi.fn() };
             docker.log = mockLog;
             storeContainer.getContainers.mockImplementationOnce(() => {
                 throw new Error('Store error');
@@ -989,14 +990,14 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest
+                getTags: vi
                     .fn()
                     .mockResolvedValue(['1.0.0', '1.1.0', '2.0.0']),
             };
             registry.getState.mockReturnValue({
                 registry: { hub: mockRegistry },
             });
-            const mockLogChild = { error: jest.fn() };
+            const mockLogChild = { error: vi.fn() };
 
             const result = await docker.findNewVersion(container, mockLogChild);
 
@@ -1013,7 +1014,7 @@ describe('Docker Watcher', () => {
                 },
             };
             registry.getState.mockReturnValue({ registry: {} });
-            const mockLogChild = { error: jest.fn() };
+            const mockLogChild = { error: vi.fn() };
 
             try {
                 await docker.findNewVersion(container, mockLogChild);
@@ -1032,8 +1033,8 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest.fn().mockResolvedValue(['1.0.0']),
-                getImageManifestDigest: jest
+                getTags: vi.fn().mockResolvedValue(['1.0.0']),
+                getImageManifestDigest: vi
                     .fn()
                     .mockResolvedValueOnce({
                         digest: 'sha256:def456',
@@ -1047,7 +1048,7 @@ describe('Docker Watcher', () => {
             registry.getState.mockReturnValue({
                 registry: { hub: mockRegistry },
             });
-            const mockLogChild = { error: jest.fn() };
+            const mockLogChild = { error: vi.fn() };
 
             const result = await docker.findNewVersion(container, mockLogChild);
 
@@ -1069,8 +1070,8 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest.fn().mockResolvedValue(['1.0.0']),
-                getImageManifestDigest: jest.fn().mockResolvedValue({
+                getTags: vi.fn().mockResolvedValue(['1.0.0']),
+                getImageManifestDigest: vi.fn().mockResolvedValue({
                     digest: 'sha256:def456',
                     created: '2023-01-01',
                     version: 1,
@@ -1079,7 +1080,7 @@ describe('Docker Watcher', () => {
             registry.getState.mockReturnValue({
                 registry: { hub: mockRegistry },
             });
-            const mockLogChild = { error: jest.fn() };
+            const mockLogChild = { error: vi.fn() };
             const mockImageInspect = { Config: { Image: 'sha256:legacy123' } };
             mockImage.inspect.mockResolvedValue(mockImageInspect);
 
@@ -1101,7 +1102,7 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest
+                getTags: vi
                     .fn()
                     .mockResolvedValue([
                         'v1.0.0',
@@ -1115,7 +1116,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue({ major: 1, minor: 1, patch: 0 });
             mockTag.isGreater.mockReturnValue(true);
-            const mockLogChild = { error: jest.fn(), warn: jest.fn() };
+            const mockLogChild = { error: vi.fn(), warn: vi.fn() };
 
             await docker.findNewVersion(container, mockLogChild);
 
@@ -1131,7 +1132,7 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest.fn().mockResolvedValue([
+                getTags: vi.fn().mockResolvedValue([
                     '1.2.1', // 3 parts, should be filtered out
                     '1.3', // 2 parts, should be kept
                     '1.1', // 2 parts, should be kept (but lower)
@@ -1148,7 +1149,7 @@ describe('Docker Watcher', () => {
                 return false;
             });
 
-            const mockLogChild = { error: jest.fn(), warn: jest.fn() };
+            const mockLogChild = { error: vi.fn(), warn: vi.fn() };
 
             const result = await docker.findNewVersion(container, mockLogChild);
 
@@ -1165,7 +1166,7 @@ describe('Docker Watcher', () => {
                 },
             };
             const mockRegistry = {
-                getTags: jest
+                getTags: vi
                     .fn()
                     .mockResolvedValue(['1.8.0', '1.9.0', '2.1.0']),
             };
@@ -1186,7 +1187,7 @@ describe('Docker Watcher', () => {
                 rank[version] ? { major: 1, minor: 0, patch: 0 } : null,
             );
 
-            const mockLogChild = { error: jest.fn(), warn: jest.fn() };
+            const mockLogChild = { error: vi.fn(), warn: vi.fn() };
 
             const result = await docker.findNewVersion(container, mockLogChild);
 
@@ -1223,7 +1224,7 @@ describe('Docker Watcher', () => {
             mockTag.parse.mockReturnValue(semverValue);
 
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1243,7 +1244,7 @@ describe('Docker Watcher', () => {
 
         test('should return existing container from store', async () => {
             await docker.register('watcher', 'docker', 'test', {});
-            const mockLog = { debug: jest.fn() };
+            const mockLog = { debug: vi.fn() };
             docker.log = mockLog;
             const existingContainer = { id: '123', error: undefined };
             storeContainer.getContainer.mockReturnValue(existingContainer);
@@ -1275,7 +1276,7 @@ describe('Docker Watcher', () => {
             mockImage.inspect.mockResolvedValue(imageDetails);
             mockTag.parse.mockReturnValue({ major: 1, minor: 0, patch: 0 });
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1324,7 +1325,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue(null);
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'ghcr',
                 match: () => true,
             };
@@ -1367,7 +1368,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue(null);
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'ghcr',
                 match: () => true,
             };
@@ -1459,7 +1460,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue({ major: 2026, minor: 2, patch: 1 });
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'ghcr',
                 match: () => true,
             };
@@ -1547,7 +1548,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue({ major: 2026, minor: 2, patch: 1 });
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'ghcr',
                 match: () => true,
             };
@@ -1622,12 +1623,12 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue({ major: 3, minor: 5, patch: 3 });
             const harborRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'harbor',
                 match: (img) => img.registry.url === 'harbor.example.com',
             };
             const hubRegistry = {
-                normalizeImage: jest.fn((img) => ({
+                normalizeImage: vi.fn((img) => ({
                     ...img,
                     registry: {
                         ...img.registry,
@@ -1687,12 +1688,12 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue({ major: 3, minor: 5, patch: 3 });
             const harborRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'harbor',
                 match: (img) => img.registry.url === 'harbor.example.com',
             };
             const hubRegistry = {
-                normalizeImage: jest.fn((img) => ({
+                normalizeImage: vi.fn((img) => ({
                     ...img,
                     registry: {
                         ...img.registry,
@@ -1751,7 +1752,7 @@ describe('Docker Watcher', () => {
 
             // Mock registry to handle unknown/docker hub
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1793,7 +1794,7 @@ describe('Docker Watcher', () => {
             };
             mockImage.inspect.mockResolvedValue(imageDetails);
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1818,7 +1819,7 @@ describe('Docker Watcher', () => {
 
         test('should handle container with no repo tags', async () => {
             await docker.register('watcher', 'docker', 'test', {});
-            const mockLog = { warn: jest.fn() };
+            const mockLog = { warn: vi.fn() };
             docker.log = mockLog;
             const container = {
                 Id: '123',
@@ -1840,7 +1841,7 @@ describe('Docker Watcher', () => {
 
         test('should warn for non-semver without digest watching', async () => {
             await docker.register('watcher', 'docker', 'test', {});
-            const mockLog = { warn: jest.fn() };
+            const mockLog = { warn: vi.fn() };
             docker.log = mockLog;
             const container = {
                 Id: '123',
@@ -1858,7 +1859,7 @@ describe('Docker Watcher', () => {
             mockImage.inspect.mockResolvedValue(imageDetails);
             mockTag.parse.mockReturnValue(null);
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1914,7 +1915,7 @@ describe('Docker Watcher', () => {
                 tag === '2.7.5' ? { version: '2.7.5' } : null,
             );
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -1960,7 +1961,7 @@ describe('Docker Watcher', () => {
             });
             mockTag.parse.mockReturnValue(null);
             const mockRegistry = {
-                normalizeImage: jest.fn((img) => img),
+                normalizeImage: vi.fn((img) => img),
                 getId: () => 'hub',
                 match: () => true,
             };
@@ -2001,8 +2002,8 @@ describe('Docker Watcher', () => {
     describe('Container Reporting', () => {
         test('should map container to report for new container', async () => {
             const container = { id: '123', name: 'test' };
-            const mockLogChild = { debug: jest.fn() };
-            const mockLog = { child: jest.fn().mockReturnValue(mockLogChild) };
+            const mockLogChild = { debug: vi.fn() };
+            const mockLog = { child: vi.fn().mockReturnValue(mockLogChild) };
             docker.log = mockLog;
             storeContainer.getContainer.mockReturnValue(undefined);
             storeContainer.insertContainer.mockReturnValue(container);
@@ -2022,10 +2023,10 @@ describe('Docker Watcher', () => {
                 updateAvailable: true,
             };
             const existingContainer = {
-                resultChanged: jest.fn().mockReturnValue(true),
+                resultChanged: vi.fn().mockReturnValue(true),
             };
-            const mockLogChild = { debug: jest.fn() };
-            const mockLog = { child: jest.fn().mockReturnValue(mockLogChild) };
+            const mockLogChild = { debug: vi.fn() };
+            const mockLog = { child: vi.fn().mockReturnValue(mockLogChild) };
             docker.log = mockLog;
             storeContainer.getContainer.mockReturnValue(existingContainer);
             storeContainer.updateContainer.mockReturnValue(container);
@@ -2045,10 +2046,10 @@ describe('Docker Watcher', () => {
                 updateAvailable: false,
             };
             const existingContainer = {
-                resultChanged: jest.fn().mockReturnValue(true),
+                resultChanged: vi.fn().mockReturnValue(true),
             };
-            const mockLogChild = { debug: jest.fn() };
-            const mockLog = { child: jest.fn().mockReturnValue(mockLogChild) };
+            const mockLogChild = { debug: vi.fn() };
+            const mockLog = { child: vi.fn().mockReturnValue(mockLogChild) };
             docker.log = mockLog;
             storeContainer.getContainer.mockReturnValue(existingContainer);
             storeContainer.updateContainer.mockReturnValue(container);
@@ -2110,12 +2111,12 @@ describe('isDigestToWatch Logic', () => {
     beforeEach(async () => {
         // Setup dockerode mock
         const mockDockerApi = {
-            getImage: jest.fn(),
+            getImage: vi.fn(),
         };
         mockDockerode.mockImplementation(() => mockDockerApi);
 
         mockImage = {
-            inspect: jest.fn(),
+            inspect: vi.fn(),
         };
         mockDockerApi.getImage.mockReturnValue(mockImage);
 
@@ -2131,7 +2132,7 @@ describe('isDigestToWatch Logic', () => {
         event.emitContainerReport.mockImplementation(() => {});
 
         // Setup prometheus mock
-        const mockGauge = { set: jest.fn() };
+        const mockGauge = { set: vi.fn() };
         mockPrometheus.getWatchContainerGauge.mockReturnValue(mockGauge);
 
         // Setup fullName mock
@@ -2176,7 +2177,7 @@ describe('isDigestToWatch Logic', () => {
         }
 
         const mockRegistry = {
-            normalizeImage: jest.fn((img) => img),
+            normalizeImage: vi.fn((img) => img),
             getId: () => 'registry',
             match: () => true,
         };

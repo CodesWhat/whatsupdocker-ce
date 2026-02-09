@@ -2,7 +2,7 @@
 import Dhi from './Dhi.js';
 
 // Mock axios
-jest.mock('axios', () => jest.fn());
+vi.mock('axios', () => ({ default: vi.fn() }));
 
 describe('DHI Registry', () => {
     let dhi;
@@ -10,7 +10,7 @@ describe('DHI Registry', () => {
     beforeEach(async () => {
         dhi = new Dhi();
         await dhi.register('registry', 'dhi', 'test', {});
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should create instance', async () => {
@@ -47,7 +47,7 @@ describe('DHI Registry', () => {
         const { default: axios } = await import('axios');
         axios.mockResolvedValue({ data: { token: 'auth-token' } });
 
-        dhi.getAuthCredentials = jest.fn().mockReturnValue('base64credentials');
+        dhi.getAuthCredentials = vi.fn().mockReturnValue('base64credentials');
 
         const image = { name: 'python' };
         const requestOptions = { headers: {} };
@@ -69,7 +69,7 @@ describe('DHI Registry', () => {
         const { default: axios } = await import('axios');
         axios.mockResolvedValue({ data: { token: 'public-token' } });
 
-        dhi.getAuthCredentials = jest.fn().mockReturnValue(null);
+        dhi.getAuthCredentials = vi.fn().mockReturnValue(null);
 
         const image = { name: 'python' };
         const requestOptions = { headers: {} };

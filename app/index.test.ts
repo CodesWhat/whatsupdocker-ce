@@ -1,45 +1,44 @@
 // @ts-nocheck
 // Mock all dependencies
-jest.mock('./configuration', () => ({
-    getVersion: jest.fn(() => '1.0.0'),
+vi.mock('./configuration', () => ({
+    getVersion: vi.fn(() => '1.0.0'),
 }));
 
-jest.mock('./log', () => ({
-    info: jest.fn(),
-    child: jest.fn().mockReturnThis(),
+vi.mock('./log', () => ({
+    default: { info: vi.fn(), child: vi.fn().mockReturnThis() },
 }));
 
-jest.mock('./store', () => ({
-    init: jest.fn().mockResolvedValue(),
+vi.mock('./store', () => ({
+    init: vi.fn().mockResolvedValue(),
 }));
 
-jest.mock('./registry', () => ({
-    init: jest.fn().mockResolvedValue(),
+vi.mock('./registry', () => ({
+    init: vi.fn().mockResolvedValue(),
 }));
 
-jest.mock('./api', () => ({
-    init: jest.fn().mockResolvedValue(),
+vi.mock('./api', () => ({
+    init: vi.fn().mockResolvedValue(),
 }));
 
-jest.mock('./agent/api', () => ({
-    init: jest.fn().mockResolvedValue(),
+vi.mock('./agent/api', () => ({
+    init: vi.fn().mockResolvedValue(),
 }));
 
-jest.mock('./agent', () => ({
-    init: jest.fn().mockResolvedValue(),
+vi.mock('./agent', () => ({
+    init: vi.fn().mockResolvedValue(),
 }));
 
-jest.mock('./prometheus', () => ({
-    init: jest.fn(),
+vi.mock('./prometheus', () => ({
+    init: vi.fn(),
 }));
 
 describe('Main Application', () => {
     const originalArgv = process.argv;
 
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // Clear the module cache to ensure fresh imports
-        jest.resetModules();
+        vi.resetModules();
         process.argv = [...originalArgv].filter((arg) => arg !== '--agent');
     });
 

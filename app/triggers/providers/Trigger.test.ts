@@ -4,9 +4,9 @@ import * as event from '../../event/index.js';
 import log from '../../log/index.js';
 import Trigger from './Trigger.js';
 
-jest.mock('../../log');
-jest.mock('../../event');
-jest.mock('../../prometheus/trigger', () => ({
+vi.mock('../../log');
+vi.mock('../../event');
+vi.mock('../../prometheus/trigger', () => ({
     getTriggerCounter: () => ({
         inc: () => ({}),
     }),
@@ -30,7 +30,7 @@ const configurationValid = {
 };
 
 beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     trigger = new Trigger();
     trigger.log = log;
     trigger.configuration = { ...configurationValid };
@@ -67,20 +67,20 @@ test('validateConfiguration should throw error when invalid', async () => {
 });
 
 test('init should register to container report when simple mode enabled', async () => {
-    const spy = jest.spyOn(event, 'registerContainerReport');
+    const spy = vi.spyOn(event, 'registerContainerReport');
     await trigger.init();
     expect(spy).toHaveBeenCalled();
 });
 
 test('init should register to container reports when batch mode enabled', async () => {
-    const spy = jest.spyOn(event, 'registerContainerReports');
+    const spy = vi.spyOn(event, 'registerContainerReports');
     trigger.configuration.mode = 'batch';
     await trigger.init();
     expect(spy).toHaveBeenCalled();
 });
 
 test('init should register handlers with trigger id and order', async () => {
-    const spy = jest.spyOn(event, 'registerContainerReport');
+    const spy = vi.spyOn(event, 'registerContainerReport');
     trigger.type = 'docker';
     trigger.name = 'update';
     trigger.configuration.order = 42;
@@ -92,8 +92,8 @@ test('init should register handlers with trigger id and order', async () => {
 });
 
 test('deregister should unregister container report handler', async () => {
-    const unregisterHandler = jest.fn();
-    jest.spyOn(event, 'registerContainerReport').mockReturnValue(
+    const unregisterHandler = vi.fn();
+    vi.spyOn(event, 'registerContainerReport').mockReturnValue(
         unregisterHandler,
     );
 
@@ -156,7 +156,7 @@ test.each(handleContainerReportTestCases)(
         };
         await trigger.init();
 
-        const spy = jest.spyOn(trigger, 'trigger');
+        const spy = vi.spyOn(trigger, 'trigger');
         await trigger.handleContainerReport({
             changed: item.changed,
             container: {
@@ -192,7 +192,7 @@ test('handleContainerReport should warn when trigger method of the trigger fails
         throw new Error('Fail!!!');
     };
     await trigger.init();
-    const spyLog = jest.spyOn(log, 'warn');
+    const spyLog = vi.spyOn(log, 'warn');
     await trigger.handleContainerReport({
         changed: true,
         container: {
@@ -256,7 +256,7 @@ test.each(handleContainerReportsTestCases)(
         };
         await trigger.init();
 
-        const spy = jest.spyOn(trigger, 'triggerBatch');
+        const spy = vi.spyOn(trigger, 'triggerBatch');
         await trigger.handleContainerReports([
             {
                 changed: item.changed,
