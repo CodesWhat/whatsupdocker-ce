@@ -28,7 +28,7 @@
         "express": "5.2.1",
         "express-healthcheck": "0.1.0",
         "express-session": "1.19.0",
-        "flat": "5.0.2",
+        "flat": "6.0.1",
         "getmac": "6.6.0",
         "gotify-client": "0.4.2",
         "joi": "18.0.2",
