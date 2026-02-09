@@ -4,6 +4,7 @@ import passport from 'passport';
 import nocache from 'nocache';
 import { output } from '../prometheus';
 import * as auth from './auth';
+import { getServerConfiguration } from '../configuration';
 
 /**
  * Prometheus Metrics router.
@@ -27,10 +28,13 @@ async function outputMetrics(req, res) {
  * @returns {*}
  */
 export function init() {
+    const configuration = getServerConfiguration();
     router.use(nocache());
 
-    // Routes to protect after this line
-    router.use(passport.authenticate(auth.getAllIds()));
+    if (configuration.metrics?.auth !== false) {
+        // Routes to protect after this line
+        router.use(passport.authenticate(auth.getAllIds()));
+    }
 
     router.get('/', outputMetrics);
     return router;

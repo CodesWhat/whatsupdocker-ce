@@ -41,6 +41,14 @@ WUD exposes various metrics that [Prometheus](https://prometheus.io/) can scrape
 ### Endpoint
 The metrics are exposed at [/metrics](http://localhost:3000/metrics).
 
+By default, `/metrics` requires authentication when API auth is enabled.  
+To expose metrics without app authentication (for local Prometheus scrapes), set:
+
+```yaml
+environment:
+  - WUD_SERVER_METRICS_AUTH=false
+```
+
 ### Metrics
 
 #### WUD specific metrics

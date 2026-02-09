@@ -15,6 +15,7 @@ You can adjust the server configuration with the following environment variables
 | `WUD_SERVER_CORS_ORIGIN`   | :white_circle: | Supported CORS origin                                                        |                                          | `*`                              |
 | `WUD_SERVER_CORS_METHODS`  | :white_circle: | Supported CORS methods                                                       | Comma separated list of valid HTTP verbs | `GET,HEAD,PUT,PATCH,POST,DELETE` |
 | `WUD_SERVER_FEATURE_DELETE`| :white_circle: | If deleting operations are enabled through API & UI                          | `true`, `false`                          | `true`                           |
+| `WUD_SERVER_METRICS_AUTH`  | :white_circle: | Require authentication on `/metrics` endpoint                                | `true`, `false`                          | `true`                           |
 
 ### Examples
 

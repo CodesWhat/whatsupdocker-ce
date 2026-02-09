@@ -147,6 +147,11 @@ export function getServerConfiguration() {
             .default({
                 delete: true,
             }),
+        metrics: joi
+            .object({
+                auth: joi.boolean().default(true),
+            })
+            .default({}),
     });
 
     // Validate Configuration

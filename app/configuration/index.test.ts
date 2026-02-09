@@ -95,13 +95,32 @@ test('getStoreConfiguration should return configured store', async () => {
 
 test('getServerConfiguration should return configured api (new vars)', async () => {
     configuration.wudEnvVars.WUD_SERVER_PORT = '4000';
+    delete configuration.wudEnvVars.WUD_SERVER_METRICS_AUTH;
     expect(configuration.getServerConfiguration()).toStrictEqual({
         cors: {},
         enabled: true,
         feature: {
             delete: true,
         },
+        metrics: {},
         port: 4000,
+        tls: {},
+    });
+});
+
+test('getServerConfiguration should allow disabling metrics auth', async () => {
+    delete configuration.wudEnvVars.WUD_SERVER_PORT;
+    configuration.wudEnvVars.WUD_SERVER_METRICS_AUTH = 'false';
+    expect(configuration.getServerConfiguration()).toStrictEqual({
+        cors: {},
+        enabled: true,
+        feature: {
+            delete: true,
+        },
+        metrics: {
+            auth: false,
+        },
+        port: 3000,
         tls: {},
     });
 });
