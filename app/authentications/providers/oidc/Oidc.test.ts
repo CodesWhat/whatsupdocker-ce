@@ -148,11 +148,49 @@ test('redirect should persist oidc checks in session before responding', async (
     await oidc.redirect(req, res);
 
     expect(req.session.oidc.default).toBeDefined();
-    expect(req.session.oidc.default.codeVerifier).toBeDefined();
-    expect(req.session.oidc.default.state).toBeDefined();
+    expect(req.session.oidc.default.pending).toBeDefined();
+    expect(Object.keys(req.session.oidc.default.pending)).toHaveLength(1);
+    expect(
+        req.session.oidc.default.pending[
+            Object.keys(req.session.oidc.default.pending)[0]
+        ].codeVerifier,
+    ).toBeDefined();
     expect(save).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith({ url: 'https://idp/auth' });
     expect(res.status).not.toHaveBeenCalled();
+});
+
+test('callback should fail with explicit message when callback state is missing', async () => {
+    const req = {
+        protocol: 'https',
+        hostname: 'wud.example.com',
+        originalUrl: '/auth/oidc/default/cb?code=abc',
+        session: {
+            oidc: {
+                default: {
+                    pending: {
+                        state1: {
+                            codeVerifier: 'code-verifier',
+                            createdAt: Date.now(),
+                        },
+                    },
+                },
+            },
+        },
+        login: jest.fn(),
+    };
+    const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.send).toHaveBeenCalledWith(
+        'OIDC callback is missing state. Please retry authentication.',
+    );
 });
 
 test('callback should return explicit error when oidc checks are missing', async () => {
@@ -175,5 +213,145 @@ test('callback should return explicit error when oidc checks are missing', async
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.send).toHaveBeenCalledWith(
         'OIDC session is missing or expired. Please retry authentication.',
+    );
+});
+
+test('callback should authenticate using matching state when multiple auth redirects are pending', async () => {
+    openidClientMock.randomPKCECodeVerifier = jest
+        .fn()
+        .mockReturnValueOnce('code-verifier-1')
+        .mockReturnValueOnce('code-verifier-2');
+    openidClientMock.authorizationCodeGrant = jest
+        .fn()
+        .mockResolvedValue({ access_token: 'token' });
+    openidClientMock.fetchUserInfo = jest
+        .fn()
+        .mockResolvedValue({ email: 'user@example.com' });
+    const session = {
+        save: jest.fn((cb) => cb()),
+    };
+    const resRedirect = {
+        json: jest.fn(),
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+    };
+
+    await oidc.redirect(
+        { protocol: 'https', hostname: 'wud.example.com', session },
+        resRedirect,
+    );
+    await oidc.redirect(
+        { protocol: 'https', hostname: 'wud.example.com', session },
+        resRedirect,
+    );
+
+    const stateByCodeVerifier = Object.fromEntries(
+        Object.entries(session.oidc.default.pending).map(([state, check]: any) => [
+            check.codeVerifier,
+            state,
+        ]),
+    );
+    const firstState = stateByCodeVerifier['code-verifier-1'];
+    const secondState = stateByCodeVerifier['code-verifier-2'];
+    const req = {
+        protocol: 'https',
+        hostname: 'wud.example.com',
+        originalUrl: `/auth/oidc/default/cb?code=abc&state=${firstState}`,
+        session,
+        login: jest.fn((user, done) => done()),
+    };
+    const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+        redirect: jest.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(openidClientMock.authorizationCodeGrant).toHaveBeenCalledWith(
+        oidc.client,
+        expect.any(URL),
+        {
+            pkceCodeVerifier: 'code-verifier-1',
+            expectedState: firstState,
+        },
+    );
+    expect(req.session.oidc.default.pending[firstState]).toBeUndefined();
+    expect(req.session.oidc.default.pending[secondState]).toBeDefined();
+    expect(res.redirect).toHaveBeenCalledWith('https://wud.example.com');
+});
+
+test('callback should support legacy single-check session shape', async () => {
+    openidClientMock.authorizationCodeGrant = jest
+        .fn()
+        .mockResolvedValue({ access_token: 'token' });
+    openidClientMock.fetchUserInfo = jest
+        .fn()
+        .mockResolvedValue({ email: 'user@example.com' });
+
+    const req = {
+        protocol: 'https',
+        hostname: 'wud.example.com',
+        originalUrl: '/auth/oidc/default/cb?code=abc&state=legacy-state',
+        session: {
+            oidc: {
+                default: {
+                    state: 'legacy-state',
+                    codeVerifier: 'legacy-code-verifier',
+                },
+            },
+        },
+        login: jest.fn((user, done) => done()),
+    };
+    const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+        redirect: jest.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(openidClientMock.authorizationCodeGrant).toHaveBeenCalledWith(
+        oidc.client,
+        expect.any(URL),
+        {
+            pkceCodeVerifier: 'legacy-code-verifier',
+            expectedState: 'legacy-state',
+        },
+    );
+    expect(req.session.oidc.default).toBeUndefined();
+    expect(res.redirect).toHaveBeenCalledWith('https://wud.example.com');
+});
+
+test('callback should return explicit error when callback state does not match session checks', async () => {
+    const req = {
+        protocol: 'https',
+        hostname: 'wud.example.com',
+        originalUrl: '/auth/oidc/default/cb?code=abc&state=unknown-state',
+        session: {
+            oidc: {
+                default: {
+                    pending: {
+                        knownState: {
+                            codeVerifier: 'code-verifier',
+                            createdAt: Date.now(),
+                        },
+                    },
+                },
+            },
+        },
+        login: jest.fn(),
+    };
+    const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.send).toHaveBeenCalledWith(
+        'OIDC session state mismatch or expired. Please retry authentication.',
     );
 });
