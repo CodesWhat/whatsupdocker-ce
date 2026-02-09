@@ -12,7 +12,7 @@ scripts/
 .github/
 *.md
 !README.md
-.travis.yml
+ci.config.yml
 .eslintrc*
 .prettierrc*
 babel.config.js

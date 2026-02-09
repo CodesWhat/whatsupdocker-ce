@@ -9,8 +9,11 @@ env:
 
 before_install:
 
-  - export PROJECT_IMAGE_NAME=${PROJECT_IMAGE_NAME:-${TRAVIS_REPO_SLUG##*/}}
-  - export IMAGE_VERSION=${TRAVIS_BRANCH//\//\_}
+  - export CI_REPO_SLUG=${CI_REPO_SLUG:-${TRAVIS_REPO_SLUG:-${GITHUB_REPOSITORY:-${CI_PROJECT_PATH:-whatsupdocker-ce}}}}
+  - export CI_BRANCH_NAME=${CI_BRANCH_NAME:-${TRAVIS_BRANCH:-${GITHUB_REF_NAME:-${CI_COMMIT_REF_NAME:-main}}}}
+  - export CI_TAG_NAME=${CI_TAG_NAME:-${TRAVIS_TAG:-${CI_COMMIT_TAG:-}}}
+  - export PROJECT_IMAGE_NAME=${PROJECT_IMAGE_NAME:-${CI_REPO_SLUG##*/}}
+  - export IMAGE_VERSION=${CI_BRANCH_NAME//\//\_}
   - export IMAGE_VERSION=${IMAGE_VERSION//\#/\_}
   - export IMAGE_VERSION_MINOR=$(echo $IMAGE_VERSION | sed -rn 's/^(v?[[:digit:]]+.[[:digit:]]+).([[:digit:]]+)(.*)/\1/p')
   - export IMAGE_VERSION_MAJOR=$(echo $IMAGE_VERSION | sed -rn 's/^(v?[[:digit:]]+).[[:digit:]]+.([[:digit:]]+)(.*)/\1/p')
@@ -154,7 +157,7 @@ script:
   # Override image version with tag name if any
   - export DOCKER_TAGS="-t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION}"
   - |
-    if [ ! -z "$TRAVIS_TAG" ]
+    if [ -n "$CI_TAG_NAME" ]
     then
       export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MAJOR} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MAJOR}"
       export DOCKER_TAGS="${DOCKER_TAGS} -t ${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MINOR} -t ghcr.io/${GITHUB_USERNAME}/${PROJECT_IMAGE_NAME}:${IMAGE_VERSION_MINOR}"
