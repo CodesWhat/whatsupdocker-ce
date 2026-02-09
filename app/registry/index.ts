@@ -13,11 +13,12 @@ import {
     getAuthenticationConfigurations,
     getAgentConfigurations,
 } from '../configuration';
-import Component, { ComponentConfiguration } from './Component';
-import Trigger from '../triggers/providers/Trigger';
-import Watcher from '../watchers/Watcher';
-import Registry from '../registries/Registry';
-import Authentication from '../authentications/providers/Authentication';
+import type Component from './Component';
+import type { ComponentConfiguration } from './Component';
+import type Trigger from '../triggers/providers/Trigger';
+import type Watcher from '../watchers/Watcher';
+import type Registry from '../registries/Registry';
+import type Authentication from '../authentications/providers/Authentication';
 import Agent from '../agent/components/Agent';
 
 export interface RegistryState {
@@ -34,6 +35,15 @@ export interface RegistrationOptions {
 
 type ComponentKind = keyof RegistryState;
 const SHARED_TRIGGER_CONFIGURATION_KEYS = ['threshold'];
+
+function isRecord(value: unknown): value is Record<string, any> {
+    return (
+        value !== null &&
+        value !== undefined &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+    );
+}
 
 /**
  * Registry state.
@@ -196,8 +206,7 @@ async function registerComponents(
 ) {
     if (configurations) {
         const providers = Object.keys(configurations);
-        const providerPromises = providers
-            .map((provider) => {
+        const providerPromises = providers.flatMap((provider) => {
                 log.info(
                     `Register all components of kind ${kind} for provider ${provider}`,
                 );
@@ -212,11 +221,55 @@ async function registerComponents(
                             path,
                         ),
                 );
-            })
-            .flat();
+            });
         return Promise.all(providerPromises);
     }
     return [];
+}
+
+function applyProviderSharedTriggerConfiguration(
+    configurations: Record<string, any>,
+) {
+    const normalizedConfigurations: Record<string, any> = {};
+
+    Object.keys(configurations || {}).forEach((provider) => {
+        const providerConfigurations = configurations[provider];
+        if (!isRecord(providerConfigurations)) {
+            normalizedConfigurations[provider] = providerConfigurations;
+            return;
+        }
+
+        const sharedConfiguration: Record<string, any> = {};
+        Object.keys(providerConfigurations).forEach((key) => {
+            const value = providerConfigurations[key];
+            if (
+                SHARED_TRIGGER_CONFIGURATION_KEYS.includes(key.toLowerCase()) &&
+                !isRecord(value)
+            ) {
+                sharedConfiguration[key.toLowerCase()] = value;
+            }
+        });
+
+        normalizedConfigurations[provider] = {};
+        Object.keys(providerConfigurations).forEach((triggerName) => {
+            const triggerConfiguration = providerConfigurations[triggerName];
+            if (isRecord(triggerConfiguration)) {
+                normalizedConfigurations[provider][triggerName] = {
+                    ...sharedConfiguration,
+                    ...triggerConfiguration,
+                };
+            } else if (
+                !SHARED_TRIGGER_CONFIGURATION_KEYS.includes(
+                    triggerName.toLowerCase(),
+                )
+            ) {
+                normalizedConfigurations[provider][triggerName] =
+                    triggerConfiguration;
+            }
+        });
+    });
+
+    return normalizedConfigurations;
 }
 
 function getSharedTriggerConfigurationByName(configurations: Record<string, any>) {
@@ -224,18 +277,12 @@ function getSharedTriggerConfigurationByName(configurations: Record<string, any>
 
     Object.keys(configurations || {}).forEach((provider) => {
         const providerConfigurations = configurations[provider];
-        if (
-            !providerConfigurations ||
-            typeof providerConfigurations !== 'object'
-        ) {
+        if (!isRecord(providerConfigurations)) {
             return;
         }
         Object.keys(providerConfigurations).forEach((triggerName) => {
             const triggerConfiguration = providerConfigurations[triggerName];
-            if (
-                !triggerConfiguration ||
-                typeof triggerConfiguration !== 'object'
-            ) {
+            if (!isRecord(triggerConfiguration)) {
                 return;
             }
             const triggerNameNormalized = triggerName.toLowerCase();
@@ -277,38 +324,40 @@ function getSharedTriggerConfigurationByName(configurations: Record<string, any>
 function applySharedTriggerConfigurationByName(
     configurations: Record<string, any>,
 ) {
+    const configurationsWithProviderSharedValues =
+        applyProviderSharedTriggerConfiguration(configurations);
     const sharedConfigurationByName =
-        getSharedTriggerConfigurationByName(configurations);
+        getSharedTriggerConfigurationByName(
+            configurationsWithProviderSharedValues,
+        );
     const configurationsWithSharedValues: Record<string, any> = {};
 
-    Object.keys(configurations || {}).forEach((provider) => {
-        const providerConfigurations = configurations[provider];
-        if (
-            !providerConfigurations ||
-            typeof providerConfigurations !== 'object'
-        ) {
-            configurationsWithSharedValues[provider] = providerConfigurations;
-            return;
-        }
-        configurationsWithSharedValues[provider] = {};
-        Object.keys(providerConfigurations).forEach((triggerName) => {
-            const triggerConfiguration = providerConfigurations[triggerName];
-            if (
-                !triggerConfiguration ||
-                typeof triggerConfiguration !== 'object'
-            ) {
-                configurationsWithSharedValues[provider][triggerName] =
-                    triggerConfiguration;
+    Object.keys(configurationsWithProviderSharedValues || {}).forEach(
+        (provider) => {
+            const providerConfigurations =
+                configurationsWithProviderSharedValues[provider];
+            if (!isRecord(providerConfigurations)) {
+                configurationsWithSharedValues[provider] =
+                    providerConfigurations;
                 return;
             }
-            const sharedConfiguration =
-                sharedConfigurationByName[triggerName.toLowerCase()] || {};
-            configurationsWithSharedValues[provider][triggerName] = {
-                ...sharedConfiguration,
-                ...triggerConfiguration,
-            };
-        });
-    });
+            configurationsWithSharedValues[provider] = {};
+            Object.keys(providerConfigurations).forEach((triggerName) => {
+                const triggerConfiguration = providerConfigurations[triggerName];
+                if (!isRecord(triggerConfiguration)) {
+                    configurationsWithSharedValues[provider][triggerName] =
+                        triggerConfiguration;
+                    return;
+                }
+                const sharedConfiguration =
+                    sharedConfigurationByName[triggerName.toLowerCase()] || {};
+                configurationsWithSharedValues[provider][triggerName] = {
+                    ...sharedConfiguration,
+                    ...triggerConfiguration,
+                };
+            });
+        },
+    );
 
     return configurationsWithSharedValues;
 }

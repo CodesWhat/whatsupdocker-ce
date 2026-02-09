@@ -207,6 +207,37 @@ test('registerTriggers should not share threshold when same-name triggers define
     ).toEqual('all');
 });
 
+test('registerTriggers should apply provider-level threshold to ntfy triggers', async () => {
+    triggers = {
+        ntfy: {
+            threshold: 'minor',
+            sh: {
+                topic: 'xxxxyyyyzzzz',
+            },
+        },
+    };
+    await registry.testable_registerTriggers();
+    expect(
+        registry.getState().trigger['ntfy.sh'].configuration.threshold,
+    ).toEqual('minor');
+});
+
+test('registerTriggers should let trigger-level threshold override provider-level one', async () => {
+    triggers = {
+        ntfy: {
+            threshold: 'minor',
+            sh: {
+                topic: 'xxxxyyyyzzzz',
+                threshold: 'patch',
+            },
+        },
+    };
+    await registry.testable_registerTriggers();
+    expect(
+        registry.getState().trigger['ntfy.sh'].configuration.threshold,
+    ).toEqual('patch');
+});
+
 test('registerTriggers should warn when registration errors occur', async () => {
     const spyLog = jest.spyOn(registry.testable_log, 'warn');
     triggers = {

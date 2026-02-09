@@ -28,11 +28,13 @@ services:
     image: ghcr.io/codeswhat/whatsupdocker-ce
     ...
     environment:
+      - WUD_TRIGGER_NTFY_THRESHOLD=minor
       - WUD_TRIGGER_NTFY_SH_TOPIC=xxxxyyyyzzzz
 ```
 #### **Docker**
 ```bash
 docker run \
+  -e WUD_TRIGGER_NTFY_THRESHOLD="minor" \
   -e WUD_TRIGGER_NTFY_SH_TOPIC="xxxxyyyyzzzz" \
   ...
   ghcr.io/codeswhat/whatsupdocker-ce
