@@ -161,7 +161,7 @@ function getRawTagUpdate(container: Container): ContainerUpdateKind {
         kind: 'unknown',
         localValue: undefined,
         remoteValue: undefined,
-        semverDiff: undefined,
+        semverDiff: 'unknown',
     };
     if (!container.image || !container.result) {
         return updateKind;
@@ -244,7 +244,7 @@ function getRawDigestUpdate(container: Container): ContainerUpdateKind {
         kind: 'unknown',
         localValue: undefined,
         remoteValue: undefined,
-        semverDiff: undefined,
+        semverDiff: 'unknown',
     };
     if (!container.image || !container.result) {
         return updateKind;
@@ -259,7 +259,7 @@ function getRawDigestUpdate(container: Container): ContainerUpdateKind {
             kind: 'digest',
             localValue: container.image.digest.value,
             remoteValue: container.result.digest,
-            semverDiff: undefined,
+            semverDiff: 'unknown',
         };
     }
     return updateKind;
@@ -270,7 +270,7 @@ function getRawUpdateKind(container: Container): ContainerUpdateKind {
         kind: 'unknown',
         localValue: undefined,
         remoteValue: undefined,
-        semverDiff: undefined,
+        semverDiff: 'unknown',
     };
     if (!container.image || !container.result) {
         return unknownUpdateKind;

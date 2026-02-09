@@ -331,6 +331,7 @@ test('model should flag updateAvailable when created is different', async () => 
     expect(containerValidated.updateAvailable).toBeTruthy();
     expect(containerValidated.updateKind).toEqual({
         kind: 'unknown',
+        semverDiff: 'unknown',
     });
     expect(containerValidated.resultChanged(containerEquals)).toBeFalsy();
     expect(containerValidated.resultChanged(containerDifferent)).toBeTruthy();
@@ -372,6 +373,7 @@ test('model should suppress created-only update when snoozed', async () => {
 
     expect(containerValidated.updateKind).toEqual({
         kind: 'unknown',
+        semverDiff: 'unknown',
     });
     expect(containerValidated.updateAvailable).toBeFalsy();
 });
@@ -714,6 +716,7 @@ test('addUpdateKindProperty should detect digest update', async () => {
         kind: 'digest',
         localValue: 'sha256:123465789',
         remoteValue: 'sha256:987654321',
+        semverDiff: 'unknown',
     });
 });
 
@@ -723,6 +726,7 @@ test('addUpdateKindProperty should return unknown when no image or result', asyn
     addUpdateKindProperty(containerObject);
     expect(containerObject.updateKind).toEqual({
         kind: 'unknown',
+        semverDiff: 'unknown',
     });
 });
 
@@ -736,5 +740,6 @@ test('addUpdateKindProperty should return unknown when no update available', asy
     addUpdateKindProperty(containerObject);
     expect(containerObject.updateKind).toEqual({
         kind: 'unknown',
+        semverDiff: 'unknown',
     });
 });
