@@ -52,7 +52,7 @@
         "set-value": "4.1.0",
         "snake-case": "3.0.4",
         "sort-es": "1.7.18",
-        "uuid": "11.0.3",
+        "uuid": "11.1.0",
         "yaml": "2.8.2"
     },
     "overrides": {
@@ -72,7 +72,7 @@
         "@types/nodemailer": "^7.0.9",
         "@types/passport": "^1.0.17",
         "@types/semver": "^7.7.1",
-        "@types/uuid": "^10.0.0",
+        "@types/uuid": "^11.0.0",
         "@types/yaml": "^1.9.7",
         "vitest": "^3.2.3",
         "nodemon": "3.1.11",
