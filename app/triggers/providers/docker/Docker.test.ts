@@ -389,6 +389,74 @@ test('pull should throw error when error occurs', async () => {
     ).rejects.toThrowError('Error when pulling image');
 });
 
+test('pull should emit progress logs from followProgress events', async () => {
+    const dockerApi = {
+        pull: jest.fn().mockResolvedValue({}),
+        modem: {
+            followProgress: jest.fn((pullStream, done, onProgress) => {
+                onProgress({
+                    id: 'layer-1',
+                    status: 'Downloading',
+                    progressDetail: {
+                        current: 50,
+                        total: 100,
+                    },
+                });
+                done(null, [
+                    {
+                        id: 'layer-1',
+                        status: 'Download complete',
+                    },
+                ]);
+            }),
+        },
+    };
+    const logContainer = {
+        info: jest.fn(),
+        warn: jest.fn(),
+        debug: jest.fn(),
+    };
+
+    await docker.pullImage(
+        dockerApi,
+        undefined,
+        'test/test:1.2.3',
+        logContainer,
+    );
+
+    expect(logContainer.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Pull progress for test/test:1.2.3'),
+    );
+    expect(logContainer.info).toHaveBeenCalledWith(
+        'Image test/test:1.2.3 pulled with success',
+    );
+});
+
+test('pull should throw error when followProgress reports an error', async () => {
+    const dockerApi = {
+        pull: jest.fn().mockResolvedValue({}),
+        modem: {
+            followProgress: jest.fn((pullStream, done) => {
+                done(new Error('Pull progress failed'));
+            }),
+        },
+    };
+    const logContainer = {
+        info: jest.fn(),
+        warn: jest.fn(),
+        debug: jest.fn(),
+    };
+
+    await expect(
+        docker.pullImage(
+            dockerApi,
+            undefined,
+            'test/test:1.2.3',
+            logContainer,
+        ),
+    ).rejects.toThrowError('Pull progress failed');
+});
+
 test('removeImage should pull image from dockerApi', async () => {
     await expect(
         docker.removeImage(

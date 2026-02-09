@@ -4,6 +4,8 @@ import Trigger from '../Trigger.js';
 import { getState } from '../../../registry/index.js';
 import { fullName } from '../../../model/container.js';
 
+const PULL_PROGRESS_LOG_INTERVAL_MS = 2000;
+
 /**
  * Replace a Docker container with an updated one.
  */
@@ -177,6 +179,68 @@ class Docker extends Trigger {
         }
     }
 
+    formatPullProgress(progressEvent) {
+        const progressDetail = progressEvent?.progressDetail || {};
+        if (
+            typeof progressDetail.current === 'number' &&
+            typeof progressDetail.total === 'number' &&
+            progressDetail.total > 0
+        ) {
+            const percentage = Math.round(
+                (progressDetail.current * 100) / progressDetail.total,
+            );
+            return `${progressDetail.current}/${progressDetail.total} (${percentage}%)`;
+        }
+        if (
+            progressEvent &&
+            typeof progressEvent.progress === 'string' &&
+            progressEvent.progress.trim() !== ''
+        ) {
+            return progressEvent.progress;
+        }
+        return undefined;
+    }
+
+    createPullProgressLogger(logContainer, imageName) {
+        let lastLogAt = 0;
+        let lastProgressSnapshot = '';
+        const logProgress = (progressEvent, force = false) => {
+            if (!progressEvent || typeof logContainer.debug !== 'function') {
+                return;
+            }
+
+            const status = progressEvent.status || 'progress';
+            const layer = progressEvent.id ? ` layer=${progressEvent.id}` : '';
+            const progress = this.formatPullProgress(progressEvent);
+            const progressSnapshot = progress
+                ? `${status}${layer} ${progress}`
+                : `${status}${layer}`;
+            const now = Date.now();
+
+            if (
+                !force &&
+                now - lastLogAt < PULL_PROGRESS_LOG_INTERVAL_MS &&
+                progressSnapshot === lastProgressSnapshot
+            ) {
+                return;
+            }
+            if (!force && now - lastLogAt < PULL_PROGRESS_LOG_INTERVAL_MS) {
+                return;
+            }
+
+            lastLogAt = now;
+            lastProgressSnapshot = progressSnapshot;
+            logContainer.debug(
+                `Pull progress for ${imageName}: ${progressSnapshot}`,
+            );
+        };
+
+        return {
+            onProgress: (progressEvent) => logProgress(progressEvent),
+            onDone: (progressEvent) => logProgress(progressEvent, true),
+        };
+    }
+
     /**
      * Pull new image.
      * @param dockerApi
@@ -192,9 +256,31 @@ class Docker extends Trigger {
             const pullStream = await dockerApi.pull(newImage, {
                 authconfig: auth,
             });
+            const pullProgressLogger = this.createPullProgressLogger(
+                logContainer,
+                newImage,
+            );
 
-            await new Promise((res) =>
-                dockerApi.modem.followProgress(pullStream, res),
+            await new Promise((resolve, reject) =>
+                dockerApi.modem.followProgress(
+                    pullStream,
+                    (error, output) => {
+                        if (
+                            Array.isArray(output) &&
+                            output.length > 0
+                        ) {
+                            pullProgressLogger.onDone(output[output.length - 1]);
+                        }
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(undefined);
+                        }
+                    },
+                    (progressEvent) => {
+                        pullProgressLogger.onProgress(progressEvent);
+                    },
+                ),
             );
             logContainer.info(`Image ${newImage} pulled with success`);
         } catch (e) {
