@@ -28,6 +28,8 @@
             },
             "suspicious": {
                 "noAssignInExpressions": "off",
+                "noExplicitAny": "off",
+                "noImplicitAnyLet": "off",
                 "noSelfCompare": "off",
                 "noTemplateCurlyInString": "off",
                 "noThenProperty": "off",

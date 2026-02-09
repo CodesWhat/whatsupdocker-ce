@@ -11,7 +11,7 @@ module.exports = {
   moduleFileExtensions: ['js', 'json', 'vue', 'ts'],
   extensionsToTreatAsEsm: ['.vue'],
   moduleNameMapper: {
-    '\\.svg$': '<rootDir>/tests/mocks/svgMock.js',
+    '\\.(svg|png|jpe?g|gif|webp)$': '<rootDir>/tests/mocks/svgMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@vue/test-utils$': '<rootDir>/node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js'
   },
@@ -20,7 +20,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{js,vue,ts}',
     '!src/main.ts',
-    '!src/registerServiceWorker.js',
+    '!src/registerServiceWorker.ts',
     '!**/node_modules/**'
   ],
   coverageReporters: ['text', 'lcov', 'html'],
