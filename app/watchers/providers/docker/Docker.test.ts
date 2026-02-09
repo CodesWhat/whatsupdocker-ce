@@ -215,10 +215,22 @@ describe('Docker Watcher', () => {
             expect(mockDebounce).not.toHaveBeenCalled();
         });
 
-        test('should set watchatstart based on store state', async () => {
+        test('should disable watchatstart when watcher state already exists in store', async () => {
             storeContainer.getContainers.mockReturnValue([{ id: 'existing' }]);
             await docker.register('watcher', 'docker', 'test', {
                 watchatstart: true,
+            });
+            docker.init();
+            expect(storeContainer.getContainers).toHaveBeenCalledWith({
+                watcher: 'test',
+            });
+            expect(docker.configuration.watchatstart).toBe(false);
+        });
+
+        test('should keep watchatstart disabled when explicitly set to false', async () => {
+            storeContainer.getContainers.mockReturnValue([]);
+            await docker.register('watcher', 'docker', 'test', {
+                watchatstart: false,
             });
             docker.init();
             expect(docker.configuration.watchatstart).toBe(false);
