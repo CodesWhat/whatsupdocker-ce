@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Dhi from './Dhi';
+import Dhi from './Dhi.js';
 
 // Mock axios
 jest.mock('axios', () => jest.fn());

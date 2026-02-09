@@ -1,8 +1,8 @@
 // @ts-nocheck
 import parse from 'parse-docker-image-name';
-import Trigger from '../Trigger';
-import { getState } from '../../../registry';
-import { fullName } from '../../../model/container';
+import Trigger from '../Trigger.js';
+import { getState } from '../../../registry/index.js';
+import { fullName } from '../../../model/container.js';
 
 /**
  * Replace a Docker container with an updated one.

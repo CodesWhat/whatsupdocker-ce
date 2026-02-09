@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from 'axios';
-import Custom from '../custom/Custom';
+import Custom from '../custom/Custom.js';
 
 /**
  * Docker Hardened Images registry integration.

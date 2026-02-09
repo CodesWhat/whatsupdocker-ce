@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as registry from './registry';
+import * as registry from './registry.js';
 
 test('registry histogram should be properly configured', async () => {
     registry.init();

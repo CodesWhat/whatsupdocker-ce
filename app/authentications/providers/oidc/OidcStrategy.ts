@@ -1,7 +1,5 @@
 // @ts-nocheck
-import { Strategy } from 'openid-client';
-
-class OidcStrategy extends Strategy {
+class OidcStrategy {
     /**
      * Constructor.
      * @param options
@@ -9,7 +7,7 @@ class OidcStrategy extends Strategy {
      * @param log
      */
     constructor(options, verify, log) {
-        super(options, verify);
+        this.options = options;
         this.log = log;
         this.verify = verify;
     }

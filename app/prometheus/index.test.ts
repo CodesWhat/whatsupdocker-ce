@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as prometheus from './index';
+import * as prometheus from './index.js';
 
 // Mock prom-client
 jest.mock('prom-client', () => ({
@@ -40,10 +40,10 @@ describe('Prometheus Module', () => {
 
     test('should initialize all prometheus components', async () => {
         const { collectDefaultMetrics } = await import('prom-client');
-        const container = await import('./container');
-        const trigger = await import('./trigger');
-        const watcher = await import('./watcher');
-        const registry = await import('./registry');
+        const container = await import('./container.js');
+        const trigger = await import('./trigger.js');
+        const watcher = await import('./watcher.js');
+        const registry = await import('./registry.js');
 
         prometheus.init();
 

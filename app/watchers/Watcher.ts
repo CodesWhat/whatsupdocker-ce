@@ -1,5 +1,5 @@
-import Component from '../registry/Component';
-import { Container, ContainerReport } from '../model/container';
+import Component from '../registry/Component.js';
+import { Container, ContainerReport } from '../model/container.js';
 
 /**
  * Watcher abstract class.

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
-import Docker from './Docker';
-import log from '../../../log';
+import Docker from './Docker.js';
+import log from '../../../log/index.js';
 
 const configurationValid = {
     prune: false,

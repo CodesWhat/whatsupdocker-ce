@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as watcher from './watcher';
+import * as watcher from './watcher.js';
 
 test('watcher counter should be properly configured', async () => {
     watcher.init();

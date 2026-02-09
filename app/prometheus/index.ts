@@ -1,12 +1,12 @@
 // @ts-nocheck
 import { collectDefaultMetrics, register } from 'prom-client';
 
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'prometheus' });
-import * as container from './container';
-import * as trigger from './trigger';
-import * as watcher from './watcher';
-import * as registry from './registry';
+import * as container from './container.js';
+import * as trigger from './trigger.js';
+import * as watcher from './watcher.js';
+import * as registry from './registry.js';
 
 /**
  * Start the Prometheus registry.

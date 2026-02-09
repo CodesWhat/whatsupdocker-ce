@@ -20,7 +20,7 @@ jest.mock('express', () => ({
 
 jest.mock('nocache', () => jest.fn());
 
-import * as serverRouter from './server';
+import * as serverRouter from './server.js';
 
 describe('Server Router', () => {
     beforeEach(async () => {
@@ -36,7 +36,7 @@ describe('Server Router', () => {
     });
 
     test('should call getServerConfiguration when route handler is called', async () => {
-        const { getServerConfiguration } = await import('../configuration');
+        const { getServerConfiguration } = await import('../configuration/index.js');
         const router = serverRouter.init();
 
         // Get the route handler function

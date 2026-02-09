@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Gitea from './Gitea';
+import Gitea from './Gitea.js';
 
 const gitea = new Gitea();
 gitea.configuration = {

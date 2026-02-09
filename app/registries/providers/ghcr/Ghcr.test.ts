@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Ghcr from './Ghcr';
+import Ghcr from './Ghcr.js';
 
 describe('GitHub Container Registry', () => {
     let ghcr;

@@ -2,9 +2,9 @@
 import express from 'express';
 import passport from 'passport';
 import nocache from 'nocache';
-import { output } from '../prometheus';
-import * as auth from './auth';
-import { getServerConfiguration } from '../configuration';
+import { output } from '../prometheus/index.js';
+import * as auth from './auth.js';
+import { getServerConfiguration } from '../configuration/index.js';
 
 /**
  * Prometheus Metrics router.

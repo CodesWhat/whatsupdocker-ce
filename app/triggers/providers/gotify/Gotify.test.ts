@@ -3,7 +3,7 @@ import { ValidationError } from 'joi';
 import axios from 'axios';
 
 jest.mock('axios');
-import Gotify from './Gotify';
+import Gotify from './Gotify.js';
 
 const gotify = new Gotify();
 

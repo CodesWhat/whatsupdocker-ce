@@ -1,7 +1,7 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
-import * as store from '../store';
+import * as store from '../store/index.js';
 
 const router = express.Router();
 

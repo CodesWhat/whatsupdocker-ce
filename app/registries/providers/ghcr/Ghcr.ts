@@ -1,5 +1,5 @@
 // @ts-nocheck
-import BaseRegistry from '../../BaseRegistry';
+import BaseRegistry from '../../BaseRegistry.js';
 
 /**
  * Github Container Registry integration.

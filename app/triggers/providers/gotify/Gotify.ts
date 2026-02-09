@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { GotifyClient } from 'gotify-client';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * Gotify Trigger implementation

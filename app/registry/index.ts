@@ -4,7 +4,9 @@
 import capitalize from 'capitalize';
 import fs from 'fs';
 import path from 'path';
-import logger from '../log';
+import { pathToFileURL } from 'url';
+import logger from '../log/index.js';
+import { resolveFromRuntimeRoot } from '../runtime/paths.js';
 const log = logger.child({ component: 'registry' });
 import {
     getWatcherConfigurations,
@@ -12,14 +14,14 @@ import {
     getRegistryConfigurations,
     getAuthenticationConfigurations,
     getAgentConfigurations,
-} from '../configuration';
-import type Component from './Component';
-import type { ComponentConfiguration } from './Component';
-import type Trigger from '../triggers/providers/Trigger';
-import type Watcher from '../watchers/Watcher';
-import type Registry from '../registries/Registry';
-import type Authentication from '../authentications/providers/Authentication';
-import Agent from '../agent/components/Agent';
+} from '../configuration/index.js';
+import type Component from './Component.js';
+import type { ComponentConfiguration } from './Component.js';
+import type Trigger from '../triggers/providers/Trigger.js';
+import type Watcher from '../watchers/Watcher.js';
+import type Registry from '../registries/Registry.js';
+import type Authentication from '../authentications/providers/Authentication.js';
+import Agent from '../agent/components/Agent.js';
 
 export interface RegistryState {
     trigger: { [key: string]: Trigger };
@@ -67,7 +69,7 @@ export function getState() {
  */
 function getAvailableProviders(basePath: string) {
     try {
-        const resolvedPath = path.resolve(__dirname, basePath);
+        const resolvedPath = resolveFromRuntimeRoot(basePath);
         const providers = fs
             .readdirSync(resolvedPath)
             .filter((file) => {
@@ -79,6 +81,24 @@ function getAvailableProviders(basePath: string) {
     } catch (e) {
         return [];
     }
+}
+
+function resolveComponentModuleSpecifier(componentFileBase: string) {
+    const jsCandidate = `${componentFileBase}.js`;
+    if (fs.existsSync(jsCandidate)) {
+        return pathToFileURL(jsCandidate).href;
+    }
+
+    const tsCandidate = `${componentFileBase}.ts`;
+    if (fs.existsSync(tsCandidate)) {
+        if (process.env.JEST_WORKER_ID) {
+            // ts-jest resolves extensionless local modules in test mode.
+            return componentFileBase;
+        }
+        return pathToFileURL(tsCandidate).href;
+    }
+
+    return pathToFileURL(jsCandidate).href;
 }
 
 /**
@@ -157,22 +177,29 @@ export async function registerComponent(
 ): Promise<Component> {
     const providerLowercase = provider.toLowerCase();
     const nameLowercase = name.toLowerCase();
-    const componentFileByConvention = `${componentPath}/${providerLowercase}/${capitalize(provider)}`;
-    const componentFileLowercase = `${componentPath}/${providerLowercase}/${providerLowercase}`;
-    const componentFileByConventionPath = path.resolve(
-        __dirname,
-        componentFileByConvention,
+    const componentRoot = resolveFromRuntimeRoot(componentPath);
+    const componentFileByConvention = path.join(
+        componentRoot,
+        providerLowercase,
+        capitalize(provider),
+    );
+    const componentFileLowercase = path.join(
+        componentRoot,
+        providerLowercase,
+        providerLowercase,
     );
     const componentFileByConventionExists = ['.js', '.ts'].some((extension) =>
-        fs.existsSync(`${componentFileByConventionPath}${extension}`),
+        fs.existsSync(`${componentFileByConvention}${extension}`),
     );
-    const componentFile = agent
-        ? `${componentPath}/Agent${capitalize(kind)}`
+    const componentFileBase = agent
+        ? path.join(componentRoot, `Agent${capitalize(kind)}`)
         : componentFileByConventionExists
           ? componentFileByConvention
           : componentFileLowercase;
+    const componentModuleSpecifier =
+        resolveComponentModuleSpecifier(componentFileBase);
     try {
-        const componentModule = await import(componentFile);
+        const componentModule = await import(componentModuleSpecifier);
         const ComponentClass = componentModule.default || componentModule;
         const component: Component = new ComponentClass();
         const componentRegistered = await component.register(
@@ -394,7 +421,7 @@ async function registerWatchers(options: RegistrationOptions = {}) {
                     'docker',
                     'local',
                     {},
-                    '../watchers/providers',
+                    'watchers/providers',
                 ),
             );
         } else {
@@ -406,7 +433,7 @@ async function registerWatchers(options: RegistrationOptions = {}) {
                         'docker',
                         watcherKeyNormalize,
                         configurations[watcherKeyNormalize],
-                        '../watchers/providers',
+                        'watchers/providers',
                     );
                 }),
             );
@@ -443,7 +470,7 @@ async function registerTriggers(options: RegistrationOptions = {}) {
             await registerComponents(
                 'trigger',
                 filteredConfigurations,
-                '../triggers/providers',
+                'triggers/providers',
             );
         } catch (e: any) {
             log.warn(`Some triggers failed to register (${e.message})`);
@@ -456,7 +483,7 @@ async function registerTriggers(options: RegistrationOptions = {}) {
         await registerComponents(
             'trigger',
             configurations,
-            '../triggers/providers',
+            'triggers/providers',
         );
     } catch (e: any) {
         log.warn(`Some triggers failed to register (${e.message})`);
@@ -488,7 +515,7 @@ async function registerRegistries() {
         await registerComponents(
             'registry',
             registriesToRegister,
-            '../registries/providers',
+            'registries/providers',
         );
     } catch (e: any) {
         log.warn(`Some registries failed to register (${e.message})`);
@@ -509,13 +536,13 @@ async function registerAuthentications() {
                 'anonymous',
                 'anonymous',
                 {},
-                '../authentications/providers',
+                'authentications/providers',
             );
         }
         await registerComponents(
             'authentication',
             configurations,
-            '../authentications/providers',
+            'authentications/providers',
         );
     } catch (e: any) {
         log.warn(`Some authentications failed to register (${e.message})`);

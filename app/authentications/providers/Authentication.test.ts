@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Authentication from './Authentication';
+import Authentication from './Authentication.js';
 
 describe('Authentication Base Class', () => {
     let authentication;

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
 
-import Command from './Command';
+import Command from './Command.js';
 
 const command = new Command();
 

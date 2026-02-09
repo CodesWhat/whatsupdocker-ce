@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Discord from './Discord';
+import Discord from './Discord.js';
 
 // Mock axios
 jest.mock('axios', () => jest.fn().mockResolvedValue({ data: {} }));

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Custom from './Custom';
+import Custom from './Custom.js';
 
 const custom = new Custom();
 custom.configuration = {

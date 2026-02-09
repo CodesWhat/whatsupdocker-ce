@@ -1,6 +1,6 @@
-import Watcher from '../../watchers/Watcher';
-import { Container } from '../../model/container';
-import { getAgent } from '../manager';
+import Watcher from '../../watchers/Watcher.js';
+import { Container } from '../../model/container.js';
+import { getAgent } from '../manager.js';
 
 /**
  * Agent Watcher.

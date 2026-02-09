@@ -1,13 +1,13 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
-import * as storeContainer from '../store/container';
-import * as registry from '../registry';
-import { getServerConfiguration } from '../configuration';
-import { mapComponentsToList } from './component';
-import Trigger from '../triggers/providers/Trigger';
-import logger from '../log';
-import { getAgent } from '../agent/manager';
+import * as storeContainer from '../store/container.js';
+import * as registry from '../registry/index.js';
+import { getServerConfiguration } from '../configuration/index.js';
+import { mapComponentsToList } from './component.js';
+import Trigger from '../triggers/providers/Trigger.js';
+import logger from '../log/index.js';
+import { getAgent } from '../agent/manager.js';
 const log = logger.child({ component: 'container' });
 
 const router = express.Router();
@@ -35,6 +35,63 @@ function getTriggers() {
  */
 export function getContainersFromStore(query) {
     return storeContainer.getContainers(query);
+}
+
+function uniqStrings(values = []) {
+    return [...new Set(values.filter((value) => typeof value === 'string'))];
+}
+
+function normalizeUpdatePolicy(updatePolicy = {}) {
+    const normalizedPolicy = {};
+
+    if (Array.isArray(updatePolicy.skipTags)) {
+        const skipTags = uniqStrings(updatePolicy.skipTags);
+        if (skipTags.length > 0) {
+            normalizedPolicy.skipTags = skipTags;
+        }
+    }
+
+    if (Array.isArray(updatePolicy.skipDigests)) {
+        const skipDigests = uniqStrings(updatePolicy.skipDigests);
+        if (skipDigests.length > 0) {
+            normalizedPolicy.skipDigests = skipDigests;
+        }
+    }
+
+    if (updatePolicy.snoozeUntil) {
+        const snoozeUntil = new Date(updatePolicy.snoozeUntil);
+        if (!Number.isNaN(snoozeUntil.getTime())) {
+            normalizedPolicy.snoozeUntil = snoozeUntil.toISOString();
+        }
+    }
+
+    return normalizedPolicy;
+}
+
+function getCurrentUpdateValue(container, kind) {
+    if (kind === 'tag') {
+        return container.updateKind?.remoteValue || container.result?.tag;
+    }
+    if (kind === 'digest') {
+        return container.updateKind?.remoteValue || container.result?.digest;
+    }
+    return undefined;
+}
+
+function getSnoozeUntilFromActionPayload(payload = {}) {
+    if (payload.snoozeUntil) {
+        const customDate = new Date(payload.snoozeUntil);
+        if (Number.isNaN(customDate.getTime())) {
+            throw new Error('Invalid snoozeUntil date');
+        }
+        return customDate.toISOString();
+    }
+    const days = Number(payload.days ?? 7);
+    if (!Number.isFinite(days) || days <= 0 || days > 365) {
+        throw new Error('Invalid snooze days value');
+    }
+    const snoozeUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    return snoozeUntil.toISOString();
 }
 
 /**
@@ -308,6 +365,99 @@ async function watchContainer(req, res) {
 }
 
 /**
+ * Update container update policy (skip/snooze controls).
+ * @param req
+ * @param res
+ */
+function patchContainerUpdatePolicy(req, res) {
+    const { id } = req.params;
+    const { action } = req.body || {};
+    const container = storeContainer.getContainer(id);
+
+    if (!container) {
+        res.sendStatus(404);
+        return;
+    }
+
+    if (!action) {
+        res.status(400).json({
+            error: 'Action is required',
+        });
+        return;
+    }
+
+    try {
+        let updatePolicy = normalizeUpdatePolicy(container.updatePolicy || {});
+
+        switch (action) {
+            case 'skip-current': {
+                const updateKind = container.updateKind?.kind;
+                if (!['tag', 'digest'].includes(updateKind)) {
+                    res.status(400).json({
+                        error: 'No current update available to skip',
+                    });
+                    return;
+                }
+                const updateValue = getCurrentUpdateValue(container, updateKind);
+                if (!updateValue) {
+                    res.status(400).json({
+                        error: 'No update value available to skip',
+                    });
+                    return;
+                }
+                if (updateKind === 'tag') {
+                    updatePolicy.skipTags = uniqStrings([
+                        ...(updatePolicy.skipTags || []),
+                        updateValue,
+                    ]);
+                } else {
+                    updatePolicy.skipDigests = uniqStrings([
+                        ...(updatePolicy.skipDigests || []),
+                        updateValue,
+                    ]);
+                }
+                break;
+            }
+            case 'clear-skips': {
+                delete updatePolicy.skipTags;
+                delete updatePolicy.skipDigests;
+                break;
+            }
+            case 'snooze': {
+                updatePolicy.snoozeUntil = getSnoozeUntilFromActionPayload(
+                    req.body || {},
+                );
+                break;
+            }
+            case 'unsnooze': {
+                delete updatePolicy.snoozeUntil;
+                break;
+            }
+            case 'clear': {
+                updatePolicy = {};
+                break;
+            }
+            default: {
+                res.status(400).json({
+                    error: `Unknown action ${action}`,
+                });
+                return;
+            }
+        }
+
+        updatePolicy = normalizeUpdatePolicy(updatePolicy);
+        container.updatePolicy =
+            Object.keys(updatePolicy).length > 0 ? updatePolicy : undefined;
+        const containerUpdated = storeContainer.updateContainer(container);
+        res.status(200).json(containerUpdated);
+    } catch (e) {
+        res.status(400).json({
+            error: e.message,
+        });
+    }
+}
+
+/**
  * Init Router.
  * @returns {*}
  */
@@ -323,6 +473,7 @@ export function init() {
         '/:id/triggers/:triggerAgent/:triggerType/:triggerName',
         runTrigger,
     );
+    router.patch('/:id/update-policy', patchContainerUpdatePolicy);
     router.post('/:id/watch', watchContainer);
     return router;
 }

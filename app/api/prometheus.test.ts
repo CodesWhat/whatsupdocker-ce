@@ -27,10 +27,10 @@ jest.mock('./auth', () => ({
 }));
 
 import passport from 'passport';
-import { getServerConfiguration } from '../configuration';
-import { output } from '../prometheus';
-import * as prometheusRouter from './prometheus';
-import * as auth from './auth';
+import { getServerConfiguration } from '../configuration/index.js';
+import { output } from '../prometheus/index.js';
+import * as prometheusRouter from './prometheus.js';
+import * as auth from './auth.js';
 
 describe('Prometheus Router', () => {
     beforeEach(async () => {

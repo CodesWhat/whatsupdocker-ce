@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Lscr from './Lscr';
+import Lscr from './Lscr.js';
 
 jest.mock('axios', () =>
     jest.fn().mockImplementation(() => ({

@@ -1,9 +1,9 @@
-import { AgentClient, AgentClientConfig } from './AgentClient';
-import log from '../log';
-import { getState } from '../registry';
-import { addAgent } from './manager';
+import { AgentClient, AgentClientConfig } from './AgentClient.js';
+import log from '../log/index.js';
+import { getState } from '../registry/index.js';
+import { addAgent } from './manager.js';
 
-export * from './manager';
+export * from './manager.js';
 
 export async function init(): Promise<void> {
     const registryState = getState();

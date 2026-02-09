@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Forgejo from './Forgejo';
+import Forgejo from './Forgejo.js';
 
 const forgejo = new Forgejo();
 forgejo.configuration = {

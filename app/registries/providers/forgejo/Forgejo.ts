@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Gitea from '../gitea/Gitea';
+import Gitea from '../gitea/Gitea.js';
 
 /**
  * Forgejo Container Registry integration.

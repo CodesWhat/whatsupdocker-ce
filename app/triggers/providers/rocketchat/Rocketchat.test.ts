@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Rocketchat from './Rocketchat';
+import Rocketchat from './Rocketchat.js';
 
 // Mock axios
 jest.mock('axios', () => ({

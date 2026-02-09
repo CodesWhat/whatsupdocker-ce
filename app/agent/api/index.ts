@@ -2,12 +2,12 @@ import fs from 'fs';
 import https from 'https';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import logger from '../../log';
-import { getServerConfiguration } from '../../configuration';
-import * as containerApi from './container';
-import * as watcherApi from './watcher';
-import * as triggerApi from './trigger';
-import * as eventApi from './event';
+import logger from '../../log/index.js';
+import { getServerConfiguration } from '../../configuration/index.js';
+import * as containerApi from './container.js';
+import * as watcherApi from './watcher.js';
+import * as triggerApi from './trigger.js';
+import * as eventApi from './event.js';
 
 const log = logger.child({ component: 'agent-server' });
 

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from 'axios';
-import Registry from '../../Registry';
+import Registry from '../../Registry.js';
 
 /**
  * Quay.io Registry integration.

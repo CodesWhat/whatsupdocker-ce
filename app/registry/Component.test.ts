@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Component from './Component';
+import Component from './Component.js';
 
 beforeEach(async () => {
     jest.resetAllMocks();

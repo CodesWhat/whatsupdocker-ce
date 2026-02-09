@@ -1,6 +1,6 @@
 // @ts-nocheck
 import nodemailer from 'nodemailer';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * SMTP Trigger implementation

@@ -3,10 +3,10 @@ import axios, {
     type Method,
     type AxiosResponse,
 } from 'axios';
-import log from '../log';
-import Component from '../registry/Component';
-import { getSummaryTags } from '../prometheus/registry';
-import type { ContainerImage } from '../model/container';
+import log from '../log/index.js';
+import Component from '../registry/Component.js';
+import { getSummaryTags } from '../prometheus/registry.js';
+import type { ContainerImage } from '../model/container.js';
 
 export interface RegistryImage extends ContainerImage {
     // Add any registry specific properties if needed

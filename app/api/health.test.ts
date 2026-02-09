@@ -10,7 +10,7 @@ jest.mock('express', () => ({
 jest.mock('nocache', () => jest.fn());
 jest.mock('express-healthcheck', () => jest.fn(() => 'healthcheck-middleware'));
 
-import * as healthRouter from './health';
+import * as healthRouter from './health.js';
 
 describe('Health Router', () => {
     beforeEach(async () => {

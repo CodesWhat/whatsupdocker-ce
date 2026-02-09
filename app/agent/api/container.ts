@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import * as storeContainer from '../../store/container';
-import { getServerConfiguration } from '../../configuration';
+import * as storeContainer from '../../store/container.js';
+import { getServerConfiguration } from '../../configuration/index.js';
 
 /**
  * Get Containers (Handshake).

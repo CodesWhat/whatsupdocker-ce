@@ -4,7 +4,7 @@ const { Kafka: KafkaClient } = require('kafkajs');
 
 jest.mock('kafkajs');
 
-import Kafka from './Kafka';
+import Kafka from './Kafka.js';
 
 const kafka = new Kafka();
 

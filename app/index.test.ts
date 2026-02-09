@@ -48,17 +48,17 @@ describe('Main Application', () => {
     });
 
     test('should initialize controller mode by default', async () => {
-        const { default: log } = await import('./log');
-        const store = await import('./store');
-        const registry = await import('./registry');
-        const api = await import('./api');
-        const agentManager = await import('./agent');
-        const agentServer = await import('./agent/api');
-        const prometheus = await import('./prometheus');
-        const { getVersion } = await import('./configuration');
+        const { default: log } = await import('./log/index.js');
+        const store = await import('./store/index.js');
+        const registry = await import('./registry/index.js');
+        const api = await import('./api/index.js');
+        const agentManager = await import('./agent/index.js');
+        const agentServer = await import('./agent/api/index.js');
+        const prometheus = await import('./prometheus/index.js');
+        const { getVersion } = await import('./configuration/index.js');
 
         // Import and run the main module
-        await import('./index');
+        await import('./index.js');
 
         // Wait for async operations to complete
         await new Promise((resolve) => setImmediate(resolve));
@@ -79,15 +79,15 @@ describe('Main Application', () => {
     test('should initialize agent mode with --agent flag', async () => {
         process.argv = [...originalArgv, '--agent'];
 
-        const { default: log } = await import('./log');
-        const store = await import('./store');
-        const registry = await import('./registry');
-        const api = await import('./api');
-        const agentManager = await import('./agent');
-        const agentServer = await import('./agent/api');
-        const prometheus = await import('./prometheus');
+        const { default: log } = await import('./log/index.js');
+        const store = await import('./store/index.js');
+        const registry = await import('./registry/index.js');
+        const api = await import('./api/index.js');
+        const agentManager = await import('./agent/index.js');
+        const agentServer = await import('./agent/api/index.js');
+        const prometheus = await import('./prometheus/index.js');
 
-        await import('./index');
+        await import('./index.js');
         await new Promise((resolve) => setImmediate(resolve));
 
         expect(log.info).toHaveBeenCalledWith(

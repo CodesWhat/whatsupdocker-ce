@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Registry from '../../Registry';
+import Registry from '../../Registry.js';
 
 /**
  * Azure Container Registry integration.

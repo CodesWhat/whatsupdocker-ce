@@ -2,11 +2,11 @@
 /**
  * App store.
  */
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'store' });
-import * as migrate from './migrate';
+import * as migrate from './migrate.js';
 const { migrate: migrateData } = migrate;
-import { getVersion } from '../configuration';
+import { getVersion } from '../configuration/index.js';
 
 let app;
 

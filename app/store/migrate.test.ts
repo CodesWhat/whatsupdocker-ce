@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as container from './container';
+import * as container from './container.js';
 
 jest.mock('./container');
 
@@ -12,7 +12,7 @@ container.getContainers = () => [
     },
 ];
 
-import * as migrate from './migrate';
+import * as migrate from './migrate.js';
 
 beforeEach(async () => {
     jest.resetAllMocks();

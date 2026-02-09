@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Anonymous from './Anonymous';
+import Anonymous from './Anonymous.js';
 
 describe('Anonymous Authentication', () => {
     let anonymous;

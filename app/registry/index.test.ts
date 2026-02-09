@@ -1,7 +1,7 @@
 // @ts-nocheck
-import * as configuration from '../configuration';
-import Component from './Component';
-import * as prometheusWatcher from '../prometheus/watcher';
+import * as configuration from '../configuration/index.js';
+import Component from './Component.js';
+import * as prometheusWatcher from '../prometheus/watcher.js';
 
 jest.mock('../configuration', () => ({
     getLogLevel: jest.fn(() => 'info'),
@@ -33,7 +33,7 @@ mockGetWatcherConfigurations.mockImplementation(() => watchers);
 mockGetAuthenticationConfigurations.mockImplementation(() => authentications);
 mockGetAgentConfigurations.mockImplementation(() => agents);
 
-import * as registry from './index';
+import * as registry from './index.js';
 
 beforeEach(async () => {
     jest.clearAllMocks();

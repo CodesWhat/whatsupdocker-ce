@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
 import axios from 'axios';
-import Ntfy from './Ntfy';
+import Ntfy from './Ntfy.js';
 
 jest.mock('axios');
 

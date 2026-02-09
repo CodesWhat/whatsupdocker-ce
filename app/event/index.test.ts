@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as event from './index';
+import * as event from './index.js';
 
 beforeEach(() => {
     event.clearAllListenersForTests();

@@ -2,12 +2,12 @@
 import joi from 'joi';
 import Loki from 'lokijs';
 import fs from 'fs';
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'store' });
-import { getStoreConfiguration } from '../configuration';
+import { getStoreConfiguration } from '../configuration/index.js';
 
-import * as app from './app';
-import * as container from './container';
+import * as app from './app.js';
+import * as container from './container.js';
 
 // Store Configuration Schema
 const configurationSchema = joi.object().keys({

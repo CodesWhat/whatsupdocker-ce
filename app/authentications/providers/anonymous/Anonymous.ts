@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Strategy as AnonymousStrategy } from 'passport-anonymous';
-import Authentication from '../Authentication';
-import log from '../../../log';
+import Authentication from '../Authentication.js';
+import log from '../../../log/index.js';
 
 /**
  * Anonymous authentication.

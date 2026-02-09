@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Kafka as KafkaClient } from 'kafkajs';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * Kafka Trigger implementation

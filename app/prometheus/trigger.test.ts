@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as trigger from './trigger';
+import * as trigger from './trigger.js';
 
 test('trigger counter should be properly configured', async () => {
     trigger.init();

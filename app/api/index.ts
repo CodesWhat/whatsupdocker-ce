@@ -3,14 +3,14 @@ import fs from 'fs';
 import https from 'https';
 import express from 'express';
 import cors from 'cors';
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'api' });
-import * as auth from './auth';
-import * as apiRouter from './api';
-import * as uiRouter from './ui';
-import * as prometheusRouter from './prometheus';
-import * as healthRouter from './health';
-import { getServerConfiguration } from '../configuration';
+import * as auth from './auth.js';
+import * as apiRouter from './api.js';
+import * as uiRouter from './ui.js';
+import * as prometheusRouter from './prometheus.js';
+import * as healthRouter from './health.js';
+import { getServerConfiguration } from '../configuration/index.js';
 
 const configuration = getServerConfiguration();
 

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Custom from '../custom/Custom';
+import Custom from '../custom/Custom.js';
 
 /**
  * Gitea Container Registry integration.

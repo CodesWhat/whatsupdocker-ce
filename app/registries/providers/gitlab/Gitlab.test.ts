@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from 'axios';
-import Gitlab from './Gitlab';
+import Gitlab from './Gitlab.js';
 
 const gitlab = new Gitlab();
 gitlab.configuration = {

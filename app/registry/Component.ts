@@ -1,5 +1,5 @@
 import joi from 'joi';
-import log from '../log';
+import log from '../log/index.js';
 import Logger from 'bunyan';
 
 export interface ComponentConfiguration {

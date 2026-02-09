@@ -8,14 +8,17 @@ module.exports = {
         '^.+\\.tsx?$': [
             'ts-jest',
             {
-                useESM: true,
+                useESM: false,
+                tsconfig: {
+                    module: 'CommonJS',
+                    moduleResolution: 'Node',
+                },
             },
         ],
     },
     moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
-    extensionsToTreatAsEsm: ['.ts'],
     coverageDirectory: 'coverage',
     collectCoverageFrom: [
         '**/*.{js,ts}',

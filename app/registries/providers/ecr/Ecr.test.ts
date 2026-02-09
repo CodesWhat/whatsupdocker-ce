@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Ecr from './Ecr';
+import Ecr from './Ecr.js';
 
 jest.mock('aws-sdk/clients/ecr', () =>
     jest.fn().mockImplementation(() => ({

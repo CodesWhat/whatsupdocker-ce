@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAgents } from '../agent';
+import { getAgents } from '../agent/index.js';
 
 const router = express.Router();
 

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Hub from './Hub';
+import Hub from './Hub.js';
 
 // Mock axios
 jest.mock('axios', () => jest.fn());

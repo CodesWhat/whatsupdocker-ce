@@ -3,7 +3,7 @@ import { byValues, byString } from 'sort-es';
 
 import express from 'express';
 import nocache from 'nocache';
-import * as registry from '../registry';
+import * as registry from '../registry/index.js';
 
 export interface ApiComponent {
     id: string;

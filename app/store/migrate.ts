@@ -1,7 +1,7 @@
 // @ts-nocheck
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'store' });
-import * as container from './container';
+import * as container from './container.js';
 const { getContainers, deleteContainer } = container;
 
 /**

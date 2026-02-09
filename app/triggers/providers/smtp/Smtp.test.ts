@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
-import Smtp from './Smtp';
-import log from '../../../log';
+import Smtp from './Smtp.js';
+import log from '../../../log/index.js';
 
 const smtp = new Smtp();
 

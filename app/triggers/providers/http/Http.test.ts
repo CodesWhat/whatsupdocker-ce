@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Http from './Http';
+import Http from './Http.js';
 
 // Mock axios
 jest.mock('axios', () => jest.fn());

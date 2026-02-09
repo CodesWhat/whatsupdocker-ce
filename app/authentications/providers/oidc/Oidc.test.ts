@@ -1,13 +1,8 @@
 // @ts-nocheck
-import { ValidationError } from 'joi';
 import express from 'express';
-import { Issuer } from 'openid-client';
-import Oidc from './Oidc';
+jest.mock('openid-client', () => ({}));
 
 const app = express();
-
-const { Client } = new Issuer({ issuer: 'issuer' });
-const client = new Client({ client_id: '123456789' });
 
 const configurationValid = {
     clientid: '123465798',
@@ -17,12 +12,33 @@ const configurationValid = {
     timeout: 5000,
 };
 
-const oidc = new Oidc();
-oidc.configuration = configurationValid;
-oidc.client = client;
+let oidc;
+
+let openidClientMock;
 
 beforeEach(async () => {
     jest.resetAllMocks();
+    jest.resetModules();
+    const { default: Oidc } = await import('./Oidc.js');
+    oidc = new Oidc();
+    oidc.configuration = configurationValid;
+    openidClientMock = {
+        randomPKCECodeVerifier: jest.fn().mockReturnValue('code-verifier'),
+        calculatePKCECodeChallenge: jest
+            .fn()
+            .mockResolvedValue('code-challenge'),
+        buildAuthorizationUrl: jest
+            .fn()
+            .mockReturnValue(new URL('https://idp/auth')),
+        authorizationCodeGrant: jest.fn(),
+        fetchUserInfo: jest.fn(),
+        skipSubjectCheck: Symbol('skip-subject-check'),
+        ClientSecretPost: jest.fn(),
+        discovery: jest.fn(),
+        buildEndSessionUrl: jest.fn(),
+    };
+    oidc.openidClient = openidClientMock;
+    oidc.client = { config: 'client' };
     oidc.name = '';
     oidc.log = {
         debug: jest.fn(),
@@ -40,7 +56,7 @@ test('validateConfiguration should throw error when invalid', async () => {
     const configuration = {};
     expect(() => {
         oidc.validateConfiguration(configuration);
-    }).toThrowError(ValidationError);
+    }).toThrowError('"discovery" is required');
 });
 
 test('getStrategy should return an Authentication strategy', async () => {
@@ -70,7 +86,7 @@ test('getStrategyDescription should return strategy description', async () => {
 
 test('verify should return user on valid token', async () => {
     const mockUserInfo = { email: 'test@example.com' };
-    oidc.client.userinfo = jest.fn().mockResolvedValue(mockUserInfo);
+    openidClientMock.fetchUserInfo = jest.fn().mockResolvedValue(mockUserInfo);
 
     const done = jest.fn();
     await oidc.verify('valid-token', done);
@@ -79,7 +95,7 @@ test('verify should return user on valid token', async () => {
 });
 
 test('verify should return false on invalid token', async () => {
-    oidc.client.userinfo = jest
+    openidClientMock.fetchUserInfo = jest
         .fn()
         .mockRejectedValue(new Error('Invalid token'));
     oidc.log = { warn: jest.fn() };
@@ -92,7 +108,9 @@ test('verify should return false on invalid token', async () => {
 
 test('getUserFromAccessToken should return user with email', async () => {
     const mockUserInfo = { email: 'user@example.com' };
-    oidc.client.userinfo = jest.fn().mockResolvedValue(mockUserInfo);
+    openidClientMock.fetchUserInfo = jest
+        .fn()
+        .mockResolvedValue(mockUserInfo);
 
     const user = await oidc.getUserFromAccessToken('token');
     expect(user).toEqual({ username: 'user@example.com' });
@@ -100,15 +118,15 @@ test('getUserFromAccessToken should return user with email', async () => {
 
 test('getUserFromAccessToken should return unknown for missing email', async () => {
     const mockUserInfo = {};
-    oidc.client.userinfo = jest.fn().mockResolvedValue(mockUserInfo);
+    openidClientMock.fetchUserInfo = jest
+        .fn()
+        .mockResolvedValue(mockUserInfo);
 
     const user = await oidc.getUserFromAccessToken('token');
     expect(user).toEqual({ username: 'unknown' });
 });
 
 test('redirect should persist oidc checks in session before responding', async () => {
-    oidc.client.authorizationUrl = jest.fn().mockReturnValue('https://idp/auth');
-
     const save = jest.fn((cb) => cb());
     const req = {
         protocol: 'https',
@@ -134,11 +152,7 @@ test('redirect should persist oidc checks in session before responding', async (
 });
 
 test('callback should return explicit error when oidc checks are missing', async () => {
-    oidc.client.callbackParams = jest.fn().mockReturnValue({
-        code: 'code',
-        state: 'state',
-    });
-    oidc.client.callback = jest.fn();
+    openidClientMock.authorizationCodeGrant = jest.fn();
 
     const req = {
         protocol: 'https',
@@ -153,7 +167,7 @@ test('callback should return explicit error when oidc checks are missing', async
 
     await oidc.callback(req, res);
 
-    expect(oidc.client.callback).not.toHaveBeenCalled();
+    expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.send).toHaveBeenCalledWith(
         'OIDC session is missing or expired. Please retry authentication.',

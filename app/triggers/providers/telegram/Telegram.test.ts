@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
-import Telegram from './Telegram';
+import Telegram from './Telegram.js';
 
 const telegram = new Telegram();
 

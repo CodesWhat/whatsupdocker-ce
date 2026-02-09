@@ -4,7 +4,7 @@ import maintenanceMode from 'aws-sdk/lib/maintenance_mode_message';
 // @ts-ignore
 maintenanceMode.suppress = true; // Disable aws sdk maintenance mode message at startup
 import axios from 'axios';
-import Registry from '../../Registry';
+import Registry from '../../Registry.js';
 
 const ECR_PUBLIC_GALLERY_HOSTNAME = 'public.ecr.aws';
 

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import log from './index';
+import log from './index.js';
 
 // Mock the configuration module
 jest.mock('../configuration', () => ({

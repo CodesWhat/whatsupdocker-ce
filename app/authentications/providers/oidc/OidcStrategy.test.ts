@@ -1,11 +1,8 @@
 // @ts-nocheck
-import { Issuer } from 'openid-client';
-import OidcStrategy from './OidcStrategy';
-import log from '../../../log';
+import OidcStrategy from './OidcStrategy.js';
+import log from '../../../log/index.js';
 
-const { Client } = new Issuer({ issuer: 'issuer' });
-const client = new Client({ client_id: '123456789' });
-const oidcStrategy = new OidcStrategy({ client }, () => {}, log);
+const oidcStrategy = new OidcStrategy({}, () => {}, log);
 
 beforeEach(async () => {
     oidcStrategy.success = jest.fn();

@@ -1,13 +1,13 @@
 // @ts-nocheck
-import { getVersion } from '../../../configuration';
+import { getVersion } from '../../../configuration/index.js';
 import {
     registerContainerAdded,
     registerContainerUpdated,
     registerContainerRemoved,
     registerWatcherStart,
     registerWatcherStop,
-} from '../../../event';
-import * as containerStore from '../../../store/container';
+} from '../../../event/index.js';
+import * as containerStore from '../../../store/container.js';
 
 const HASS_DEVICE_ID = 'wud';
 const HASS_DEVICE_NAME = 'wud';

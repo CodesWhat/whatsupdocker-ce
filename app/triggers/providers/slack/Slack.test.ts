@@ -3,7 +3,7 @@ import { ValidationError } from 'joi';
 import { WebClient } from '@slack/web-api';
 
 jest.mock('@slack/web-api');
-import Slack from './Slack';
+import Slack from './Slack.js';
 
 const slack = new Slack();
 

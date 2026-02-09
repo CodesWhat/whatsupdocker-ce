@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Quay from '../quay/Quay';
+import Quay from '../quay/Quay.js';
 
 /**
  * Linux-Server Container Registry integration.

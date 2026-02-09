@@ -4,7 +4,7 @@ import axios from 'axios';
 
 jest.mock('axios');
 
-import Ifttt from './Ifttt';
+import Ifttt from './Ifttt.js';
 
 const ifttt = new Ifttt();
 

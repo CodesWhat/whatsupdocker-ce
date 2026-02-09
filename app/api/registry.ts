@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as component from './component';
+import * as component from './component.js';
 
 /**
  * Init Router.

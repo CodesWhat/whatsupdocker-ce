@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as container from './container';
+import * as container from './container.js';
 
 test('model should be validated when compliant', async () => {
     const containerValidated = container.validate({
@@ -181,6 +181,117 @@ test('model should flag updateAvailable when digest is different', async () => {
     expect(containerValidated.updateAvailable).toBeTruthy();
 });
 
+test('model should suppress tag update when remote tag is skipped', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            skipTags: ['1.0.1'],
+        },
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: '1.0.0',
+                semver: true,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: '1.0.1',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
+    expect(containerValidated.updateKind).toEqual({
+        kind: 'tag',
+        localValue: '1.0.0',
+        remoteValue: '1.0.1',
+        semverDiff: 'patch',
+    });
+});
+
+test('model should suppress updates when snoozed in the future', async () => {
+    const snoozeUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            snoozeUntil,
+        },
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: '1.0.0',
+                semver: true,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: '1.0.1',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
+    expect(containerValidated.updateKind.kind).toBe('tag');
+});
+
+test('model should keep updateAvailable when remote tag changes past skipped value', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            skipTags: ['1.0.1'],
+        },
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: '1.0.0',
+                semver: true,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: '1.0.2',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeTruthy();
+    expect(containerValidated.updateKind.remoteValue).toBe('1.0.2');
+});
+
 test('model should flag updateAvailable when created is different', async () => {
     const containerValidated = container.validate({
         id: 'container-123456789',
@@ -217,8 +328,52 @@ test('model should flag updateAvailable when created is different', async () => 
         ...containerValidated,
     });
     containerDifferent.result.tag = 'y';
+    expect(containerValidated.updateAvailable).toBeTruthy();
+    expect(containerValidated.updateKind).toEqual({
+        kind: 'unknown',
+    });
     expect(containerValidated.resultChanged(containerEquals)).toBeFalsy();
     expect(containerValidated.resultChanged(containerDifferent)).toBeTruthy();
+});
+
+test('model should suppress created-only update when snoozed', async () => {
+    const snoozeUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            snoozeUntil,
+        },
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: 'latest',
+                semver: false,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: 'latest',
+            created: '2021-06-15T05:33:38.440Z',
+        },
+    });
+
+    expect(containerValidated.updateKind).toEqual({
+        kind: 'unknown',
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
 });
 
 test('model should support transforms for links', async () => {
@@ -545,6 +700,7 @@ test('addUpdateKindProperty should detect digest update', async () => {
                 semver: false,
             },
             digest: {
+                watch: true,
                 value: 'sha256:123465789',
             },
         },

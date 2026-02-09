@@ -1,9 +1,9 @@
 // @ts-nocheck
-import Docker from './Docker';
-import * as event from '../../../event';
-import * as storeContainer from '../../../store/container';
-import * as registry from '../../../registry';
-import { fullName } from '../../../model/container';
+import Docker from './Docker.js';
+import * as event from '../../../event/index.js';
+import * as storeContainer from '../../../store/container.js';
+import * as registry from '../../../registry/index.js';
+import { fullName } from '../../../model/container.js';
 
 // Mock all dependencies
 jest.mock('dockerode');
@@ -23,8 +23,8 @@ import mockCron from 'node-cron';
 import mockDebounce from 'just-debounce';
 import mockFs from 'fs';
 import mockParse from 'parse-docker-image-name';
-import * as mockTag from '../../../tag';
-import * as mockPrometheus from '../../../prometheus/watcher';
+import * as mockTag from '../../../tag/index.js';
+import * as mockPrometheus from '../../../prometheus/watcher.js';
 
 describe('Docker Watcher', () => {
     let docker;
@@ -1119,7 +1119,7 @@ describe('Docker Watcher', () => {
             });
 
             // Mock the validateContainer function to return the container
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockReturnValue({
@@ -1167,7 +1167,7 @@ describe('Docker Watcher', () => {
                 registry: { ghcr: mockRegistry },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1210,7 +1210,7 @@ describe('Docker Watcher', () => {
                 registry: { ghcr: mockRegistry },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1294,7 +1294,7 @@ describe('Docker Watcher', () => {
                 },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1359,7 +1359,7 @@ describe('Docker Watcher', () => {
                 },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1407,7 +1407,7 @@ describe('Docker Watcher', () => {
                 registry: { hub: mockRegistry },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockReturnValue({
@@ -1450,7 +1450,7 @@ describe('Docker Watcher', () => {
             });
 
             // Mock the validateContainer function to return the container
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockReturnValue({
@@ -1515,7 +1515,7 @@ describe('Docker Watcher', () => {
             });
 
             // Mock the validateContainer function to return the container
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockReturnValue({
@@ -1570,7 +1570,7 @@ describe('Docker Watcher', () => {
                 registry: { hub: mockRegistry },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1616,7 +1616,7 @@ describe('Docker Watcher', () => {
                 registry: { hub: mockRegistry },
             });
 
-            const containerModule = await import('../../../model/container');
+            const containerModule = await import('../../../model/container.js');
             const validateContainer = containerModule.validate;
             // @ts-ignore
             validateContainer.mockImplementation((c) => c);
@@ -1832,7 +1832,7 @@ describe('isDigestToWatch Logic', () => {
             registry: { registry: mockRegistry },
         });
 
-        const containerModule = await import('../../../model/container');
+        const containerModule = await import('../../../model/container.js');
         const validateContainer = containerModule.validate;
         // @ts-ignore
         validateContainer.mockImplementation((c) => c);

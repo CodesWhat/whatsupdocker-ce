@@ -3,15 +3,15 @@
  * Container store.
  */
 import { byString, byValues } from 'sort-es';
-import logger from '../log';
+import logger from '../log/index.js';
 const log = logger.child({ component: 'store' });
-import * as container from '../model/container';
+import * as container from '../model/container.js';
 const { validate: validateContainer } = container;
 import {
     emitContainerAdded,
     emitContainerUpdated,
     emitContainerRemoved,
-} from '../event';
+} from '../event/index.js';
 
 let containers;
 
@@ -45,7 +45,23 @@ export function insertContainer(container) {
  * @param container
  */
 export function updateContainer(container) {
-    const containerToReturn = validateContainer(container);
+    const hasUpdatePolicy = Object.prototype.hasOwnProperty.call(
+        container,
+        'updatePolicy',
+    );
+    const containerCurrentDoc =
+        typeof containers?.findOne === 'function'
+            ? containers.findOne({ 'data.id': container.id })
+            : undefined;
+    const containerCurrent = containerCurrentDoc
+        ? validateContainer(containerCurrentDoc.data)
+        : undefined;
+    const containerMerged = {
+        ...container,
+        updatePolicy:
+            hasUpdatePolicy ? container.updatePolicy : containerCurrent?.updatePolicy,
+    };
+    const containerToReturn = validateContainer(containerMerged);
 
     // Remove existing container
     containers

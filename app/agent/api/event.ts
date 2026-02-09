@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import logger from '../../log';
-import * as event from '../../event';
-import { Container } from '../../model/container';
-import { getVersion } from '../../configuration';
+import logger from '../../log/index.js';
+import * as event from '../../event/index.js';
+import { Container } from '../../model/container.js';
+import { getVersion } from '../../configuration/index.js';
 
 const log = logger.child({ component: 'agent-api-event' });
 

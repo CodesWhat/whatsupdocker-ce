@@ -1,7 +1,7 @@
 // @ts-nocheck
 import passJs from 'pass';
-import BasicStrategy from './BasicStrategy';
-import Authentication from '../Authentication';
+import BasicStrategy from './BasicStrategy.js';
+import Authentication from '../Authentication.js';
 
 /**
  * Htpasswd authentication.

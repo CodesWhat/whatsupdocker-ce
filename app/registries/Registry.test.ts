@@ -1,5 +1,5 @@
 // @ts-nocheck
-import log from '../log';
+import log from '../log/index.js';
 
 jest.mock('axios');
 jest.mock('../prometheus/registry', () => ({
@@ -8,7 +8,7 @@ jest.mock('../prometheus/registry', () => ({
     }),
 }));
 
-import Registry from './Registry';
+import Registry from './Registry.js';
 
 const registry = new Registry();
 registry.register('registry', 'hub', 'test', {});

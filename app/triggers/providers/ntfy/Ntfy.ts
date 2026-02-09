@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from 'axios';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * Ntfy Trigger implementation

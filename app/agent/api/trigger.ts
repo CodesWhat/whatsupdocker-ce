@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import * as registry from '../../registry';
-import { mapComponentsToList } from '../../api/component';
-import * as triggerApi from '../../api/trigger';
-import logger from '../../log';
+import * as registry from '../../registry/index.js';
+import { mapComponentsToList } from '../../api/component.js';
+import * as triggerApi from '../../api/trigger.js';
+import logger from '../../log/index.js';
 
 const log = logger.child({ component: 'agent-api-trigger' });
 

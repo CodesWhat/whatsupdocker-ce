@@ -6,10 +6,10 @@ const LokiStore = ConnectLoki(session);
 import passport from 'passport';
 import { v5 as uuidV5 } from 'uuid';
 import getmac from 'getmac';
-import * as store from '../store';
-import * as registry from '../registry';
-import log from '../log';
-import { getVersion } from '../configuration';
+import * as store from '../store/index.js';
+import * as registry from '../registry/index.js';
+import log from '../log/index.js';
+import { getVersion } from '../configuration/index.js';
 
 const router = express.Router();
 

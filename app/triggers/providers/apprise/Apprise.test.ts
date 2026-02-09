@@ -3,7 +3,7 @@ import { ValidationError } from 'joi';
 import axios from 'axios';
 
 jest.mock('axios');
-import Apprise from './Apprise';
+import Apprise from './Apprise.js';
 
 const apprise = new Apprise();
 

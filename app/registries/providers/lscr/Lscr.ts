@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Ghcr from '../ghcr/Ghcr';
+import Ghcr from '../ghcr/Ghcr.js';
 
 /**
  * Linux-Server Container Registry integration.

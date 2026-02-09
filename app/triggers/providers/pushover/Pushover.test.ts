@@ -11,7 +11,7 @@ jest.mock(
         },
 );
 
-import Pushover from './Pushover';
+import Pushover from './Pushover.js';
 
 const pushover = new Pushover();
 

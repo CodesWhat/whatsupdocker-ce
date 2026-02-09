@@ -2,11 +2,11 @@ import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
 import fs from 'fs';
 import { StringDecoder } from 'string_decoder';
-import logger from '../log';
-import * as storeContainer from '../store/container';
-import { emitContainerReport } from '../event';
-import { Container, ContainerReport } from '../model/container';
-import * as registry from '../registry';
+import logger from '../log/index.js';
+import * as storeContainer from '../store/container.js';
+import { emitContainerReport } from '../event/index.js';
+import { Container, ContainerReport } from '../model/container.js';
+import * as registry from '../registry/index.js';
 
 export interface AgentClientConfig {
     host: string;

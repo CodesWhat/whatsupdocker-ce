@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Gcr from './Gcr';
+import Gcr from './Gcr.js';
 
 jest.mock('axios', () =>
     jest.fn().mockImplementation(() => ({

@@ -1,6 +1,6 @@
 import joi from 'joi';
 import flat from 'flat';
-import * as tag from '../tag';
+import * as tag from '../tag/index.js';
 const { parse: parseSemver, diff: diffSemver, transform: transformTag } = tag;
 
 export interface ContainerImage {
@@ -41,6 +41,12 @@ export interface ContainerUpdateKind {
     semverDiff?: 'major' | 'minor' | 'patch' | 'prerelease' | 'unknown';
 }
 
+export interface ContainerUpdatePolicy {
+    skipTags?: string[];
+    skipDigests?: string[];
+    snoozeUntil?: string;
+}
+
 export interface Container {
     id: string;
     name: string;
@@ -56,6 +62,7 @@ export interface Container {
     link?: string;
     triggerInclude?: string;
     triggerExclude?: string;
+    updatePolicy?: ContainerUpdatePolicy;
     image: ContainerImage;
     result?: ContainerResult;
     error?: {
@@ -88,6 +95,11 @@ const schema = joi.object({
     link: joi.string(),
     triggerInclude: joi.string(),
     triggerExclude: joi.string(),
+    updatePolicy: joi.object({
+        skipTags: joi.array().items(joi.string()),
+        skipDigests: joi.array().items(joi.string()),
+        snoozeUntil: joi.string().isoDate(),
+    }),
     image: joi
         .object({
             id: joi.string().min(1).required(),
@@ -143,6 +155,208 @@ const schema = joi.object({
     labels: joi.object(),
 });
 
+function getRawTagUpdate(container: Container): ContainerUpdateKind {
+    const updateKind: ContainerUpdateKind = {
+        kind: 'unknown',
+        localValue: undefined,
+        remoteValue: undefined,
+        semverDiff: undefined,
+    };
+    if (!container.image || !container.result) {
+        return updateKind;
+    }
+    if (
+        container.image.tag?.value === undefined ||
+        container.result.tag === undefined
+    ) {
+        return updateKind;
+    }
+
+    let hasTagOrCreatedUpdate = false;
+    let hasTagUpdate = false;
+    const localTag = transformTag(
+        container.transformTags,
+        container.image.tag.value,
+    );
+    const remoteTag = transformTag(container.transformTags, container.result.tag);
+    hasTagUpdate = localTag !== remoteTag;
+    hasTagOrCreatedUpdate = hasTagUpdate;
+
+    // Fallback to image created date (especially for legacy v1 manifests)
+    if (
+        container.image.created !== undefined &&
+        container.result.created !== undefined
+    ) {
+        const createdDate = new Date(container.image.created).getTime();
+        const createdDateResult = new Date(container.result.created).getTime();
+        hasTagOrCreatedUpdate =
+            hasTagOrCreatedUpdate || createdDate !== createdDateResult;
+    }
+
+    if (!hasTagOrCreatedUpdate) {
+        return updateKind;
+    }
+    if (!hasTagUpdate) {
+        // Created-date-only updates are considered updates, but they do not
+        // carry a stable remote value to be skipped as a specific version.
+        return updateKind;
+    }
+
+    let semverDiffWud: ContainerUpdateKind['semverDiff'] = 'unknown';
+    const isSemver = container.image.tag.semver;
+    if (isSemver) {
+        const semverDiff = diffSemver(
+            transformTag(container.transformTags, container.image.tag.value),
+            transformTag(container.transformTags, container.result.tag),
+        );
+        switch (semverDiff) {
+            case 'major':
+            case 'premajor':
+                semverDiffWud = 'major';
+                break;
+            case 'minor':
+            case 'preminor':
+                semverDiffWud = 'minor';
+                break;
+            case 'patch':
+            case 'prepatch':
+                semverDiffWud = 'patch';
+                break;
+            case 'prerelease':
+                semverDiffWud = 'prerelease';
+                break;
+            default:
+                semverDiffWud = 'unknown';
+        }
+    }
+
+    return {
+        kind: 'tag',
+        localValue: container.image.tag.value,
+        remoteValue: container.result.tag,
+        semverDiff: semverDiffWud,
+    };
+}
+
+function getRawDigestUpdate(container: Container): ContainerUpdateKind {
+    const updateKind: ContainerUpdateKind = {
+        kind: 'unknown',
+        localValue: undefined,
+        remoteValue: undefined,
+        semverDiff: undefined,
+    };
+    if (!container.image || !container.result) {
+        return updateKind;
+    }
+    if (
+        container.image.digest?.watch &&
+        container.image.digest.value !== undefined &&
+        container.result.digest !== undefined &&
+        container.image.digest.value !== container.result.digest
+    ) {
+        return {
+            kind: 'digest',
+            localValue: container.image.digest.value,
+            remoteValue: container.result.digest,
+            semverDiff: undefined,
+        };
+    }
+    return updateKind;
+}
+
+function getRawUpdateKind(container: Container): ContainerUpdateKind {
+    const unknownUpdateKind: ContainerUpdateKind = {
+        kind: 'unknown',
+        localValue: undefined,
+        remoteValue: undefined,
+        semverDiff: undefined,
+    };
+    if (!container.image || !container.result) {
+        return unknownUpdateKind;
+    }
+
+    // Digest watch mode takes precedence over tag-based updates.
+    if (
+        container.image.digest?.watch &&
+        container.image.digest.value !== undefined &&
+        container.result.digest !== undefined
+    ) {
+        return getRawDigestUpdate(container);
+    }
+    return getRawTagUpdate(container);
+}
+
+function hasRawUpdate(container: Container): boolean {
+    if (!container.image || !container.result) {
+        return false;
+    }
+
+    if (
+        container.image.digest?.watch &&
+        container.image.digest.value !== undefined &&
+        container.result.digest !== undefined
+    ) {
+        return container.image.digest.value !== container.result.digest;
+    }
+
+    const localTag = transformTag(
+        container.transformTags,
+        container.image.tag.value,
+    );
+    const remoteTag = transformTag(container.transformTags, container.result.tag);
+    let updateAvailable = localTag !== remoteTag;
+
+    // Fallback to image created date (especially for legacy v1 manifests)
+    if (
+        container.image.created !== undefined &&
+        container.result.created !== undefined
+    ) {
+        const createdDate = new Date(container.image.created).getTime();
+        const createdDateResult = new Date(container.result.created).getTime();
+
+        updateAvailable = updateAvailable || createdDate !== createdDateResult;
+    }
+    return updateAvailable;
+}
+
+function isUpdateSuppressed(
+    container: Container,
+    updateKind: ContainerUpdateKind,
+): boolean {
+    const updatePolicy = container.updatePolicy;
+    if (!updatePolicy) {
+        return false;
+    }
+
+    if (updatePolicy.snoozeUntil) {
+        const snoozeUntilDate = new Date(updatePolicy.snoozeUntil);
+        if (
+            !Number.isNaN(snoozeUntilDate.getTime()) &&
+            snoozeUntilDate.getTime() > Date.now()
+        ) {
+            return true;
+        }
+    }
+
+    if (
+        updateKind.kind === 'tag' &&
+        updateKind.remoteValue &&
+        Array.isArray(updatePolicy.skipTags)
+    ) {
+        return updatePolicy.skipTags.includes(updateKind.remoteValue);
+    }
+
+    if (
+        updateKind.kind === 'digest' &&
+        updateKind.remoteValue &&
+        Array.isArray(updatePolicy.skipDigests)
+    ) {
+        return updatePolicy.skipDigests.includes(updateKind.remoteValue);
+    }
+
+    return false;
+}
+
 /**
  * Render Link template.
  * @param container
@@ -195,45 +409,11 @@ function addUpdateAvailableProperty(container: Container) {
     Object.defineProperty(container, 'updateAvailable', {
         enumerable: true,
         get(this: Container) {
-            if (this.image === undefined || this.result === undefined) {
+            if (!hasRawUpdate(this)) {
                 return false;
             }
-
-            // Compare digests if we have them
-            if (
-                this.image.digest.watch &&
-                this.image.digest.value !== undefined &&
-                this.result.digest !== undefined
-            ) {
-                return this.image.digest.value !== this.result.digest;
-            }
-
-            // Compare tags otherwise
-            let updateAvailable = false;
-            const localTag = transformTag(
-                container.transformTags,
-                this.image.tag.value,
-            );
-            const remoteTag = transformTag(
-                container.transformTags,
-                this.result.tag,
-            );
-            updateAvailable = localTag !== remoteTag;
-
-            // Fallback to image created date (especially for legacy v1 manifests)
-            if (
-                this.image.created !== undefined &&
-                this.result.created !== undefined
-            ) {
-                const createdDate = new Date(this.image.created).getTime();
-                const createdDateResult = new Date(
-                    this.result.created!,
-                ).getTime();
-
-                updateAvailable =
-                    updateAvailable || createdDate !== createdDateResult;
-            }
-            return updateAvailable;
+            const updateKind = getRawUpdateKind(this);
+            return !isUpdateSuppressed(this, updateKind);
         },
     });
 }
@@ -272,76 +452,7 @@ function addUpdateKindProperty(container: Container) {
     Object.defineProperty(container, 'updateKind', {
         enumerable: true,
         get(this: Container) {
-            const updateKind: ContainerUpdateKind = {
-                kind: 'unknown',
-                localValue: undefined,
-                remoteValue: undefined,
-                semverDiff: undefined,
-            };
-            if (
-                container.image === undefined ||
-                container.result === undefined
-            ) {
-                return updateKind;
-            }
-            if (!container.updateAvailable) {
-                return updateKind;
-            }
-
-            if (
-                container.image !== undefined &&
-                container.result !== undefined &&
-                container.updateAvailable
-            ) {
-                if (container.image.tag.value !== container.result.tag) {
-                    updateKind.kind = 'tag';
-                    let semverDiffWud: ContainerUpdateKind['semverDiff'] =
-                        'unknown';
-                    const isSemver = container.image.tag.semver;
-                    if (isSemver) {
-                        const semverDiff = diffSemver(
-                            transformTag(
-                                container.transformTags,
-                                container.image.tag.value,
-                            ),
-                            transformTag(
-                                container.transformTags,
-                                container.result.tag,
-                            ),
-                        );
-                        switch (semverDiff) {
-                            case 'major':
-                            case 'premajor':
-                                semverDiffWud = 'major';
-                                break;
-                            case 'minor':
-                            case 'preminor':
-                                semverDiffWud = 'minor';
-                                break;
-                            case 'patch':
-                            case 'prepatch':
-                                semverDiffWud = 'patch';
-                                break;
-                            case 'prerelease':
-                                semverDiffWud = 'prerelease';
-                                break;
-                            default:
-                                semverDiffWud = 'unknown';
-                        }
-                    }
-                    updateKind.localValue = container.image.tag.value;
-                    updateKind.remoteValue = container.result.tag;
-                    updateKind.semverDiff = semverDiffWud;
-                } else if (
-                    container.image.digest &&
-                    container.image.digest.value !== container.result.digest
-                ) {
-                    updateKind.kind = 'digest';
-                    updateKind.localValue = container.image.digest.value;
-                    updateKind.remoteValue = container.result.digest;
-                }
-            }
-            return updateKind;
+            return getRawUpdateKind(this);
         },
     });
 }

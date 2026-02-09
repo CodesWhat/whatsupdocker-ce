@@ -1,7 +1,7 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
-import { getServerConfiguration } from '../configuration';
+import { getServerConfiguration } from '../configuration/index.js';
 
 const router = express.Router();
 

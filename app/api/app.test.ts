@@ -18,7 +18,7 @@ jest.mock('express', () => ({
 
 jest.mock('nocache', () => jest.fn());
 
-import * as appRouter from './app';
+import * as appRouter from './app.js';
 
 describe('App Router', () => {
     beforeEach(async () => {
@@ -34,7 +34,7 @@ describe('App Router', () => {
     });
 
     test('should call getAppInfos when route handler is called', async () => {
-        const storeApp = await import('../store/app');
+        const storeApp = await import('../store/app.js');
         const router = appRouter.init();
 
         // Get the route handler function

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * Mock Trigger implementation (for tests)

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from 'axios';
-import BaseRegistry from '../../BaseRegistry';
+import BaseRegistry from '../../BaseRegistry.js';
 
 /**
  * Google Container Registry integration.

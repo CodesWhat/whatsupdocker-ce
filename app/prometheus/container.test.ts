@@ -2,9 +2,9 @@
 jest.mock('../store/container');
 jest.mock('../log');
 
-import * as store from '../store/container';
-import * as container from './container';
-import log from '../log';
+import * as store from '../store/container.js';
+import * as container from './container.js';
+import log from '../log/index.js';
 
 test('gauge must be populated when containers are in the store', async () => {
     jest.useFakeTimers();

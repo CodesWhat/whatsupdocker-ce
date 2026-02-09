@@ -1,12 +1,12 @@
 // @ts-nocheck
-import { getVersion } from './configuration';
-import log from './log';
-import * as store from './store';
-import * as registry from './registry';
-import * as api from './api';
-import * as prometheus from './prometheus';
-import * as agentServer from './agent/api';
-import * as agentManager from './agent';
+import { getVersion } from './configuration/index.js';
+import log from './log/index.js';
+import * as store from './store/index.js';
+import * as registry from './registry/index.js';
+import * as api from './api/index.js';
+import * as prometheus from './prometheus/index.js';
+import * as agentServer from './agent/api/index.js';
+import * as agentManager from './agent/index.js';
 
 async function main() {
     const isAgent = process.argv.includes('--agent');

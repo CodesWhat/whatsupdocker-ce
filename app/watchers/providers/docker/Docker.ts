@@ -5,13 +5,15 @@ import JoiCronExpression from 'joi-cron-expression';
 const joi = JoiCronExpression(Joi);
 import cron from 'node-cron';
 import parse from 'parse-docker-image-name';
-import debounce from 'just-debounce';
+import debounceImport from 'just-debounce';
+const debounce: typeof import('just-debounce').default =
+    (debounceImport as any).default || (debounceImport as any);
 import {
     parse as parseSemver,
     isGreater as isGreaterSemver,
     transform as transformTag,
-} from '../../../tag';
-import * as event from '../../../event';
+} from '../../../tag/index.js';
+import * as event from '../../../event/index.js';
 import {
     wudWatch,
     wudTagInclude,
@@ -26,19 +28,19 @@ import {
     wudDisplayIcon,
     wudTriggerInclude,
     wudTriggerExclude,
-} from './label';
-import * as storeContainer from '../../../store/container';
-import log from '../../../log';
+} from './label.js';
+import * as storeContainer from '../../../store/container.js';
+import log from '../../../log/index.js';
 import {
     validate as validateContainer,
     fullName,
     Container,
     ContainerImage,
-} from '../../../model/container';
-import * as registry from '../../../registry';
-import { getWatchContainerGauge } from '../../../prometheus/watcher';
-import Watcher from '../../Watcher';
-import { ComponentConfiguration } from '../../../registry/Component';
+} from '../../../model/container.js';
+import * as registry from '../../../registry/index.js';
+import { getWatchContainerGauge } from '../../../prometheus/watcher.js';
+import Watcher from '../../Watcher.js';
+import { ComponentConfiguration } from '../../../registry/Component.js';
 
 export interface DockerWatcherConfiguration extends ComponentConfiguration {
     socket: string;

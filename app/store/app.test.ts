@@ -1,6 +1,6 @@
 // @ts-nocheck
-import * as app from './app';
-import * as migrate from './migrate';
+import * as app from './app.js';
+import * as migrate from './migrate.js';
 
 jest.mock('../configuration', () => ({
     getVersion: () => '2.0.0',

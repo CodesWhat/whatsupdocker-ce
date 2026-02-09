@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { EventEmitter } from 'events';
-import Docker from '../docker/Docker';
-import Dockercompose from './Dockercompose';
-import { getState } from '../../../registry';
+import Docker from '../docker/Docker.js';
+import Dockercompose from './Dockercompose.js';
+import { getState } from '../../../registry/index.js';
 
 jest.mock('../../../registry', () => ({
     getState: jest.fn(),

@@ -3,7 +3,7 @@
  * Semver utils.
  */
 import semver from 'semver';
-import log from '../log';
+import log from '../log/index.js';
 
 /**
  * Parse a string to a semver (return null is it cannot be parsed as a valid semver).

@@ -1,8 +1,8 @@
 // @ts-nocheck
-import * as component from './component';
-import * as registry from '../registry';
-import * as agent from '../agent';
-import logger from '../log';
+import * as component from './component.js';
+import * as registry from '../registry/index.js';
+import * as agent from '../agent/index.js';
+import logger from '../log/index.js';
 
 const log = logger.child({ component: 'trigger' });
 

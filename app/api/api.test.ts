@@ -41,7 +41,7 @@ jest.mock('./auth', () => ({
     requireAuthentication: jest.fn((req, res, next) => next()),
 }));
 
-import * as api from './api';
+import * as api from './api.js';
 
 describe('API Router', () => {
     let router;
@@ -56,16 +56,16 @@ describe('API Router', () => {
     });
 
     test('should mount all sub-routers', async () => {
-        const appRouter = await import('./app');
-        const containerRouter = await import('./container');
-        const watcherRouter = await import('./watcher');
-        const triggerRouter = await import('./trigger');
-        const registryRouter = await import('./registry');
-        const authenticationRouter = await import('./authentication');
-        const logRouter = await import('./log');
-        const storeRouter = await import('./store');
-        const serverRouter = await import('./server');
-        const agentRouter = await import('./agent');
+        const appRouter = await import('./app.js');
+        const containerRouter = await import('./container.js');
+        const watcherRouter = await import('./watcher.js');
+        const triggerRouter = await import('./trigger.js');
+        const registryRouter = await import('./registry.js');
+        const authenticationRouter = await import('./authentication.js');
+        const logRouter = await import('./log.js');
+        const storeRouter = await import('./store.js');
+        const serverRouter = await import('./server.js');
+        const agentRouter = await import('./agent.js');
 
         expect(appRouter.init).toHaveBeenCalled();
         expect(containerRouter.init).toHaveBeenCalled();
@@ -80,7 +80,7 @@ describe('API Router', () => {
     });
 
     test('should use requireAuthentication middleware', async () => {
-        const auth = await import('./auth');
+        const auth = await import('./auth.js');
         expect(router.use).toHaveBeenCalledWith(auth.requireAuthentication);
     });
 });

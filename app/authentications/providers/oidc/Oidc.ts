@@ -1,16 +1,22 @@
 // @ts-nocheck
-import { Issuer, generators, custom } from 'openid-client';
 import { v4 as uuid } from 'uuid';
-import Authentication from '../Authentication';
-import OidcStrategy from './OidcStrategy';
-import { getPublicUrl } from '../../../configuration';
+import * as openidClientLibrary from 'openid-client';
+import Authentication from '../Authentication.js';
+import OidcStrategy from './OidcStrategy.js';
+import { getPublicUrl } from '../../../configuration/index.js';
 
 /**
  * Htpasswd authentication.
  */
 class Oidc extends Authentication {
+    openidClient = openidClientLibrary;
+
     getSessionKey() {
         return this.name || 'default';
+    }
+
+    async getOpenIdClient() {
+        return this.openidClient;
     }
 
     /**
@@ -46,17 +52,19 @@ class Oidc extends Authentication {
         this.log.debug(
             `Discovering configuration from ${this.configuration.discovery}`,
         );
-        custom.setHttpOptionsDefaults({
-            timeout: this.configuration.timeout,
-        });
-        const issuer = await Issuer.discover(this.configuration.discovery);
-        this.client = new issuer.Client({
-            client_id: this.configuration.clientid,
-            client_secret: this.configuration.clientsecret,
-            response_types: ['code'],
-        });
+        const openidClient = await this.getOpenIdClient();
+        const timeoutSeconds = Math.ceil(this.configuration.timeout / 1000);
+        this.client = await openidClient.discovery(
+            new URL(this.configuration.discovery),
+            this.configuration.clientid,
+            this.configuration.clientsecret,
+            openidClient.ClientSecretPost(this.configuration.clientsecret),
+            {
+                timeout: timeoutSeconds,
+            },
+        );
         try {
-            this.logoutUrl = this.client.endSessionUrl();
+            this.logoutUrl = openidClient.buildEndSessionUrl(this.client).href;
         } catch (e) {
             this.log.warn(` End session url is not supported (${e.message})`);
         }
@@ -97,8 +105,10 @@ class Oidc extends Authentication {
     }
 
     async redirect(req, res) {
-        const codeVerifier = generators.codeVerifier();
-        const codeChallenge = generators.codeChallenge(codeVerifier);
+        const openidClient = await this.getOpenIdClient();
+        const codeVerifier = openidClient.randomPKCECodeVerifier();
+        const codeChallenge =
+            await openidClient.calculatePKCECodeChallenge(codeVerifier);
         const state = uuid();
         const sessionKey = this.getSessionKey();
 
@@ -117,13 +127,15 @@ class Oidc extends Authentication {
             codeVerifier,
             state,
         };
-        const authUrl = `${this.client.authorizationUrl({
-            redirect_uri: `${getPublicUrl(req)}/auth/oidc/${this.name}/cb`,
-            scope: 'openid email profile',
-            code_challenge_method: 'S256',
-            code_challenge: codeChallenge,
-            state,
-        })}`;
+        const authUrl = openidClient
+            .buildAuthorizationUrl(this.client, {
+                redirect_uri: `${getPublicUrl(req)}/auth/oidc/${this.name}/cb`,
+                scope: 'openid email profile',
+                code_challenge_method: 'S256',
+                code_challenge: codeChallenge,
+                state,
+            })
+            .href;
         this.log.debug(`Build redirection url [${authUrl}]`);
 
         try {
@@ -152,7 +164,7 @@ class Oidc extends Authentication {
     async callback(req, res) {
         try {
             this.log.debug('Validate callback data');
-            const params = this.client.callbackParams(req);
+            const openidClient = await this.getOpenIdClient();
             const sessionKey = this.getSessionKey();
             const oidcChecks =
                 req.session && req.session.oidc
@@ -173,15 +185,23 @@ class Oidc extends Authentication {
                 return;
             }
 
-            const tokenSet = await this.client.callback(
-                `${getPublicUrl(req)}/auth/oidc/${this.name}/cb`,
-                params,
+            const callbackUrl = new URL(
+                req.originalUrl || req.url,
+                `${getPublicUrl(req)}/`,
+            );
+            const tokenSet = await openidClient.authorizationCodeGrant(
+                this.client,
+                callbackUrl,
                 {
-                    response_type: 'code',
-                    code_verifier: oidcChecks.codeVerifier,
-                    state: oidcChecks.state,
+                    pkceCodeVerifier: oidcChecks.codeVerifier,
+                    expectedState: oidcChecks.state,
                 },
             );
+            if (!tokenSet.access_token) {
+                throw new Error(
+                    'Access token is missing from OIDC authorization response',
+                );
+            }
 
             if (req.session && req.session.oidc) {
                 delete req.session.oidc[sessionKey];
@@ -222,7 +242,12 @@ class Oidc extends Authentication {
     }
 
     async getUserFromAccessToken(accessToken) {
-        const userInfo = await this.client.userinfo(accessToken);
+        const openidClient = await this.getOpenIdClient();
+        const userInfo = await openidClient.fetchUserInfo(
+            this.client,
+            accessToken,
+            openidClient.skipSubjectCheck,
+        );
         return {
             username: userInfo.email || 'unknown',
         };

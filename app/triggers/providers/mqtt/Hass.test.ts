@@ -1,6 +1,6 @@
 // @ts-nocheck
-import log from '../../../log';
-import Hass from './Hass';
+import log from '../../../log/index.js';
+import Hass from './Hass.js';
 
 const containerData = [
     {

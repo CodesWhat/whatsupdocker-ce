@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
-import * as event from '../../event';
-import log from '../../log';
-import Trigger from './Trigger';
+import * as event from '../../event/index.js';
+import log from '../../log/index.js';
+import Trigger from './Trigger.js';
 
 jest.mock('../../log');
 jest.mock('../../event');

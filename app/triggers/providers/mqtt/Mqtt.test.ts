@@ -1,11 +1,11 @@
 // @ts-nocheck
 import { ValidationError } from 'joi';
 import mqttClient from 'mqtt';
-import log from '../../../log';
-import { flatten } from '../../../model/container';
+import log from '../../../log/index.js';
+import { flatten } from '../../../model/container.js';
 
 jest.mock('mqtt');
-import Mqtt from './Mqtt';
+import Mqtt from './Mqtt.js';
 
 const mqtt = new Mqtt();
 mqtt.log = log;

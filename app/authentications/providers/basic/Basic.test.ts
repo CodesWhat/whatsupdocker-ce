@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Basic from './Basic';
+import Basic from './Basic.js';
 
 describe('Basic Authentication', () => {
     let basic;

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import Push from 'pushover-notifications';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /**
  * Ifttt Trigger implementation

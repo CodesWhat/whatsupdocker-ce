@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { WebClient } from '@slack/web-api';
-import Trigger from '../Trigger';
+import Trigger from '../Trigger.js';
 
 /*
  * Slack Trigger implementation

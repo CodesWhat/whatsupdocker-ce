@@ -2,8 +2,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import yaml from 'yaml';
-import Docker from '../docker/Docker';
-import { getState } from '../../../registry';
+import Docker from '../docker/Docker.js';
+import { getState } from '../../../registry/index.js';
 
 function getServiceKey(compose, container, currentImage) {
     const composeServiceName = container.labels?.['com.docker.compose.service'];

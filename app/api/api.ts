@@ -1,16 +1,16 @@
 // @ts-nocheck
 import express from 'express';
-import * as appRouter from './app';
-import * as containerRouter from './container';
-import * as watcherRouter from './watcher';
-import * as triggerRouter from './trigger';
-import * as registryRouter from './registry';
-import * as authenticationRouter from './authentication';
-import * as logRouter from './log';
-import * as storeRouter from './store';
-import * as serverRouter from './server';
-import { requireAuthentication } from './auth';
-import * as agentRouter from './agent';
+import * as appRouter from './app.js';
+import * as containerRouter from './container.js';
+import * as watcherRouter from './watcher.js';
+import * as triggerRouter from './trigger.js';
+import * as registryRouter from './registry.js';
+import * as authenticationRouter from './authentication.js';
+import * as logRouter from './log.js';
+import * as storeRouter from './store.js';
+import * as serverRouter from './server.js';
+import { requireAuthentication } from './auth.js';
+import * as agentRouter from './agent.js';
 
 /**
  * Init the API router.

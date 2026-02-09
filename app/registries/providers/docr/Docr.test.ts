@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Docr from './Docr';
+import Docr from './Docr.js';
 
 const docr = new Docr();
 

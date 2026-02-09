@@ -1,4 +1,4 @@
-import Component from '../../registry/Component';
+import Component from '../../registry/Component.js';
 import { Strategy } from 'passport';
 
 class Authentication extends Component {

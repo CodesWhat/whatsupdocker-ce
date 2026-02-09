@@ -1,5 +1,5 @@
 // @ts-nocheck
-import * as configuration from './index';
+import * as configuration from './index.js';
 
 test('getVersion should return wud version', async () => {
     configuration.wudEnvVars.WUD_VERSION = 'x.y.z';

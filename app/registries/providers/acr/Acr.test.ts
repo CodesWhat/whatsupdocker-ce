@@ -1,5 +1,5 @@
 // @ts-nocheck
-import Acr from './Acr';
+import Acr from './Acr.js';
 
 const acr = new Acr();
 acr.configuration = {

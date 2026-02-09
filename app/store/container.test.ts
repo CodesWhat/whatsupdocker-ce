@@ -1,6 +1,6 @@
 // @ts-nocheck
-import * as container from './container';
-import * as event from '../event';
+import * as container from './container.js';
+import * as event from '../event/index.js';
 
 jest.mock('./migrate');
 jest.mock('../event');
@@ -125,6 +125,167 @@ test('updateContainer should update doc and emit an event', async () => {
     container.updateContainer(containerToSave);
     expect(spyInsert).toHaveBeenCalled();
     expect(spyEvent).toHaveBeenCalled();
+});
+
+test('updateContainer should preserve updatePolicy when omitted from payload', async () => {
+    const existingContainer = {
+        data: {
+            id: 'container-123456789',
+            name: 'test',
+            watcher: 'test',
+            updatePolicy: {
+                skipTags: ['2.0.0'],
+            },
+            image: {
+                id: 'image-123456789',
+                registry: {
+                    name: 'registry',
+                    url: 'https://hub',
+                },
+                name: 'organization/image',
+                tag: {
+                    value: 'version',
+                    semver: false,
+                },
+                digest: {
+                    watch: false,
+                    repo: undefined,
+                },
+                architecture: 'arch',
+                os: 'os',
+                created: '2021-06-12T05:33:38.440Z',
+            },
+            result: {
+                tag: 'version',
+            },
+        },
+    };
+    const collection = {
+        findOne: () => existingContainer,
+        insert: () => {},
+        chain: () => ({
+            find: () => ({
+                remove: () => ({}),
+            }),
+        }),
+    };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    const containerToSave = {
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'registry',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: 'version',
+                semver: false,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: 'version',
+        },
+    };
+
+    container.createCollections(db);
+    const updated = container.updateContainer(containerToSave);
+    expect(updated.updatePolicy).toEqual({
+        skipTags: ['2.0.0'],
+    });
+});
+
+test('updateContainer should clear updatePolicy when explicitly set to undefined', async () => {
+    const existingContainer = {
+        data: {
+            id: 'container-123456789',
+            name: 'test',
+            watcher: 'test',
+            updatePolicy: {
+                skipTags: ['2.0.0'],
+            },
+            image: {
+                id: 'image-123456789',
+                registry: {
+                    name: 'registry',
+                    url: 'https://hub',
+                },
+                name: 'organization/image',
+                tag: {
+                    value: 'version',
+                    semver: false,
+                },
+                digest: {
+                    watch: false,
+                    repo: undefined,
+                },
+                architecture: 'arch',
+                os: 'os',
+                created: '2021-06-12T05:33:38.440Z',
+            },
+            result: {
+                tag: 'version',
+            },
+        },
+    };
+    const collection = {
+        findOne: () => existingContainer,
+        insert: () => {},
+        chain: () => ({
+            find: () => ({
+                remove: () => ({}),
+            }),
+        }),
+    };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    const containerToSave = {
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: undefined,
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'registry',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: 'version',
+                semver: false,
+            },
+            digest: {
+                watch: false,
+                repo: undefined,
+            },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: {
+            tag: 'version',
+        },
+    };
+
+    container.createCollections(db);
+    const updated = container.updateContainer(containerToSave);
+    expect(updated.updatePolicy).toBeUndefined();
 });
 
 test('getContainers should return all containers sorted by name', async () => {
