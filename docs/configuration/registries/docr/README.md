@@ -23,7 +23,7 @@ The `docr` registry lets you configure [DigitalOcean Container Registry](https:/
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_REGISTRY_DOCR_PRIVATE_TOKEN=dop_v1_xxxxxxxxxxxxx
@@ -33,7 +33,7 @@ services:
 docker run \
   -e "WUD_REGISTRY_DOCR_PRIVATE_TOKEN=dop_v1_xxxxxxxxxxxxx" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -44,7 +44,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_REGISTRY_DOCR_PRIVATE_LOGIN=doctl
@@ -56,7 +56,7 @@ docker run \
   -e "WUD_REGISTRY_DOCR_PRIVATE_LOGIN=doctl" \
   -e "WUD_REGISTRY_DOCR_PRIVATE_PASSWORD=dop_v1_xxxxxxxxxxxxx" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -80,5 +80,5 @@ use:
 docker run \
   -e "WUD_REGISTRY_DOCR_PRIVATE_AUTH=ZG9jdGw6ZG9wX3YxX3h4eHh4eHh4eHh4" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```

@@ -86,6 +86,8 @@ describe('Dockercompose Trigger', () => {
             service: 'portainer',
             current: 'portainer/portainer-ce:2.27.4',
             update: 'portainer/portainer-ce:2.27.5',
+            currentNormalized: 'portainer/portainer-ce:2.27.4',
+            updateNormalized: 'portainer/portainer-ce:2.27.5',
         });
     });
 
@@ -222,6 +224,43 @@ describe('Dockercompose Trigger', () => {
         jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
                 redis: { image: 'redis:7.0.0' },
+            },
+        });
+
+        const getComposeFileSpy = jest.spyOn(trigger, 'getComposeFile');
+        const writeComposeFileSpy = jest.spyOn(trigger, 'writeComposeFile');
+        const dockerTriggerSpy = jest
+            .spyOn(Docker.prototype, 'trigger')
+            .mockResolvedValue();
+
+        await trigger.processComposeFile('/tmp/stack.yml', [container]);
+
+        expect(getComposeFileSpy).not.toHaveBeenCalled();
+        expect(writeComposeFileSpy).not.toHaveBeenCalled();
+        expect(dockerTriggerSpy).not.toHaveBeenCalled();
+        expect(mockLog.info).toHaveBeenCalledWith(
+            expect.stringContaining('already up to date'),
+        );
+    });
+
+    test('processComposeFile should treat implicit latest as up to date', async () => {
+        trigger.configuration.dryrun = false;
+        const container = {
+            name: 'nginx',
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: 'latest' },
+            },
+            updateKind: {
+                kind: 'digest',
+                remoteValue: 'sha256:deadbeef',
+            },
+        };
+
+        jest.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { image: 'nginx' },
             },
         });
 

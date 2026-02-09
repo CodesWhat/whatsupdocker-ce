@@ -6,6 +6,8 @@
     - [Registries](configuration/registries/)
         - [ACR](configuration/registries/acr/)
         - [CUSTOM](configuration/registries/custom/)
+        - [DOCR](configuration/registries/docr/)
+        - [DHI](configuration/registries/dhi/)
         - [ECR](configuration/registries/ecr/)
         - [FORGEJO](configuration/registries/forgejo/)
         - [GCR](configuration/registries/gcr/)

@@ -56,7 +56,7 @@ All implemented triggers, in addition to their specific configuration, also supp
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_TRIGGER_SMTP_GMAIL_SIMPLETITLE=Container $${container.name} can be updated
@@ -68,6 +68,6 @@ docker run \
   -e 'WUD_TRIGGER_SMTP_GMAIL_SIMPLETITLE=Container ${container.name} can be updated' \
   -e 'WUD_TRIGGER_SMTP_GMAIL_SIMPLEBODY=Container ${name} can be updated from ${local.substring(0, 15)} to ${remote.substring(0, 15)}'
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->

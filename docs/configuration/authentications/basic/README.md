@@ -29,7 +29,7 @@ or escape them in Bash commands \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_AUTH_BASIC_JOHN_USER=john
@@ -49,7 +49,7 @@ docker run \
   -e WUD_AUTH_BASIC_JANE_USER="bob" \
   -e WUD_AUTH_BASIC_JANE_HASH='$apr1$aefKbZEa$ZSA5Y3zv9vDQOxr283NGx/' \    
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 

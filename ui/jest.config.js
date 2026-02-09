@@ -12,6 +12,7 @@ module.exports = {
   extensionsToTreatAsEsm: ['.vue'],
   moduleNameMapper: {
     '\\.(svg|png|jpe?g|gif|webp)$': '<rootDir>/tests/mocks/svgMock.js',
+    '^@vue/devtools-api$': '<rootDir>/tests/mocks/vueDevtoolsApiMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@vue/test-utils$': '<rootDir>/node_modules/@vue/test-utils/dist/vue-test-utils.cjs.js'
   },

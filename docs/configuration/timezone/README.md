@@ -10,14 +10,14 @@ If you prefer using a local timezone, you have 2 solutions:
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     volumes:
       - /etc/localtime:/etc/localtime:ro
 ```
 #### **Docker**
 ```bash
-docker run -v /etc/localtime:/etc/localtime:ro ... ghcr.io/codeswhat/whatsupdocker-ce
+docker run -v /etc/localtime:/etc/localtime:ro ... ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -28,14 +28,14 @@ docker run -v /etc/localtime:/etc/localtime:ro ... ghcr.io/codeswhat/whatsupdock
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - TZ=Europe/Paris
 ```
 #### **Docker**
 ```bash
-docker run -e "TZ=Europe/Paris" ... ghcr.io/codeswhat/whatsupdocker-ce
+docker run -e "TZ=Europe/Paris" ... ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 

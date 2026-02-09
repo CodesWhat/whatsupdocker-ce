@@ -13,7 +13,7 @@ Keep your containers up-to-date.
 
 <p align="center">
   <a href="docs/quickstart/README.md"><img src="https://img.shields.io/badge/docs-quickstart-1f6feb" alt="Quickstart docs"></a>
-  <a href="https://github.com/orgs/CodesWhat/packages/container/package/whatsupdocker-ce"><img src="https://img.shields.io/badge/GHCR-image-2ea44f" alt="GHCR package"></a>
+  <a href="https://github.com/orgs/CodesWhat/packages/container/package/wud-ce"><img src="https://img.shields.io/badge/GHCR-image-2ea44f" alt="GHCR package"></a>
 </p>
 <p align="center">
   <a href="https://github.com/CodesWhat/whatsupdocker-ce/stargazers"><img src="https://img.shields.io/github/stars/CodesWhat/whatsupdocker-ce?label=stars" alt="Fork stars"></a>
@@ -29,7 +29,6 @@ Keep your containers up-to-date.
 - [What's Updated From Original WUD](#whats-updated-from-original-wud)
 - [Moving From Old WUD Image](#moving-from-old-wud-image)
 - [Configuration and Usage Docs](#configuration-and-usage-docs)
-- [Roadmap](#roadmap)
 - [Support](#support)
 - [Build and Tooling](#build-and-tooling)
 - [License](#license)
@@ -42,8 +41,8 @@ Keep your containers up-to-date.
 
 | Method | Command |
 | --- | --- |
-| Pull image | `docker pull ghcr.io/codeswhat/whatsupdocker-ce:live-test` |
-| Run container | `docker run -d --name whatsupdocker-ce -p 3000:3000 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/codeswhat/whatsupdocker-ce:live-test` |
+| Pull image | `docker pull ghcr.io/codeswhat/wud-ce:latest` |
+| Run container | `docker run -d --name whatsupdocker-ce -p 3000:3000 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/codeswhat/wud-ce:latest` |
 
 ### Verify
 ```bash
@@ -105,7 +104,7 @@ Compare snapshot:
 If you were using `getwud/wud`, switch only the image reference:
 
 - old: `getwud/wud:<tag>`
-- new: `ghcr.io/codeswhat/whatsupdocker-ce:live-test`
+- new: `ghcr.io/codeswhat/wud-ce:latest`
 
 Your Docker socket mount and most runtime settings stay the same.
 
@@ -114,9 +113,6 @@ Your Docker socket mount and most runtime settings stay the same.
 ## Configuration and Usage Docs
 - Upstream docs: [https://getwud.github.io/wud/](https://getwud.github.io/wud/)
 - CE docs: [`docs/README.md`](docs/README.md)
-
-## Roadmap
-- [`docs/planning/README.md`](docs/planning/README.md)
 
 ## Support
 - CE issues and requests: [Project issues](https://github.com/CodesWhat/whatsupdocker-ce/issues)

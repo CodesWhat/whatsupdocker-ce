@@ -43,7 +43,14 @@ import { ComponentConfiguration } from '../../../registry/Component';
 export interface DockerWatcherConfiguration extends ComponentConfiguration {
     socket: string;
     host?: string;
+    protocol?: 'http' | 'https' | 'ssh';
     port: number;
+    auth?: {
+        type?: 'basic' | 'bearer';
+        user?: string;
+        password?: string;
+        bearer?: string;
+    };
     cafile?: string;
     certfile?: string;
     keyfile?: string;
@@ -523,7 +530,14 @@ class Docker extends Watcher {
         return joi.object().keys({
             socket: this.joi.string().default('/var/run/docker.sock'),
             host: this.joi.string(),
+            protocol: this.joi.string().valid('http', 'https'),
             port: this.joi.number().port().default(2375),
+            auth: this.joi.object({
+                type: this.joi.string().valid('basic', 'bearer').insensitive(),
+                user: this.joi.string(),
+                password: this.joi.string(),
+                bearer: this.joi.string(),
+            }),
             cafile: this.joi.string(),
             certfile: this.joi.string(),
             keyfile: this.joi.string(),
@@ -535,6 +549,20 @@ class Docker extends Watcher {
             watchevents: this.joi.boolean().default(true),
             watchatstart: this.joi.boolean().default(true),
         });
+    }
+
+    maskConfiguration() {
+        return {
+            ...this.configuration,
+            auth: this.configuration.auth
+                ? {
+                      type: this.configuration.auth.type,
+                      user: Docker.mask(this.configuration.auth.user),
+                      password: Docker.mask(this.configuration.auth.password),
+                      bearer: Docker.mask(this.configuration.auth.bearer),
+                  }
+                : undefined,
+        };
     }
 
     /**
@@ -591,6 +619,9 @@ class Docker extends Watcher {
         if (this.configuration.host) {
             options.host = this.configuration.host;
             options.port = this.configuration.port;
+            if (this.configuration.protocol) {
+                options.protocol = this.configuration.protocol;
+            }
             if (this.configuration.cafile) {
                 options.ca = fs.readFileSync(this.configuration.cafile);
             }
@@ -600,10 +631,81 @@ class Docker extends Watcher {
             if (this.configuration.keyfile) {
                 options.key = fs.readFileSync(this.configuration.keyfile);
             }
+            this.applyRemoteAuthHeaders(options);
         } else {
             options.socketPath = this.configuration.socket;
         }
         this.dockerApi = new Dockerode(options);
+    }
+
+    isHttpsRemoteWatcher(options: Dockerode.DockerOptions) {
+        if (options.protocol === 'https') {
+            return true;
+        }
+        return Boolean(options.ca || options.cert || options.key);
+    }
+
+    applyRemoteAuthHeaders(options: Dockerode.DockerOptions) {
+        const auth = this.configuration.auth;
+        if (!auth) {
+            return;
+        }
+
+        const hasBearer = Boolean(auth.bearer);
+        const hasBasic = Boolean(auth.user && auth.password);
+        if (!hasBearer && !hasBasic) {
+            this.log.warn(
+                `Skip remote watcher auth for ${this.name} because credentials are incomplete`,
+            );
+            return;
+        }
+
+        if (!this.isHttpsRemoteWatcher(options)) {
+            this.log.warn(
+                `Skip remote watcher auth for ${this.name} because HTTPS is required (set protocol=https or TLS certificates)`,
+            );
+            return;
+        }
+
+        let authType = `${auth.type || ''}`.toLowerCase();
+        if (!authType) {
+            authType = hasBearer ? 'bearer' : 'basic';
+        }
+
+        if (authType === 'basic') {
+            if (!hasBasic) {
+                this.log.warn(
+                    `Skip remote watcher auth for ${this.name} because basic credentials are incomplete`,
+                );
+                return;
+            }
+            const token = Buffer.from(`${auth.user}:${auth.password}`).toString(
+                'base64',
+            );
+            options.headers = {
+                ...options.headers,
+                Authorization: `Basic ${token}`,
+            };
+            return;
+        }
+
+        if (authType === 'bearer') {
+            if (!hasBearer) {
+                this.log.warn(
+                    `Skip remote watcher auth for ${this.name} because bearer token is missing`,
+                );
+                return;
+            }
+            options.headers = {
+                ...options.headers,
+                Authorization: `Bearer ${auth.bearer}`,
+            };
+            return;
+        }
+
+        this.log.warn(
+            `Skip remote watcher auth for ${this.name} because auth type "${auth.type}" is unsupported`,
+        );
     }
 
     /**
@@ -709,6 +811,10 @@ class Docker extends Watcher {
                 const container = await this.dockerApi.getContainer(containerId);
                 const containerInspect = await container.inspect();
                 const newStatus = containerInspect.State.Status;
+                const newName = (containerInspect.Name || '').replace(
+                    /^\//,
+                    '',
+                );
                 const containerFound = storeContainer.getContainer(containerId);
                 if (containerFound) {
                     // Child logger for the container to process
@@ -716,12 +822,69 @@ class Docker extends Watcher {
                         container: fullName(containerFound),
                     });
                     const oldStatus = containerFound.status;
-                    containerFound.status = newStatus;
+                    const oldName = containerFound.name;
+                    const oldDisplayName = containerFound.displayName;
+                    const labelsFromInspect = containerInspect.Config?.Labels;
+                    const labelsCurrent = containerFound.labels || {};
+                    const labelsToApply = labelsFromInspect || labelsCurrent;
+                    const labelsChanged =
+                        JSON.stringify(labelsCurrent) !==
+                        JSON.stringify(labelsToApply);
+                    const customDisplayNameFromLabel =
+                        labelsToApply[wudDisplayName];
+                    const hasCustomDisplayName =
+                        customDisplayNameFromLabel &&
+                        customDisplayNameFromLabel.trim() !== '';
+
+                    let changed = false;
+
                     if (oldStatus !== newStatus) {
-                        storeContainer.updateContainer(containerFound);
+                        containerFound.status = newStatus;
+                        changed = true;
                         logContainer.info(
                             `Status changed from ${oldStatus} to ${newStatus}`,
                         );
+                    }
+
+                    if (newName !== '' && oldName !== newName) {
+                        containerFound.name = newName;
+                        changed = true;
+                        logContainer.info(
+                            `Name changed from ${oldName} to ${newName}`,
+                        );
+                    }
+
+                    if (labelsChanged) {
+                        containerFound.labels = labelsToApply;
+                        changed = true;
+                    }
+
+                    if (hasCustomDisplayName) {
+                        if (
+                            containerFound.displayName !==
+                            customDisplayNameFromLabel
+                        ) {
+                            containerFound.displayName =
+                                customDisplayNameFromLabel;
+                            changed = true;
+                        }
+                    } else if (
+                        newName !== '' &&
+                        oldName !== newName &&
+                        (oldDisplayName === oldName ||
+                            oldDisplayName === undefined ||
+                            oldDisplayName === '')
+                    ) {
+                        containerFound.displayName = getContainerDisplayName(
+                            newName,
+                            containerFound.image?.name || '',
+                            undefined,
+                        );
+                        changed = true;
+                    }
+
+                    if (changed) {
+                        storeContainer.updateContainer(containerFound);
                     }
                 }
             } catch (e: any) {

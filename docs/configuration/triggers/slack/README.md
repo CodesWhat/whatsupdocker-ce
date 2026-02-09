@@ -24,7 +24,7 @@ The `slack` trigger lets you post image update notifications to a Slack channel.
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         - WUD_TRIGGER_SLACK_TEST_TOKEN=xoxp-743817063446-xxx
@@ -38,6 +38,6 @@ docker run \
     -e WUD_TRIGGER_SLACK_TEST_TOKEN="xoxp-743817063446-xxx" \
     -e WUD_TRIGGER_SLACK_TEST_CHANNEL="wud" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->

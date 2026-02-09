@@ -10,12 +10,17 @@ The `docker` watcher lets you configure the Docker hosts you want to watch.
 | Env var                                                   | Required       | Description                                                                                                            | Supported values                               | Default value when missing                                      |
 | --------------------------------------------------------- |:--------------:| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- | 
 | `WUD_WATCHER_{watcher_name}_CAFILE`                       | :white_circle: | CA pem file path (only for TLS connection)                                                                             |                                                |                                                                 |
+| `WUD_WATCHER_{watcher_name}_AUTH_BEARER`                  | :white_circle: | Bearer token for remote Docker API auth (HTTPS only)                                                                   |                                                |                                                                 |
+| `WUD_WATCHER_{watcher_name}_AUTH_PASSWORD`                | :white_circle: | Password for remote Docker API basic auth (HTTPS only)                                                                 |                                                |                                                                 |
+| `WUD_WATCHER_{watcher_name}_AUTH_TYPE`                    | :white_circle: | Auth mode for remote Docker API auth                                                                                   | `BASIC`, `BEARER`                              | auto-detected from provided credentials                         |
+| `WUD_WATCHER_{watcher_name}_AUTH_USER`                    | :white_circle: | Username for remote Docker API basic auth (HTTPS only)                                                                 |                                                |                                                                 |
 | `WUD_WATCHER_{watcher_name}_CERTFILE`                     | :white_circle: | Certificate pem file path (only for TLS connection)                                                                    |                                                |                                                                 |
 | `WUD_WATCHER_{watcher_name}_CRON`                         | :white_circle: | Scheduling options                                                                                                     | [Valid CRON expression](https://crontab.guru/) | `0 * * * *` (every hour)                                        |
 | `WUD_WATCHER_{watcher_name}_HOST`                         | :white_circle: | Docker hostname or ip of the host to watch                                                                             |                                                |                                                                 |
 | `WUD_WATCHER_{watcher_name}_JITTER`                       | :white_circle: | Jitter in ms applied to the CRON to better distribute the load on the registries (on the Hub at the first place) | > 0 | `60000` (1 minute)                                              |
 | `WUD_WATCHER_{watcher_name}_KEYFILE`                      | :white_circle: | Key pem file path (only for TLS connection)                                                                            |                                                |                                                                 |
 | `WUD_WATCHER_{watcher_name}_PORT`                         | :white_circle: | Docker port of the host to watch                                                                                       |                                                | `2375`                                                          |
+| `WUD_WATCHER_{watcher_name}_PROTOCOL`                     | :white_circle: | Docker remote API protocol                                                                                              | `http`, `https`                                | `http`                                                          |
 | `WUD_WATCHER_{watcher_name}_SOCKET`                       | :white_circle: | Docker socket to watch                                                                                                 | Valid unix socket                              | `/var/run/docker.sock`                                          |
 | `WUD_WATCHER_{watcher_name}_WATCHALL`                     | :white_circle: | If WUD must monitor all containers instead of just running ones                                                        | `true`, `false`                                | `false`                                                         |
 | `WUD_WATCHER_{watcher_name}_WATCHATSTART` (deprecated)    | :white_circle: | If WUD must check for image updates during startup                                                                     | `true`, `false`                                | `true` if this watcher store is empty                           |
@@ -37,6 +42,8 @@ You just need to give them different names.
 !> If the Docker remote API is secured with TLS, don't forget to mount and configure the TLS certificates. \
 [See dockerd documentation](https://docs.docker.com/engine/security/protect-access/#use-tls-https-to-protect-the-docker-daemon-socket)
 
+!> Remote watcher auth (`AUTH_*`) is only applied on HTTPS connections (`PROTOCOL=https`) or TLS certificate-based connections.
+
 !> Watching image digests causes an extensive usage of _Docker Registry Pull API_ which is restricted by [**Quotas on the Docker Hub**](https://docs.docker.com/docker-hub/download-rate-limit/). \
 By default, WUD enables it only for **non semver** image tags. \
 You can tune this behavior per container using the `wud.watch.digest` label. \
@@ -51,7 +58,7 @@ If you face [quota related errors](https://docs.docker.com/docker-hub/download-r
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         - WUD_WATCHER_LOCAL_CRON=0 1 * * *
@@ -62,7 +69,7 @@ services:
 docker run \
     -e WUD_WATCHER_LOCAL_CRON="0 1 * * *" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -73,7 +80,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         - WUD_WATCHER_LOCAL_WATCHALL=true
@@ -84,7 +91,7 @@ services:
 docker run \
     -e WUD_WATCHER_LOCAL_WATCHALL="true" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -95,7 +102,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         - WUD_WATCHER_MYREMOTEHOST_HOST=myremotehost 
@@ -106,7 +113,37 @@ services:
 docker run \
     -e WUD_WATCHER_MYREMOTEHOST_HOST="myremotehost" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
+```
+<!-- tabs:end -->
+
+### Watch a remote docker host behind HTTPS with bearer auth
+
+<!-- tabs:start -->
+#### **Docker Compose**
+```yaml
+services:
+  whatsupdocker:
+    image: ghcr.io/codeswhat/wud-ce
+    ...
+    environment:
+        - WUD_WATCHER_MYREMOTEHOST_HOST=myremotehost
+        - WUD_WATCHER_MYREMOTEHOST_PORT=443
+        - WUD_WATCHER_MYREMOTEHOST_PROTOCOL=https
+        - WUD_WATCHER_MYREMOTEHOST_AUTH_TYPE=BEARER
+        - WUD_WATCHER_MYREMOTEHOST_AUTH_BEARER=my-secret-token
+```
+
+#### **Docker**
+```bash
+docker run \
+    -e WUD_WATCHER_MYREMOTEHOST_HOST="myremotehost" \
+    -e WUD_WATCHER_MYREMOTEHOST_PORT="443" \
+    -e WUD_WATCHER_MYREMOTEHOST_PROTOCOL="https" \
+    -e WUD_WATCHER_MYREMOTEHOST_AUTH_TYPE="BEARER" \
+    -e WUD_WATCHER_MYREMOTEHOST_AUTH_BEARER="my-secret-token" \
+  ...
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -117,7 +154,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         - WUD_WATCHER_MYREMOTEHOST_HOST=myremotehost
@@ -143,7 +180,7 @@ docker run \
     -v /my-host/my-certs/ca.pem:/certs/cert.pem:ro \
     -v /my-host/my-certs/ca.pem:/certs/key.pem:ro \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -156,7 +193,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
         -  WUD_WATCHER_LOCAL_SOCKET=/var/run/docker.sock
@@ -171,7 +208,7 @@ docker run \
     -e  WUD_WATCHER_MYREMOTEHOST1_HOST="myremotehost1" \
     -e  WUD_WATCHER_MYREMOTEHOST2_HOST="myremotehost2" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -206,7 +243,7 @@ Configure WUD to disable WATCHBYDEFAULT feature.
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_WATCHER_LOCAL_WATCHBYDEFAULT=false
@@ -217,7 +254,7 @@ services:
 docker run \
     -e WUD_WATCHER_LOCAL_WATCHBYDEFAULT="false" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 

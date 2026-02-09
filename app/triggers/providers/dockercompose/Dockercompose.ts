@@ -11,10 +11,37 @@ function getServiceKey(compose, container, currentImage) {
         return composeServiceName;
     }
 
+    const matchesServiceImage = (serviceImage, imageToMatch) => {
+        if (!serviceImage || !imageToMatch) {
+            return false;
+        }
+        const normalizedServiceImage = normalizeImplicitLatest(serviceImage);
+        return (
+            serviceImage === imageToMatch ||
+            normalizedServiceImage === imageToMatch ||
+            serviceImage.includes(imageToMatch) ||
+            normalizedServiceImage.includes(imageToMatch)
+        );
+    };
+
     return Object.keys(compose.services).find((serviceKey) => {
         const service = compose.services[serviceKey];
-        return service.image?.includes(currentImage) ?? false;
+        return matchesServiceImage(service.image, currentImage);
     });
+}
+
+function normalizeImplicitLatest(image) {
+    if (!image) {
+        return image;
+    }
+    if (image.includes('@')) {
+        return image;
+    }
+    const lastSegment = image.split('/').pop() || image;
+    if (lastSegment.includes(':')) {
+        return image;
+    }
+    return `${image}:latest`;
 }
 
 function normalizePostStartHooks(postStart) {
@@ -216,7 +243,8 @@ class Dockercompose extends Docker {
 
         // Only update/trigger containers where the compose image actually changes.
         const mappingsNeedingUpdate = versionMappings.filter(
-            ({ current, update }) => current !== update,
+            ({ currentNormalized, updateNormalized }) =>
+                currentNormalized !== updateNormalized,
         );
 
         if (mappingsNeedingUpdate.length === 0) {
@@ -381,16 +409,20 @@ class Dockercompose extends Docker {
         const registry = getState().registry[container.image.registry.name];
 
         // Rebuild image definition string
-        const currentImage = registry.getImageFullName(
+        const currentFullImage = registry.getImageFullName(
             container.image,
             container.image.tag.value,
         );
 
-        const serviceKeyToUpdate = getServiceKey(compose, container, currentImage);
+        const serviceKeyToUpdate = getServiceKey(
+            compose,
+            container,
+            currentFullImage,
+        );
 
         if (!serviceKeyToUpdate) {
             this.log.warn(
-                `Could not find service for container ${container.name} with image ${currentImage}`,
+                `Could not find service for container ${container.name} with image ${currentFullImage}`,
             );
             return undefined;
         }
@@ -402,11 +434,15 @@ class Dockercompose extends Docker {
             return undefined;
         }
 
-        // Rebuild image definition string
+        const updateImage = this.getNewImageFullName(registry, container);
+        const currentImage = serviceToUpdate.image;
+
         return {
             service: serviceKeyToUpdate,
-            current: serviceToUpdate.image,
-            update: this.getNewImageFullName(registry, container),
+            current: currentImage,
+            update: updateImage,
+            currentNormalized: normalizeImplicitLatest(currentImage),
+            updateNormalized: normalizeImplicitLatest(updateImage),
         };
     }
 

@@ -29,7 +29,7 @@ To run WUD in Agent mode, start the application with the `--agent` command line 
 ```yaml
 services:
   wud-agent:
-    image: codeswhat/whatsupdocker-ce
+    image: codeswhat/wud-ce
     command: --agent
     environment:
       - WUD_AGENT_SECRET=mysecretkey
@@ -60,7 +60,7 @@ To connect a Controller to an Agent, use the `WUD_AGENT_{name}_*` environment va
 ```yaml
 services:
   wud-controller:
-    image: codeswhat/whatsupdocker-ce
+    image: codeswhat/wud-ce
     environment:
       - WUD_AGENT_REMOTE1_HOST=192.168.1.50
       - WUD_AGENT_REMOTE1_SECRET=mysecretkey

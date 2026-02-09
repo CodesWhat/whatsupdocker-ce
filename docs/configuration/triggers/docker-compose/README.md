@@ -36,7 +36,7 @@ The trigger will:
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     volumes:
     - /etc/my-services/docker-compose.yml:/wud/docker-compose.yml
@@ -49,7 +49,7 @@ docker run \
   -v /etc/my-services/docker-compose.yml:/wud/docker-compose.yml
   -e "WUD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/wud/docker-compose.yml" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 #### **Label**
 ```yaml

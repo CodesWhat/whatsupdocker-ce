@@ -76,5 +76,15 @@ export default defineComponent({
         marginRight: `${this.marginRight}px`,
       };
     },
+
+    imageStyle() {
+      return {
+        height: `${this.size}px`,
+        width: 'auto',
+        maxHeight: `${this.size}px`,
+        marginRight: `${this.marginRight}px`,
+        display: 'inline-block',
+      };
+    },
   },
 });

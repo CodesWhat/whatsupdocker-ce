@@ -19,7 +19,7 @@ The `gitea` registry lets you configure a self-hosted [Gitea](https://gitea.com)
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_REGISTRY_GITEA_PRIVATE_URL=https://gitea.acme.com
@@ -33,6 +33,6 @@ docker run \
   -e "WUD_REGISTRY_GITEA_PRIVATE_LOGIN=john" \
   -e "WUD_REGISTRY_GITEA_PRIVATE_PASSWORD=doe" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->

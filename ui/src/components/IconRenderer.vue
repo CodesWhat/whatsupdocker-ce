@@ -2,26 +2,26 @@
   <img
     v-if="isHomarrIcon"
     :src="homarrIconUrl"
-    :style="iconStyle"
+    :style="imageStyle"
     :alt="icon"
   />
   <img
     v-else-if="isSelfhstIcon"
     :src="selfhstIconUrl"
-    :style="iconStyle"
+    :style="imageStyle"
     :alt="icon"
   />
   <img
     v-else-if="isSimpleIcon"
     :src="simpleIconUrl"
-    :style="iconStyle"
+    :style="imageStyle"
     :alt="icon"
     class="simple-icon"
   />
   <img
     v-else-if="isCustomIconUrl"
     :src="customIconUrl"
-    :style="iconStyle"
+    :style="imageStyle"
     :alt="icon"
     class="custom-icon"
   />

@@ -25,7 +25,7 @@ The `ntfy` trigger lets you send container update notifications via [Ntfy](https
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_TRIGGER_NTFY_THRESHOLD=minor
@@ -37,7 +37,7 @@ docker run \
   -e WUD_TRIGGER_NTFY_THRESHOLD="minor" \
   -e WUD_TRIGGER_NTFY_SH_TOPIC="xxxxyyyyzzzz" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -48,7 +48,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_TRIGGER_NTFY_PRIVATE_URL=http://ntfy.local
@@ -64,6 +64,6 @@ docker run \
   -e WUD_TRIGGER_NTFY_PRIVATE_AUTH_USER="john" \
   -e WUD_TRIGGER_NTFY_PRIVATE_AUTH_PASSWORD="doe" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->

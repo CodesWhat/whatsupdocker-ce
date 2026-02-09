@@ -19,7 +19,7 @@ The `ghcr` registry lets you configure [GHCR](https://docs.github.com/en/package
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_REGISTRY_GHCR_PRIVATE_USERNAME=john@doe
@@ -31,7 +31,7 @@ docker run \
   -e WUD_REGISTRY_GHCR_PRIVATE_USERNAME="john@doe" \
   -e WUD_REGISTRY_GHCR_PRIVATE_TOKEN="xxxxx" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 

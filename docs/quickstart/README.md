@@ -8,7 +8,7 @@ The easiest way to start is to deploy the official _**WUD CodesWhat CE**_ image.
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     container_name: wud
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -20,12 +20,12 @@ services:
 docker run -d --name wud \
   -v "/var/run/docker.sock:/var/run/docker.sock" \
   -p 3000:3000 \
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
 ?> Please notice that this CE build is currently published on Github Container Registry \
-\- Github Container Registry: `ghcr.io/codeswhat/whatsupdocker-ce`
+\- Github Container Registry: `ghcr.io/codeswhat/wud-ce`
 
 ## Open the UI
 [Open the UI](http://localhost:3000) in a browser and check that everything is working as expected.

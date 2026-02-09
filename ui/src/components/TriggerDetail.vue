@@ -34,7 +34,7 @@
             <span v-else>Default configuration</span>
           </v-col>
           <v-col cols="4" class="text-right">
-            <v-btn variant="outlined" size="small" color="accent" @click="showTestForm = true">
+            <v-btn variant="outlined" size="small" color="accent" @click="openTestForm">
               Test
               <v-icon right>mdi-test-tube</v-icon>
             </v-btn>
@@ -51,65 +51,37 @@
                   <v-icon size="small">mdi-test-tube</v-icon>
                   Test trigger
                 </div>
-                <v-text-field
-                  label="Container ID"
-                  v-model="container.id"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
-                <v-text-field
-                  label="Container Name"
-                  v-model="container.name"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
-                <v-text-field
-                  label="Container Watcher"
-                  v-model="container.watcher"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
                 <v-select
-                  label="Update kind"
-                  v-model="container.updateKind.kind"
-                  :items="['digest', 'tag']"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
-                <v-select
-                  v-if="container.updateKind.kind === 'tag'"
-                  label="Update semver diff"
-                  v-model="container.updateKind.semverDiff"
-                  :items="['major', 'minor', 'patch']"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
-                <v-text-field
-                  label="Container local value"
-                  v-model="container.updateKind.localValue"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mb-2"
-                />
-                <v-text-field
-                  label="Container remote value"
-                  v-model="container.updateKind.remoteValue"
+                  label="Container"
+                  v-model="selectedContainerId"
+                  :items="testContainers"
+                  item-title="displayName"
+                  item-value="id"
                   variant="outlined"
                   density="compact"
                   hide-details
                   class="mb-3"
-                />
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <v-list-item-title>
+                        {{ item.raw.displayName || item.raw.name }}
+                      </v-list-item-title>
+                      <v-list-item-subtitle>
+                        {{ item.raw.name }} • {{ item.raw.watcher }}
+                      </v-list-item-subtitle>
+                    </v-list-item>
+                  </template>
+                  <template #selection="{ item }">
+                    <span>
+                      {{ item.raw.displayName || item.raw.name }}
+                    </span>
+                  </template>
+                </v-select>
+                <div v-if="testContainers.length === 0" class="text-caption mb-3">
+                  No local containers available for testing. Remote containers cannot be
+                  used for trigger tests.
+                </div>
                 <v-btn
                   variant="outlined"
                   size="small"

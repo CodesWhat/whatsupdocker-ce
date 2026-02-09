@@ -159,9 +159,16 @@ export async function registerComponent(
     const nameLowercase = name.toLowerCase();
     const componentFileByConvention = `${componentPath}/${providerLowercase}/${capitalize(provider)}`;
     const componentFileLowercase = `${componentPath}/${providerLowercase}/${providerLowercase}`;
+    const componentFileByConventionPath = path.resolve(
+        __dirname,
+        componentFileByConvention,
+    );
+    const componentFileByConventionExists = ['.js', '.ts'].some((extension) =>
+        fs.existsSync(`${componentFileByConventionPath}${extension}`),
+    );
     const componentFile = agent
         ? `${componentPath}/Agent${capitalize(kind)}`
-        : fs.existsSync(path.resolve(__dirname, `${componentFileByConvention}.js`))
+        : componentFileByConventionExists
           ? componentFileByConvention
           : componentFileLowercase;
     try {
@@ -463,6 +470,7 @@ async function registerTriggers(options: RegistrationOptions = {}) {
  */
 async function registerRegistries() {
     const defaultRegistries = {
+        dhi: { public: '' },
         docr: { public: '' },
         ecr: { public: '' },
         gcr: { public: '' },

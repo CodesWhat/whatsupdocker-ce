@@ -26,7 +26,7 @@ You can adjust the server configuration with the following environment variables
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_SERVER_ENABLED=false
@@ -36,7 +36,7 @@ services:
 docker run \
   -e WUD_SERVER_ENABLED=false \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -47,7 +47,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_SERVER_PORT=8080
@@ -57,7 +57,7 @@ services:
 docker run \
   -e WUD_SERVER_PORT=8080 \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
@@ -68,7 +68,7 @@ docker run \
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_SERVER_TLS_ENABLED=true
@@ -82,6 +82,6 @@ docker run \
   -e "WUD_SERVER_TLS_KEY=/wud_certs/server.key" \
   -e "WUD_SERVER_TLS_CERT=/wud_certs/server.crt" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->

@@ -14,6 +14,7 @@
           <v-btn
             size="small"
             variant="plain"
+            class="status-btn"
             :color="containersToUpdateCount > 0 ? 'warning' : 'success'"
             to="/containers?update-available=true"
             :style="{
@@ -60,10 +61,16 @@
 <script lang="ts" src="./HomeView.ts"></script>
 <style scoped>
 .home-card {
-  height: 160px;
+  min-height: 160px;
 }
 
 .home-icon {
   font-size: 80px;
+}
+
+.status-btn {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.2;
 }
 </style>

@@ -1,6 +1,5 @@
 import joi from 'joi';
 import flat from 'flat';
-import { snakeCase } from 'snake-case';
 import * as tag from '../tag';
 const { parse: parseSemver, diff: diffSemver, transform: transformTag } = tag;
 
@@ -415,9 +414,16 @@ export function validate(container: any): Container {
  * @returns {*}
  */
 export function flatten(container: Container) {
+    const transformKeyToSnakeCase = (key: string) =>
+        key
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+            .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+            .replace(/[^a-zA-Z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
     const containerFlatten: any = flat(container, {
         delimiter: '_',
-        transformKey: (key: string) => snakeCase(key),
+        transformKey: (key: string) => transformKeyToSnakeCase(key),
     });
     delete containerFlatten.result_changed;
     return containerFlatten;

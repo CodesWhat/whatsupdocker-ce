@@ -175,6 +175,64 @@ describe('Docker Watcher', () => {
             });
         });
 
+        test('should initialize with HTTPS bearer auth configuration', async () => {
+            await docker.register('watcher', 'docker', 'test', {
+                host: 'localhost',
+                port: 443,
+                protocol: 'https',
+                auth: {
+                    type: 'bearer',
+                    bearer: 'my-secret-token',
+                },
+            });
+            expect(mockDockerode).toHaveBeenCalledWith({
+                host: 'localhost',
+                port: 443,
+                protocol: 'https',
+                headers: {
+                    Authorization: 'Bearer my-secret-token',
+                },
+            });
+        });
+
+        test('should initialize with HTTPS basic auth configuration', async () => {
+            await docker.register('watcher', 'docker', 'test', {
+                host: 'localhost',
+                port: 443,
+                protocol: 'https',
+                auth: {
+                    type: 'basic',
+                    user: 'john',
+                    password: 'doe',
+                },
+            });
+            expect(mockDockerode).toHaveBeenCalledWith({
+                host: 'localhost',
+                port: 443,
+                protocol: 'https',
+                headers: {
+                    Authorization: 'Basic am9objpkb2U=',
+                },
+            });
+        });
+
+        test('should skip auth headers when remote watcher is not HTTPS', async () => {
+            await docker.register('watcher', 'docker', 'test', {
+                host: 'localhost',
+                port: 2375,
+                protocol: 'http',
+                auth: {
+                    type: 'bearer',
+                    bearer: 'my-secret-token',
+                },
+            });
+            expect(mockDockerode).toHaveBeenCalledWith({
+                host: 'localhost',
+                port: 2375,
+                protocol: 'http',
+            });
+        });
+
         test('should schedule cron job on init', async () => {
             await docker.register('watcher', 'docker', 'test', {
                 cron: '0 * * * *',
@@ -322,6 +380,41 @@ describe('Docker Watcher', () => {
 
             expect(mockContainer.inspect).toHaveBeenCalled();
             expect(storeContainer.updateContainer).toHaveBeenCalled();
+        });
+
+        test('should update container name on rename events', async () => {
+            await docker.register('watcher', 'docker', 'test', {});
+            const mockLog = {
+                child: jest.fn().mockReturnValue({ info: jest.fn() }),
+                debug: jest.fn(),
+            };
+            docker.log = mockLog;
+            mockContainer.inspect.mockResolvedValue({
+                Name: '/renamed-container',
+                State: { Status: 'running' },
+                Config: { Labels: {} },
+            });
+            const existingContainer = {
+                id: 'container123',
+                name: 'old-temp-name',
+                displayName: 'old-temp-name',
+                status: 'running',
+                image: { name: 'library/nginx' },
+                labels: {},
+            };
+            storeContainer.getContainer.mockReturnValue(existingContainer);
+
+            const event = JSON.stringify({
+                Action: 'rename',
+                id: 'container123',
+            });
+            await docker.onDockerEvent(Buffer.from(event));
+
+            expect(existingContainer.name).toBe('renamed-container');
+            expect(existingContainer.displayName).toBe('renamed-container');
+            expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+                existingContainer,
+            );
         });
 
         test('should handle container not found during event processing', async () => {

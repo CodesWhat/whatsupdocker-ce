@@ -24,7 +24,7 @@ The `telegram` trigger lets you send realtime notifications using [Telegram](htt
 ```yaml
 services:
   whatsupdocker:
-    image: ghcr.io/codeswhat/whatsupdocker-ce
+    image: ghcr.io/codeswhat/wud-ce
     ...
     environment:
       - WUD_TRIGGER_TELEGRAM_1_BOTTOKEN=0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q
@@ -38,7 +38,7 @@ docker run \
   -e WUD_TRIGGER_TELEGRAM_1_BOTTOKEN="0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q" \
   -e WUD_TRIGGER_TELEGRAM_1_CHATID="9876543210" \
   ...
-  ghcr.io/codeswhat/whatsupdocker-ce
+  ghcr.io/codeswhat/wud-ce
 ```
 <!-- tabs:end -->
 
