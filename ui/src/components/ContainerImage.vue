@@ -36,6 +36,9 @@
       </template>
       <v-list-item-title>Registry</v-list-item-title>
       <v-list-item-subtitle>{{ image.registry.name }}</v-list-item-subtitle>
+      <v-list-item-subtitle v-if="image.registry.lookupImage"
+        >{{ image.registry.lookupImage }} (lookup)</v-list-item-subtitle
+      >
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
@@ -96,43 +99,4 @@
   </v-list>
 </template>
 
-<script>
-import { getRegistryProviderIcon } from "@/services/registry";
-
-export default {
-  props: {
-    image: {
-      type: Object,
-      required: true,
-    },
-  },
-  data() {
-    return {};
-  },
-  computed: {
-    registryIcon() {
-      return getRegistryProviderIcon(this.image.registry.name);
-    },
-
-    osIcon() {
-      let icon = "mdi-help";
-      switch (this.image.os) {
-        case "linux":
-          icon = "mdi-linux";
-          break;
-        case "windows":
-          icon = "mdi-microsoft-windows";
-          break;
-      }
-      return icon;
-    },
-  },
-
-  methods: {
-    copyToClipboard(kind, value) {
-      navigator.clipboard.writeText(value);
-      this.$eventBus.emit("notify", `${kind} copied to clipboard`);
-    },
-  },
-};
-</script>
+<script lang="ts" src="./ContainerImage.ts"></script>

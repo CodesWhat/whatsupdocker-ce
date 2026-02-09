@@ -2,31 +2,6 @@
 FROM node:24-alpine AS base
 WORKDIR /home/node/app
 
-# Dependencies stage for backend app
-FROM base AS app-dependencies
-
-# Copy app package.json
-COPY app/package* ./
-
-# Install app dependencies
-RUN npm ci --omit=dev --omit=optional --no-audit --no-fund --no-update-notifier
-
-# Build stage for frontend UI
-FROM base AS ui-build
-
-# Copy ui package.json
-COPY ui/package* ./
-
-# Install ui dependencies
-RUN npm ci --no-audit --no-fund --no-update-notifier
-
-# Copy ui sources and build static assets
-COPY ui/ ./
-RUN npm run build
-
-# Release stage
-FROM base AS release
-
 LABEL maintainer="fmartinou"
 EXPOSE 3000
 
@@ -43,17 +18,53 @@ RUN mkdir /store
 # Add useful stuff
 RUN apk add --no-cache tzdata openssl curl git jq bash
 
+# Build stage for backend app
+FROM base AS app-build
+
+# Copy app package.json
+COPY app/package* ./
+
+# Install dependencies (including dev)
+RUN npm ci --include=dev --omit=optional --no-audit --no-fund --no-update-notifier
+
+# Copy app source
+COPY app/ ./
+
+# Build
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm prune --omit=dev
+
+# Build stage for frontend UI
+FROM base AS ui-build
+WORKDIR /home/node/ui
+
+# Copy ui package.json
+COPY ui/package* ./
+
+# Install ui dependencies
+RUN npm ci --no-audit --no-fund --no-update-notifier
+
+# Copy ui sources and build static assets
+COPY ui/ ./
+RUN npm run build
+
+# Release stage
+FROM base AS release
+
 # Default entrypoint
 COPY Docker.entrypoint.sh /usr/bin/entrypoint.sh
 RUN chmod +x /usr/bin/entrypoint.sh
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]
-CMD ["node", "index"]
+CMD ["node", "dist/index"]
 
 ## Copy node_modules
-COPY --from=app-dependencies /home/node/app/node_modules ./node_modules
+COPY --from=app-build /home/node/app/node_modules ./node_modules
 
-# Copy app
-COPY app/ ./
+# Copy app (dist)
+COPY --from=app-build /home/node/app/dist ./dist
+COPY --from=app-build /home/node/app/package.json ./package.json
 
 # Copy ui
-COPY --from=ui-build /home/node/app/dist/ ./ui
+COPY --from=ui-build /home/node/ui/dist/ ./ui

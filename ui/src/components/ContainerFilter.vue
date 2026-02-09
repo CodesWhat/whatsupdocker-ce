@@ -4,10 +4,24 @@
       <v-col>
         <v-select
           :hide-details="true"
+          v-model="agentSelected"
+          :items="agents"
+          @update:modelValue="emitAgentChanged"
+          :clearable="true"
+          clear-icon="mdi-close"
+          label="Agent"
+          variant="outlined"
+          density="compact"
+        ></v-select>
+      </v-col>
+      <v-col>
+        <v-select
+          :hide-details="true"
           v-model="watcherSelected"
           :items="watchers"
           @update:modelValue="emitWatcherChanged"
           :clearable="true"
+          clear-icon="mdi-close"
           label="Watcher"
           variant="outlined"
           density="compact"
@@ -20,6 +34,7 @@
           :items="registries"
           @update:modelValue="emitRegistryChanged"
           :clearable="true"
+          clear-icon="mdi-close"
           label="Registry"
           variant="outlined"
           density="compact"
@@ -32,6 +47,7 @@
           :items="updateKinds"
           @update:modelValue="emitUpdateKindChanged"
           :clearable="true"
+          clear-icon="mdi-close"
           label="Update kind"
           variant="outlined"
           density="compact"
@@ -45,12 +61,13 @@
           v-model="groupByLabelLocal"
           @update:modelValue="emitGroupByLabelChanged"
           clearable
+          clear-icon="mdi-close"
           variant="outlined"
           density="compact"
         >
         </v-autocomplete>
       </v-col>
-      <v-col>
+      <v-col class="first-switch-col">
         <v-switch
           class="switch-top"
           label="Update available"
@@ -76,7 +93,7 @@
           @click.stop="refreshAllContainers"
           :loading="isRefreshing"
         >
-          Watch now
+          Check updates
           <v-icon> mdi-refresh</v-icon>
         </v-btn>
         <br />
@@ -85,115 +102,14 @@
   </v-container>
 </template>
 
-<script>
-import { refreshAllContainers } from "@/services/container";
-
-export default {
-  props: {
-    registries: {
-      type: Array,
-      required: true,
-    },
-    registrySelectedInit: {
-      type: String,
-      required: true,
-    },
-    watchers: {
-      type: Array,
-      required: true,
-    },
-    watcherSelectedInit: {
-      type: String,
-      required: true,
-    },
-    updateKinds: {
-      type: Array,
-      required: true,
-    },
-    updateKindSelectedInit: {
-      type: String,
-      required: true,
-    },
-    updateAvailable: {
-      type: Boolean,
-      required: true,
-    },
-    oldestFirst: {
-      type: Boolean,
-      required: true,
-    },
-    groupLabels: {
-      type: Array,
-      required: true,
-    },
-    groupByLabel: {
-      type: String,
-      required: false,
-    },
-  },
-
-  data() {
-    return {
-      isRefreshing: false,
-      registrySelected: "",
-      watcherSelected: "",
-      updateKindSelected: "",
-      updateAvailableLocal: this.updateAvailable,
-      oldestFirstLocal: this.oldestFirst,
-      groupByLabelLocal: this.groupByLabel,
-    };
-  },
-
-  methods: {
-    emitRegistryChanged() {
-      this.$emit("registry-changed", this.registrySelected ?? "");
-    },
-    emitWatcherChanged() {
-      this.$emit("watcher-changed", this.watcherSelected ?? "");
-    },
-    emitUpdateKindChanged() {
-      this.$emit("update-kind-changed", this.updateKindSelected ?? "");
-    },
-    emitUpdateAvailableChanged() {
-      this.$emit("update-available-changed");
-    },
-    emitOldestFirstChanged() {
-      this.$emit("oldest-first-changed");
-    },
-    emitGroupByLabelChanged(newLabel) {
-      this.$emit("group-by-label-changed", newLabel ?? "");
-    },
-    async refreshAllContainers() {
-      this.isRefreshing = true;
-      try {
-        const body = await refreshAllContainers();
-        this.$eventBus.emit("notify", "All containers refreshed");
-        this.$emit("refresh-all-containers", body);
-      } catch (e) {
-        this.$eventBus.emit(
-          "notify",
-          `Error when trying to refresh all containers (${e.message})`,
-          "error",
-        );
-      } finally {
-        this.isRefreshing = false;
-      }
-    },
-  },
-
-  async beforeUpdate() {
-    this.registrySelected = this.registrySelectedInit;
-    this.watcherSelected = this.watcherSelectedInit;
-    this.updateKindSelected = this.updateKindSelectedInit;
-    this.updateAvailableLocal = this.updateAvailable;
-    this.oldestFirstLocal = this.oldestFirst;
-    this.groupByLabelLocal = this.groupByLabel;
-  },
-};
-</script>
+<script lang="ts" src="./ContainerFilter.ts"></script>
 
 <style scoped>
 .switch-top {
   margin-top: 4px;
+}
+
+.first-switch-col {
+  padding-left: 16px;
 }
 </style>

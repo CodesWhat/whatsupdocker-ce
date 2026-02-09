@@ -6,6 +6,13 @@
       class="pa-3 d-flex align-center bg-surface"
     >
       <div class="text-body-3">
+        <span v-if="smAndUp && item.agent">
+          <v-chip label :color="agentStatusColor" variant="outlined">
+            <v-icon left>mdi-lan</v-icon>
+            {{ item.agent }}
+          </v-chip>
+          /
+        </span>
         <v-chip label color="info" variant="outlined">{{ item.type }}</v-chip>
         /
         <v-chip label color="info" variant="outlined">{{ item.name }}</v-chip>
@@ -16,7 +23,15 @@
     </v-card-title>
     <transition name="expand-transition">
       <v-card-text v-show="showDetail">
-        <v-list density="compact" v-if="configurationItems.length > 0">
+        <v-list density="compact" v-if="configurationItems.length > 0 || item.agent">
+          <v-list-item v-if="item.agent">
+            <v-list-item-title>Agent</v-list-item-title>
+            <v-list-item-subtitle>
+              <router-link to="/configuration/agents">
+                {{ item.agent }}
+              </router-link>
+            </v-list-item-subtitle>
+          </v-list-item>
           <v-list-item
             v-for="configurationItem in configurationItems"
             :key="configurationItem.key"
@@ -35,59 +50,4 @@
   </v-card>
 </template>
 
-<script>
-import IconRenderer from "@/components/IconRenderer";
-
-export default {
-  components: {
-    IconRenderer,
-  },
-  props: {
-    item: {
-      type: Object,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      showDetail: false,
-    };
-  },
-  computed: {
-    configurationItems() {
-      return Object.keys(this.item.configuration || [])
-        .map((key) => ({
-          key,
-          value: this.item.configuration[key],
-        }))
-        .sort((item1, item2) => item1.key.localeCompare(item2.key));
-    },
-
-    displayName() {
-      if (
-        this.item.name &&
-        this.item.type &&
-        this.item.name !== this.item.type
-      ) {
-        return `${this.item.name} (${this.item.type})`;
-      }
-      if (this.item.name) {
-        return this.item.name;
-      }
-      return "Unknown";
-    },
-  },
-
-  methods: {
-    collapse() {
-      this.showDetail = !this.showDetail;
-    },
-    formatValue(value) {
-      if (value === undefined || value === null || value === "") {
-        return "<empty>";
-      }
-      return value;
-    },
-  },
-};
-</script>
+<script lang="ts" src="./ConfigurationItem.ts"></script>

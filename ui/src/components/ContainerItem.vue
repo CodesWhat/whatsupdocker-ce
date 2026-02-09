@@ -23,6 +23,13 @@
           class="text-body-3 d-flex align-center"
           style="gap: 5px"
         >
+          <span v-if="smAndUp && container.agent">
+            <v-chip label :color="agentStatusColor" variant="outlined" disabled>
+              <v-icon left>mdi-lan</v-icon>
+              {{ container.agent }}
+            </v-chip>
+            /
+          </span>
           <span v-if="smAndUp">
             <v-chip label color="info" variant="outlined" disabled>
               <v-icon left>mdi-update</v-icon>
@@ -158,6 +165,19 @@
           <v-card-actions>
             <v-row>
               <v-col class="text-center">
+                <v-btn
+                  small
+                  color="secondary"
+                  variant="outlined"
+                  :loading="isUpdatingContainer"
+                  :disabled="!container.updateAvailable"
+                  @click="updateContainerNow"
+                >
+                  Update now
+                  <v-icon right>mdi-rocket-launch</v-icon>
+                </v-btn>
+              </v-col>
+              <v-col class="text-center">
                 <v-dialog
                   v-model="dialogDelete"
                   width="500"
@@ -225,147 +245,7 @@
   </div>
 </template>
 
-<script>
-import { useDisplay } from "vuetify";
-import { getRegistryProviderIcon } from "@/services/registry";
-import ContainerDetail from "@/components/ContainerDetail";
-import ContainerError from "@/components/ContainerError";
-import ContainerImage from "@/components/ContainerImage";
-import ContainerTriggers from "@/components/ContainerTriggers";
-import ContainerUpdate from "@/components/ContainerUpdate";
-import IconRenderer from "@/components/IconRenderer";
-
-export default {
-  setup() {
-    const { smAndUp, mdAndUp } = useDisplay();
-    return { smAndUp, mdAndUp };
-  },
-  components: {
-    ContainerDetail,
-    ContainerError,
-    ContainerImage,
-    ContainerTriggers,
-    ContainerUpdate,
-    IconRenderer,
-  },
-
-  props: {
-    container: {
-      type: Object,
-      required: true,
-    },
-    previousContainer: {
-      type: Object,
-      required: false,
-    },
-    groupingLabel: {
-      type: String,
-      required: true,
-    },
-    oldestFirst: {
-      type: Boolean,
-      required: false,
-    },
-  },
-  data() {
-    return {
-      showDetail: false,
-      dialogDelete: false,
-      tab: 0,
-      deleteEnabled: false,
-    };
-  },
-  computed: {
-    registryIcon() {
-      return getRegistryProviderIcon(this.container.image.registry.name);
-    },
-
-    osIcon() {
-      let icon = "mdi-help";
-      switch (this.container.image.os) {
-        case "linux":
-          icon = "mdi-linux";
-          break;
-        case "windows":
-          icon = "mdi-microsoft-windows";
-          break;
-      }
-      return icon;
-    },
-
-    newVersion() {
-      let newVersion = "unknown";
-      if (
-        this.container.result.created &&
-        this.container.image.created !== this.container.result.created
-      ) {
-        newVersion = this.$filters.dateTime(
-          this.container.result.created,
-        );
-      }
-      if (this.container.updateKind) {
-        newVersion = this.container.updateKind.remoteValue;
-      }
-      if (this.container.updateKind.kind === "digest") {
-        newVersion = this.$filters.short(newVersion, 15);
-      }
-      return newVersion;
-    },
-
-    newVersionClass() {
-      let color = "warning";
-      if (
-        this.container.updateKind &&
-        this.container.updateKind.kind === "tag"
-      ) {
-        switch (this.container.updateKind.semverDiff) {
-          case "major":
-            color = "error";
-            break;
-          case "minor":
-            color = "warning";
-            break;
-          case "patch":
-            color = "success";
-            break;
-        }
-      }
-      return color;
-    },
-  },
-
-  methods: {
-    async deleteContainer() {
-      this.$emit("delete-container");
-    },
-
-    copyToClipboard(kind, value) {
-      navigator.clipboard.writeText(value);
-      this.$eventBus.emit("notify", `${kind} copied to clipboard`);
-    },
-
-    collapseDetail() {
-      // Prevent collapse when selecting text only
-      if (window.getSelection().type !== "Range") {
-        this.showDetail = !this.showDetail;
-      }
-
-      // Hack because of a render bug on tabs inside a collapsible element
-      if (this.$refs.tabs && this.$refs.tabs.onResize) {
-        this.$refs.tabs.onResize();
-      }
-    },
-
-    normalizeFontawesome(iconString, prefix) {
-      return `${prefix} fa-${iconString.replace(`${prefix}:`, "")}`;
-    },
-  },
-
-  mounted() {
-    this.deleteEnabled = this.$serverConfig?.feature?.delete || false;
-  },
-};
-</script>
+<script lang="ts" src="./ContainerItem.ts"></script>
 
 <style scoped>
 .v-chip--disabled {

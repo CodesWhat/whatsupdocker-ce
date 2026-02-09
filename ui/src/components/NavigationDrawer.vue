@@ -8,14 +8,14 @@
     color="primary"
     theme="dark"
   >
+    <div class="drawer-brand">
+      <img :src="logo" alt="WUD logo" class="drawer-logo" />
+    </div>
     <v-toolbar flat class="ma-0 pa-0" color="primary">
-      <v-app-bar-nav-icon @click.stop="mini = !mini">
+      <v-app-bar-nav-icon class="drawer-toggle" @click.stop="mini = !mini">
         <v-icon v-if="!mini">mdi-close</v-icon>
         <v-icon v-else>mdi-menu</v-icon>
       </v-app-bar-nav-icon>
-      <v-toolbar-title v-if="!mini" class="text-body-1">
-        <img :src="logo" alt="WUD logo" class="drawer-logo" />
-      </v-toolbar-title>
     </v-toolbar>
     <v-list nav class="pt-0 pb-0">
       <v-fade-transition group hide-on-leave mode="in-out">
@@ -87,85 +87,20 @@
     </template>
   </v-navigation-drawer>
 </template>
-
-<script>
-import { ref, onMounted } from "vue";
-import { useTheme } from "vuetify";
-import { getContainerIcon } from "@/services/container";
-import { getRegistryIcon } from "@/services/registry";
-import { getTriggerIcon } from "@/services/trigger";
-import { getServerIcon } from "@/services/server";
-import { getWatcherIcon } from "@/services/watcher";
-import { getAuthenticationIcon } from "@/services/authentication";
-import logo from "@/assets/whale-logo.png";
-
-export default {
-  setup() {
-    const theme = useTheme();
-    const mini = ref(true);
-    const darkMode = ref(localStorage.darkMode === "true");
-    
-    const configurationItems = [
-      {
-        to: "/configuration/authentications",
-        name: "auth",
-        icon: getAuthenticationIcon(),
-      },
-      {
-        to: "/configuration/registries",
-        name: "registries",
-        icon: getRegistryIcon(),
-      },
-      {
-        to: "/configuration/triggers",
-        name: "triggers",
-        icon: getTriggerIcon(),
-      },
-      {
-        to: "/configuration/watchers",
-        name: "watchers",
-        icon: getWatcherIcon(),
-      },
-      {
-        to: "/configuration/server",
-        name: "server",
-        icon: getServerIcon(),
-      },
-    ];
-
-    const toggleDarkMode = (value) => {
-      darkMode.value = value;
-      localStorage.darkMode = darkMode.value;
-      theme.global.name.value = darkMode.value ? "dark" : "light";
-    };
-
-    onMounted(() => {
-      theme.global.name.value = darkMode.value ? "dark" : "light";
-    });
-
-    return {
-      logo,
-      mini,
-      darkMode,
-      containerIcon: getContainerIcon(),
-      configurationItems,
-      toggleDarkMode,
-    };
-  },
-
-  computed: {
-    configurationItemsSorted() {
-      return [...this.configurationItems].sort((item1, item2) =>
-        item1.name.localeCompare(item2.name),
-      );
-    },
-  },
-};
-</script>
+<script lang="ts" src="./NavigationDrawer.ts"></script>
 <style scoped>
+.drawer-brand {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
 .drawer-logo {
-  display: block;
-  height: 26px;
+  height: 30px;
   width: auto;
+}
+
+.drawer-toggle {
+  margin-inline: auto;
 }
 </style>
