@@ -1,0 +1,11 @@
+pre-push:
+  commands:
+    lint:
+      root: app/
+      run: npm run lint
+    build:
+      root: app/
+      run: npm run build
+    test:
+      root: app/
+      run: npm test
