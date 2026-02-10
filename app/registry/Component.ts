@@ -1,6 +1,7 @@
 import joi from 'joi';
 import log from '../log/index.js';
-import type { Logger } from 'pino';
+
+export type AppLogger = typeof log;
 
 export interface ComponentConfiguration {
     [key: string]: any;
@@ -11,7 +12,7 @@ export interface ComponentConfiguration {
  */
 class Component {
     public joi: typeof joi;
-    public log: Logger;
+    public log: AppLogger;
     public kind: string = '';
     public type: string = '';
     public name: string = '';

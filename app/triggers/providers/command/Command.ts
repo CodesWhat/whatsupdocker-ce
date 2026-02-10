@@ -59,7 +59,7 @@ class Command extends Trigger {
             timeout: this.configuration.timeout,
         };
         try {
-            const { stdout, stderr } = await exec(
+            const { stdout, stderr } = await exec( // NOSONAR - cmd is from trusted admin configuration, not user input
                 this.configuration.cmd,
                 commandOptions,
             );

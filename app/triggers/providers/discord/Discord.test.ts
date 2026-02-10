@@ -38,7 +38,7 @@ describe('Discord Trigger', () => {
 
     test('should mask configuration URL', async () => {
         discord.configuration = {
-            url: 'https://discord.com/api/webhooks/123/secret',
+            url: 'https://discord.com/api/webhooks/123/secret', // NOSONAR - test fixture, not a real credential
         };
         const masked = discord.maskConfiguration();
         expect(masked.url).toBe('h*****************************************t');

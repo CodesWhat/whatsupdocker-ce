@@ -15,7 +15,7 @@ const pushover = new Pushover();
 
 const configurationValid = {
     user: 'user',
-    token: 'token',
+    token: 'token', // NOSONAR - test fixture, not a real credential
     priority: 0,
     sound: 'pushover',
     html: 0,
@@ -31,6 +31,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -111,6 +112,7 @@ test('maskConfiguration should mask sensitive data', async () => {
             'New ${container.updateKind.kind} found for container ${container.name}',
 
         batchtitle: '${containers.length} updates available',
+        resolvenotifications: false,
         sound: 'pushover',
         html: 0,
         threshold: 'all',

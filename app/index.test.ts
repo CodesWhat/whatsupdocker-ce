@@ -4,9 +4,7 @@ vi.mock('./configuration', () => ({
     getVersion: vi.fn(() => '1.0.0'),
 }));
 
-vi.mock('./log', () => ({
-    default: { info: vi.fn(), child: vi.fn().mockReturnThis() },
-}));
+vi.mock('./log', () => ({ default: { info: vi.fn(), child: vi.fn().mockReturnThis() } }));
 
 vi.mock('./store', () => ({
     init: vi.fn().mockResolvedValue(),

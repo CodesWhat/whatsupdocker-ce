@@ -1,9 +1,7 @@
 // @ts-nocheck
 import * as container from './container.js';
 
-vi.mock('../log', () => ({
-    default: { child: vi.fn(() => ({ info: vi.fn() })) },
-}));
+vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
 vi.mock('./container', () => ({
     getContainers: vi.fn(() => [
         { name: 'container1' },

@@ -29,6 +29,7 @@ interface OrderedEventHandler {
 
 const containerReportHandlers: OrderedEventHandler[] = [];
 const containerReportsHandlers: OrderedEventHandler[] = [];
+const containerUpdateAppliedHandlers: OrderedEventHandler[] = [];
 let handlerRegistrationSequence = 0;
 
 function registerOrderedEventHandler(
@@ -121,6 +122,29 @@ export function registerContainerReport(
 }
 
 /**
+ * Emit ContainerUpdateApplied event.
+ * @param containerId
+ */
+export async function emitContainerUpdateApplied(containerId: string) {
+    await emitOrderedHandlers(containerUpdateAppliedHandlers, containerId);
+}
+
+/**
+ * Register to ContainerUpdateApplied event.
+ * @param handler
+ */
+export function registerContainerUpdateApplied(
+    handler: (containerId: string) => any,
+    options: EventHandlerRegistrationOptions = {},
+) {
+    return registerOrderedEventHandler(
+        containerUpdateAppliedHandlers,
+        handler,
+        options,
+    );
+}
+
+/**
  * Emit container added.
  * @param containerAdded
  */
@@ -189,5 +213,6 @@ export function clearAllListenersForTests() {
     eventEmitter.removeAllListeners();
     containerReportHandlers.length = 0;
     containerReportsHandlers.length = 0;
+    containerUpdateAppliedHandlers.length = 0;
     handlerRegistrationSequence = 0;
 }

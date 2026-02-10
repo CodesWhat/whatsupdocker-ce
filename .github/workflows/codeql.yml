@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '30 6 * * 1'
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   analyze:
     name: Analyze

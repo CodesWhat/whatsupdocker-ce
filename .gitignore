@@ -106,3 +106,9 @@ dist/
 
 # Local planning docs
 .planning/
+
+# Audit/findings files
+.audit/
+
+# Playwright MCP
+.playwright-mcp/

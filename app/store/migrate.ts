@@ -18,7 +18,9 @@ function deleteAllContainersFromState() {
  * @param to version
  */
 export function migrate(from, to) {
-    log.info(`Migrate data from version ${from} to version ${to}`);
+    const safeFrom = String(from).replaceAll(/[^a-zA-Z0-9._\-+]/g, '');
+    const safeTo = String(to).replaceAll(/[^a-zA-Z0-9._\-+]/g, '');
+    log.info(`Migrate data from version ${safeFrom} to version ${safeTo}`);
     if (from && !from.startsWith('8') && to && to.startsWith('8')) {
         deleteAllContainersFromState();
     }

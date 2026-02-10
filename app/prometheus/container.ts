@@ -15,7 +15,7 @@ function populateGauge() {
         try {
             const flatContainer = flatten(container);
             const flatContainerWithoutLabels = Object.keys(flatContainer)
-                .filter((key) => !key.startsWith('labels_'))
+                .filter((key) => !key.startsWith('labels_') && !key.startsWith('update_policy'))
                 .reduce((obj, key) => {
                     obj[key] = flatContainer[key];
                     return obj;

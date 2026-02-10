@@ -25,11 +25,7 @@ class Gotify extends Trigger {
      * @returns {*}
      */
     maskConfiguration() {
-        return {
-            ...this.configuration,
-            url: this.configuration.url,
-            token: Gotify.mask(this.configuration.token),
-        };
+        return this.maskFields(['token']);
     }
 
     /**
@@ -37,7 +33,7 @@ class Gotify extends Trigger {
      */
     initTrigger() {
         this.client = new GotifyClient(this.configuration.url, {
-            app: this.configuration.token,
+            app: this.configuration.token, // NOSONAR - token from admin configuration, not hardcoded
         });
     }
 
@@ -52,6 +48,20 @@ class Gotify extends Trigger {
             message: this.renderSimpleBody(container),
             priority: this.configuration.priority,
         });
+    }
+
+    /**
+     * Dismiss a previously sent Gotify notification.
+     * @param containerId the container identifier
+     * @param triggerResult the result from createMessage containing the message id
+     */
+    async dismiss(containerId, triggerResult) {
+        if (triggerResult?.id) {
+            this.log.info(
+                `Deleting Gotify message ${triggerResult.id} for container ${containerId}`,
+            );
+            await this.client.message.deleteMessage(triggerResult.id);
+        }
     }
 
     /**

@@ -30,10 +30,7 @@ vi.mock('./registry', () => ({
     init: vi.fn(),
 }));
 
-// Mock log
-vi.mock('../log', () => ({
-    default: { child: vi.fn(() => ({ info: vi.fn() })) },
-}));
+vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
 
 describe('Prometheus Module', () => {
     beforeEach(async () => {

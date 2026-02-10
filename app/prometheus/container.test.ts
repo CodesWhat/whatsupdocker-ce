@@ -36,6 +36,10 @@ test('gauge must be populated when containers are in the store', async () => {
             result: {
                 tag: 'version',
             },
+            updatePolicy: {
+                skipTags: ['2.0.0'],
+                snoozeUntil: '2099-01-01T00:00:00.000Z',
+            },
         },
     ];
     const gauge = container.init();

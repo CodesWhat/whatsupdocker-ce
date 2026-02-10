@@ -1,6 +1,21 @@
 // @ts-nocheck
 import log from '../../../log/index.js';
+import {
+    registerContainerAdded,
+    registerContainerUpdated,
+    registerContainerRemoved,
+    registerWatcherStart,
+    registerWatcherStop,
+} from '../../../event/index.js';
 import Hass from './Hass.js';
+
+vi.mock('../../../event/index.js', () => ({
+    registerContainerAdded: vi.fn(),
+    registerContainerUpdated: vi.fn(),
+    registerContainerRemoved: vi.fn(),
+    registerWatcherStart: vi.fn(),
+    registerWatcherStop: vi.fn(),
+}));
 
 const containerData = [
     {
@@ -380,4 +395,149 @@ test('updateWatcherSensors must publish all watcher sensor messages expected by 
         }),
         { retain: true },
     );
+});
+
+test('addContainerSensor should skip discovery when discovery is false', async () => {
+    const hassNoDiscovery = new Hass({
+        client: mqttClientMock,
+        configuration: {
+            topic: 'topic',
+            hass: {
+                discovery: false,
+                prefix: 'homeassistant',
+            },
+        },
+        log,
+    });
+    vi.spyOn(hassNoDiscovery, 'publishDiscoveryMessage');
+    vi.spyOn(hassNoDiscovery, 'updateContainerSensors').mockResolvedValue();
+    await hassNoDiscovery.addContainerSensor({
+        name: 'container-name',
+        watcher: 'watcher-name',
+        displayIcon: 'mdi:docker',
+    });
+    expect(hassNoDiscovery.publishDiscoveryMessage).not.toHaveBeenCalled();
+    expect(hassNoDiscovery.updateContainerSensors).toHaveBeenCalled();
+});
+
+test('removeContainerSensor should skip discovery when discovery is false', async () => {
+    const hassNoDiscovery = new Hass({
+        client: mqttClientMock,
+        configuration: {
+            topic: 'topic',
+            hass: {
+                discovery: false,
+                prefix: 'homeassistant',
+            },
+        },
+        log,
+    });
+    vi.spyOn(hassNoDiscovery, 'removeSensor');
+    vi.spyOn(hassNoDiscovery, 'updateContainerSensors').mockResolvedValue();
+    await hassNoDiscovery.removeContainerSensor({
+        name: 'container-name',
+        watcher: 'watcher-name',
+        displayIcon: 'mdi:docker',
+    });
+    expect(hassNoDiscovery.removeSensor).not.toHaveBeenCalled();
+    expect(hassNoDiscovery.updateContainerSensors).toHaveBeenCalled();
+});
+
+test('updateContainerSensors should skip discovery messages when discovery is false', async () => {
+    const hassNoDiscovery = new Hass({
+        client: mqttClientMock,
+        configuration: {
+            topic: 'topic',
+            hass: {
+                discovery: false,
+                prefix: 'homeassistant',
+            },
+        },
+        log,
+    });
+    await hassNoDiscovery.updateContainerSensors({
+        name: 'container-name',
+        watcher: 'watcher-name',
+    });
+    // Should only publish state values (6 calls), not discovery messages (which would be 15)
+    expect(mqttClientMock.publish).toHaveBeenCalledTimes(6);
+});
+
+test('updateWatcherSensors should skip discovery when discovery is false', async () => {
+    const hassNoDiscovery = new Hass({
+        client: mqttClientMock,
+        configuration: {
+            topic: 'topic',
+            hass: {
+                discovery: false,
+                prefix: 'homeassistant',
+            },
+        },
+        log,
+    });
+    await hassNoDiscovery.updateWatcherSensors({
+        watcher: { name: 'watcher-name' },
+        isRunning: true,
+    });
+    // Should publish only the state value (1), not the discovery message
+    expect(mqttClientMock.publish).toHaveBeenCalledTimes(1);
+    expect(mqttClientMock.publish).toHaveBeenCalledWith(
+        'topic/watcher-name/running',
+        'true',
+        { retain: true },
+    );
+});
+
+test('addContainerSensor should pass release_url undefined when result is absent', async () => {
+    await hass.addContainerSensor({
+        name: 'container-name',
+        watcher: 'watcher-name',
+        displayIcon: 'mdi:docker',
+        result: undefined,
+    });
+    const discoveryCall = mqttClientMock.publish.mock.calls[0];
+    const discoveryPayload = JSON.parse(discoveryCall[1]);
+    expect(discoveryPayload.release_url).toBeUndefined();
+});
+
+test('publishDiscoveryMessage should use default icon when none provided', async () => {
+    await hass.publishDiscoveryMessage({
+        discoveryTopic: 'my/discovery',
+        stateTopic: 'my/state',
+        kind: 'sensor',
+    });
+    const payload = JSON.parse(mqttClientMock.publish.mock.calls[0][1]);
+    expect(payload.icon).toBe('mdi:docker');
+    expect(payload.name).toBe('my_state');
+});
+
+test('constructor should register event callbacks that invoke methods', async () => {
+    const addSpy = vi.spyOn(hass, 'addContainerSensor').mockResolvedValue();
+    const removeSpy = vi.spyOn(hass, 'removeContainerSensor').mockResolvedValue();
+    const watcherSpy = vi.spyOn(hass, 'updateWatcherSensors').mockResolvedValue();
+
+    // Get captured callbacks
+    const containerAddedCb = registerContainerAdded.mock.calls[0][0];
+    const containerUpdatedCb = registerContainerUpdated.mock.calls[0][0];
+    const containerRemovedCb = registerContainerRemoved.mock.calls[0][0];
+    const watcherStartCb = registerWatcherStart.mock.calls[0][0];
+    const watcherStopCb = registerWatcherStop.mock.calls[0][0];
+
+    const testContainer = { name: 'test', watcher: 'w1' };
+    const testWatcher = { name: 'w1' };
+
+    await containerAddedCb(testContainer);
+    expect(addSpy).toHaveBeenCalledWith(testContainer);
+
+    await containerUpdatedCb(testContainer);
+    expect(addSpy).toHaveBeenCalledTimes(2);
+
+    await containerRemovedCb(testContainer);
+    expect(removeSpy).toHaveBeenCalledWith(testContainer);
+
+    await watcherStartCb(testWatcher);
+    expect(watcherSpy).toHaveBeenCalledWith({ watcher: testWatcher, isRunning: true });
+
+    await watcherStopCb(testWatcher);
+    expect(watcherSpy).toHaveBeenCalledWith({ watcher: testWatcher, isRunning: false });
 });

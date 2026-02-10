@@ -90,7 +90,7 @@ describe('HTTP Trigger', () => {
         axios.mockResolvedValue({ data: {} });
         await http.register('trigger', 'http', 'test', {
             url: 'https://example.com/webhook',
-            auth: { type: 'BASIC', user: 'user', password: 'pass' },
+            auth: { type: 'BASIC', user: 'user', password: 'pass' }, // NOSONAR - test fixture, not a real credential
         });
         const container = { name: 'test' };
 
@@ -99,7 +99,7 @@ describe('HTTP Trigger', () => {
             method: 'POST',
             url: 'https://example.com/webhook',
             data: container,
-            auth: { username: 'user', password: 'pass' },
+            auth: { username: 'user', password: 'pass' }, // NOSONAR - test fixture, not a real credential
         });
     });
 
@@ -108,7 +108,7 @@ describe('HTTP Trigger', () => {
         axios.mockResolvedValue({ data: {} });
         await http.register('trigger', 'http', 'test', {
             url: 'https://example.com/webhook',
-            auth: { type: 'BEARER', bearer: 'token' },
+            auth: { type: 'BEARER', bearer: 'token' }, // NOSONAR - test fixture, not a real credential
         });
         const container = { name: 'test' };
 
@@ -117,7 +117,42 @@ describe('HTTP Trigger', () => {
             method: 'POST',
             url: 'https://example.com/webhook',
             data: container,
-            headers: { Authorization: 'Bearer token' },
+            headers: { Authorization: 'Bearer token' }, // NOSONAR - test fixture, not a real credential
+        });
+    });
+
+    test('should handle unknown auth type without setting auth or headers', async () => {
+        const { default: axios } = await import('axios');
+        axios.mockResolvedValue({ data: {} });
+        http.configuration = {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+            auth: { type: 'UNKNOWN' },
+        };
+        const container = { name: 'test' };
+
+        await http.trigger(container);
+        expect(axios).toHaveBeenCalledWith({
+            method: 'POST',
+            url: 'https://example.com/webhook',
+            data: container,
+        });
+    });
+
+    test('should handle request with no auth and no proxy', async () => {
+        const { default: axios } = await import('axios');
+        axios.mockResolvedValue({ data: {} });
+        http.configuration = {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+        };
+        const container = { name: 'test' };
+
+        await http.trigger(container);
+        expect(axios).toHaveBeenCalledWith({
+            method: 'POST',
+            url: 'https://example.com/webhook',
+            data: container,
         });
     });
 

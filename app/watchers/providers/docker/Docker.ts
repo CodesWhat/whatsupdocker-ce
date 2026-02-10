@@ -846,16 +846,12 @@ class Docker extends Watcher {
             } catch (error) {
                 // Fallback to silent logger if log module fails
                 this.log = {
-                    // @ts-ignore Unused implementation
                     info: () => {},
-                    // @ts-ignore Unused implementation
                     warn: () => {},
-                    // @ts-ignore Unused implementation
                     error: () => {},
-                    // @ts-ignore Unused implementation
                     debug: () => {},
                     child: () => this.log,
-                };
+                } as unknown as typeof log;
             }
         }
     }

@@ -743,3 +743,401 @@ test('addUpdateKindProperty should return unknown when no update available', asy
         semverDiff: 'unknown',
     });
 });
+
+test('addUpdateKindProperty should return unknown when tag.value is undefined', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: {},
+            digest: { watch: false },
+        },
+        result: {
+            tag: 'v2',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind).toEqual({
+        kind: 'unknown',
+        semverDiff: 'unknown',
+    });
+});
+
+test('addUpdateKindProperty should return unknown when result.tag is undefined', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: 'v1', semver: false },
+            digest: { watch: false },
+        },
+        result: {},
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind).toEqual({
+        kind: 'unknown',
+        semverDiff: 'unknown',
+    });
+});
+
+test('model should suppress digest update when digest is in skipDigests', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            skipDigests: ['sha256:newdigest'],
+        },
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: 'latest',
+                semver: false,
+            },
+            digest: {
+                watch: true,
+                value: 'sha256:olddigest',
+            },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: 'latest',
+            digest: 'sha256:newdigest',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
+    expect(containerValidated.updateKind).toEqual({
+        kind: 'digest',
+        localValue: 'sha256:olddigest',
+        remoteValue: 'sha256:newdigest',
+        semverDiff: 'unknown',
+    });
+});
+
+test('model should not flag updateAvailable when digest watch is true but values match', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: {
+                name: 'hub',
+                url: 'https://hub',
+            },
+            name: 'organization/image',
+            tag: {
+                value: 'latest',
+                semver: false,
+            },
+            digest: {
+                watch: true,
+                value: 'sha256:samedigest',
+            },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: 'latest',
+            digest: 'sha256:samedigest',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
+});
+
+test('resultChanged should return true when other container is undefined', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: 'v1', semver: false },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: { tag: 'v1' },
+    });
+    expect(containerValidated.resultChanged(undefined)).toBeTruthy();
+});
+
+test('resultChanged should return true when digest differs', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: 'v1', semver: false },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: { tag: 'v1', digest: 'sha256:abc' },
+    });
+
+    const other = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: 'v1', semver: false },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: { tag: 'v1', digest: 'sha256:def' },
+    });
+
+    expect(containerValidated.resultChanged(other)).toBeTruthy();
+});
+
+test('getLink should use raw variable for backward compatibility', () => {
+    const { testable_getLink: getLink } = container;
+    expect(
+        getLink(
+            {
+                linkTemplate: 'https://v${raw}',
+                image: { tag: { semver: false } },
+            },
+            'mytagvalue',
+        ),
+    ).toEqual('https://vmytagvalue');
+});
+
+test('getLink should handle transformed tag in link', () => {
+    const { testable_getLink: getLink } = container;
+    expect(
+        getLink(
+            {
+                linkTemplate: 'https://v${transformed}',
+                transformTags: '^v(.*) => $1',
+                image: { tag: { semver: false } },
+            },
+            'v1.2.3',
+        ),
+    ).toEqual('https://v1.2.3');
+});
+
+test('getLink should handle empty prerelease', () => {
+    const { testable_getLink: getLink } = container;
+    const result = getLink(
+        {
+            linkTemplate: 'https://test-${prerelease}.acme.com',
+            image: { tag: { semver: true } },
+        },
+        '1.0.0',
+    );
+    expect(result).toEqual('https://test-.acme.com');
+});
+
+test('getLink should handle unknown template vars gracefully', () => {
+    const { testable_getLink: getLink } = container;
+    const result = getLink(
+        {
+            linkTemplate: 'https://test-${unknownvar}.acme.com',
+            image: { tag: { semver: false } },
+        },
+        '1.0.0',
+    );
+    expect(result).toEqual('https://test-.acme.com');
+});
+
+test('model should handle non-semver tag update', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: 'latest', semver: false },
+        },
+        result: {
+            tag: 'stable',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind).toEqual({
+        kind: 'tag',
+        localValue: 'latest',
+        remoteValue: 'stable',
+        semverDiff: 'unknown',
+    });
+});
+
+test('model should handle premajor semver diff', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: '1.0.0-alpha.1', semver: true },
+        },
+        result: {
+            tag: '2.0.0-alpha.1',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind.semverDiff).toBe('major');
+});
+
+test('model should handle preminor semver diff', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: '1.0.0-alpha.1', semver: true },
+        },
+        result: {
+            tag: '1.1.0-alpha.1',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind.semverDiff).toBe('minor');
+});
+
+test('model should return false for updateAvailable when no result', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: '1.0.0', semver: true },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeFalsy();
+    expect(containerValidated.updateKind.kind).toBe('unknown');
+});
+
+test('model should return false for updateAvailable when no image', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        result: { tag: 'v2' },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind.kind).toBe('unknown');
+});
+
+test('model should not suppress update when snoozeUntil is in the past', async () => {
+    const pastSnooze = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            snoozeUntil: pastSnooze,
+        },
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: '1.0.0', semver: true },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: '1.0.1',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeTruthy();
+});
+
+test('model should not suppress update when snoozeUntil is invalid', async () => {
+    const containerValidated = container.validate({
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        updatePolicy: {
+            snoozeUntil: '2021-06-12T05:33:38.440Z',
+        },
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'hub', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: '1.0.0', semver: true },
+            digest: { watch: false },
+            architecture: 'arch',
+            os: 'os',
+        },
+        result: {
+            tag: '1.0.1',
+        },
+    });
+    expect(containerValidated.updateAvailable).toBeTruthy();
+});
+
+test('getLink should return undefined when container is null', () => {
+    const { testable_getLink: getLink } = container;
+    expect(getLink(null, '1.0.0')).toBeUndefined();
+});
+
+test('getLink should return undefined when linkTemplate is missing', () => {
+    const { testable_getLink: getLink } = container;
+    expect(
+        getLink({ image: { tag: { semver: false } } }, '1.0.0'),
+    ).toBeUndefined();
+});
+
+test('model should handle prepatch semver diff', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: '1.0.0-alpha.1', semver: true },
+        },
+        result: {
+            tag: '1.0.1-alpha.1',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind.semverDiff).toBe('patch');
+});
+
+test('model should handle semver diff returning null (same version)', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    // Same semver but different raw tags (e.g. through transform)
+    const containerObject = {
+        transformTags: '^v(.*) => $1',
+        image: {
+            tag: { value: 'v1.0.0', semver: true },
+        },
+        result: {
+            tag: '1.0.0', // different raw but same after transform
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    // Tags are different (v1.0.0 vs 1.0.0) so kind=tag, but after transform
+    // both are 1.0.0, so no tag update
+    expect(containerObject.updateKind.kind).toBe('unknown');
+});
+
+test('model should handle digest watch mode with matching digests returning unknown update kind', async () => {
+    const { testable_addUpdateKindProperty: addUpdateKindProperty } = container;
+    const containerObject = {
+        image: {
+            tag: { value: 'latest', semver: false },
+            digest: {
+                watch: true,
+                value: 'sha256:same',
+            },
+        },
+        result: {
+            tag: 'latest',
+            digest: 'sha256:same',
+        },
+    };
+    addUpdateKindProperty(containerObject);
+    expect(containerObject.updateKind.kind).toBe('unknown');
+});

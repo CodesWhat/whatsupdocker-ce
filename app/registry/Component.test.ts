@@ -64,3 +64,32 @@ test('register should throw when init fails', async () => {
         'init failed',
     );
 });
+
+test('getId should include agent prefix when agent is set', async () => {
+    const component = new Component();
+    await component.register('kind', 'type', 'name', { x: 'x' }, 'myagent');
+    expect(component.getId()).toEqual('myagent.type.name');
+});
+
+test('maskConfiguration should return this.configuration when no arg given', () => {
+    const component = new Component();
+    component.configuration = { foo: 'bar' };
+    expect(component.maskConfiguration()).toEqual({ foo: 'bar' });
+});
+
+test('deregister should call deregisterComponent', async () => {
+    const component = new Component();
+    await component.register('kind', 'type', 'name', {});
+    const spy = vi.spyOn(component, 'deregisterComponent');
+    await component.deregister();
+    expect(spy).toHaveBeenCalledTimes(1);
+});
+
+test('validateConfiguration should return empty object when value is falsy', () => {
+    const component = new Component();
+    // Override getConfigurationSchema to return schema that yields no value
+    component.getConfigurationSchema = () =>
+        component.joi.object().keys({}).default(undefined);
+    const result = component.validateConfiguration({});
+    expect(result).toEqual({});
+});

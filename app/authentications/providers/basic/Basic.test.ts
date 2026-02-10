@@ -17,7 +17,7 @@ describe('Basic Authentication', () => {
         // Mock configuration to avoid validation errors
         basic.configuration = {
             user: 'testuser',
-            hash: '$2b$10$test.hash.value',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
         };
 
         const strategy = basic.getStrategy();
@@ -36,7 +36,7 @@ describe('Basic Authentication', () => {
     test('should mask configuration hash', async () => {
         basic.configuration = {
             user: 'testuser',
-            hash: '$2b$10$test.hash.value',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
         };
         const masked = basic.maskConfiguration();
         expect(masked.user).toBe('testuser');
@@ -47,7 +47,7 @@ describe('Basic Authentication', () => {
         const { default: passJs } = await import('pass');
         basic.configuration = {
             user: 'testuser',
-            hash: '$2b$10$test.hash.value',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
         };
 
         passJs.validate = vi.fn((pass, hash, callback) => {
@@ -65,7 +65,7 @@ describe('Basic Authentication', () => {
     test('should reject invalid user', async () => {
         basic.configuration = {
             user: 'testuser',
-            hash: '$2b$10$test.hash.value',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
         };
 
         await new Promise<void>((resolve) => {
@@ -80,7 +80,7 @@ describe('Basic Authentication', () => {
         const { default: passJs } = await import('pass');
         basic.configuration = {
             user: 'testuser',
-            hash: '$2b$10$test.hash.value',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
         };
 
         passJs.validate = vi.fn((pass, hash, callback) => {
@@ -90,6 +90,59 @@ describe('Basic Authentication', () => {
         await new Promise<void>((resolve) => {
             basic.authenticate('testuser', 'wrongpassword', (err, result) => {
                 expect(result).toBe(false);
+                resolve();
+            });
+        });
+    });
+
+    test('should reject null user', async () => {
+        basic.configuration = {
+            user: 'testuser',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+        };
+
+        await new Promise<void>((resolve) => {
+            basic.authenticate(null, 'password', (err, result) => {
+                expect(result).toBe(false);
+                resolve();
+            });
+        });
+    });
+
+    test('should validate configuration schema', async () => {
+        expect(
+            basic.validateConfiguration({
+                user: 'testuser',
+                hash: 'somehash',
+            }),
+        ).toEqual({
+            user: 'testuser',
+            hash: 'somehash',
+        });
+    });
+
+    test('should throw on invalid configuration', async () => {
+        expect(() => basic.validateConfiguration({})).toThrow(
+            '"user" is required',
+        );
+    });
+
+    test('should delegate authentication through strategy callback', async () => {
+        const { default: passJs } = await import('pass');
+        basic.configuration = {
+            user: 'testuser',
+            hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+        };
+
+        passJs.validate = vi.fn((pass, hash, callback) => {
+            callback(null, true);
+        });
+
+        const strategy = basic.getStrategy();
+        // The strategy stores the verify callback; invoke it to cover line 37
+        await new Promise<void>((resolve) => {
+            strategy._verify('testuser', 'password', (err, result) => {
+                expect(result).toEqual({ username: 'testuser' });
                 resolve();
             });
         });

@@ -8,7 +8,7 @@ import Slack from './Slack.js';
 const slack = new Slack();
 
 const configurationValid = {
-    token: 'token',
+    token: 'token', // NOSONAR - test fixture, not a real credential
     channel: 'channel',
     threshold: 'all',
     mode: 'simple',
@@ -22,6 +22,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
     disabletitle: false,
 };
 
@@ -39,7 +40,7 @@ test('validateConfiguration should throw error when invalid', async () => {
 
 test('maskConfiguration should mask sensitive data', async () => {
     slack.configuration = {
-        token: 'token',
+        token: 'token', // NOSONAR - test fixture, not a real credential
         channel: 'channel',
     };
     expect(slack.maskConfiguration()).toEqual({
@@ -147,5 +148,20 @@ test('triggerBatch should send batch notification', async () => {
     await slack.triggerBatch(containers);
     expect(slack.sendMessage).toHaveBeenCalledWith(
         '*2 updates available*\n\n- Container container1 running with tag 1.0.0 can be updated to tag 2.0.0\n\n- Container container2 running with tag 1.1.0 can be updated to tag 2.1.0\n',
+    );
+});
+
+test('triggerBatch should send body only when disabletitle is true', async () => {
+    slack.configuration = { ...configurationValid, disabletitle: true };
+    slack.sendMessage = vi.fn();
+    const containers = [
+        {
+            name: 'container1',
+            updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+        },
+    ];
+    await slack.triggerBatch(containers);
+    expect(slack.sendMessage).toHaveBeenCalledWith(
+        expect.not.stringContaining('updates available'),
     );
 });

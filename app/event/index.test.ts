@@ -89,3 +89,68 @@ test('container report handlers with same order should run by id', async () => {
 
     expect(calls).toEqual(['discord', 'docker']);
 });
+
+test('container report handlers with same order and id should run by registration sequence', async () => {
+    const calls: string[] = [];
+    event.registerContainerReport(
+        async () => {
+            calls.push('first');
+        },
+        { id: 'same.id', order: 10 },
+    );
+    event.registerContainerReport(
+        async () => {
+            calls.push('second');
+        },
+        { id: 'same.id', order: 10 },
+    );
+
+    await event.emitContainerReport({});
+
+    expect(calls).toEqual(['first', 'second']);
+});
+
+test('deregistration function should remove handler', async () => {
+    const handler = vi.fn();
+    const deregister = event.registerContainerReport(handler, { order: 10 });
+
+    deregister();
+
+    await event.emitContainerReport({});
+    expect(handler).not.toHaveBeenCalled();
+});
+
+test('emitContainerUpdateApplied should call registered handlers', async () => {
+    const handler = vi.fn();
+    event.registerContainerUpdateApplied(handler, { order: 10 });
+    await event.emitContainerUpdateApplied('container-123');
+    expect(handler).toHaveBeenCalledWith('container-123');
+});
+
+test('deregistration of containerUpdateApplied handler should work', async () => {
+    const handler = vi.fn();
+    const deregister = event.registerContainerUpdateApplied(handler, { order: 10 });
+    deregister();
+    await event.emitContainerUpdateApplied('container-456');
+    expect(handler).not.toHaveBeenCalled();
+});
+
+test('handler with non-finite order should default to 100', async () => {
+    const calls: string[] = [];
+    event.registerContainerReport(
+        async () => {
+            calls.push('low-order');
+        },
+        { order: 50 },
+    );
+    event.registerContainerReport(
+        async () => {
+            calls.push('default-order');
+        },
+        { order: Number.NaN },
+    );
+
+    await event.emitContainerReport({});
+
+    expect(calls).toEqual(['low-order', 'default-order']);
+});

@@ -7,7 +7,7 @@ const trueforge = new Trueforge();
 trueforge.configuration = {
     namespace: 'namespace',
     account: 'account',
-    token: 'token',
+    token: 'token', // NOSONAR - test fixture, not a real credential
 };
 
 vi.mock('axios');
@@ -17,12 +17,12 @@ test('validatedConfiguration should initialize when auth configuration is valid'
         trueforge.validateConfiguration({
             namespace: 'namespace',
             account: 'account',
-            token: 'token',
+            token: 'token', // NOSONAR - test fixture, not a real credential
         }),
     ).toStrictEqual({
         namespace: 'namespace',
         account: 'account',
-        token: 'token',
+        token: 'token', // NOSONAR - test fixture, not a real credential
     });
 });
 
@@ -57,6 +57,12 @@ test('match should return false when registry url is not from trueforge', async 
     ).toBeFalsy();
 });
 
+test('match should reject hostnames that bypass unescaped dot in regex', async () => {
+    expect(trueforge.match({ registry: { url: 'ociXtrueforgeXorg' } })).toBe(false);
+    expect(trueforge.match({ registry: { url: 'evil-oci.trueforge.org.attacker.com' } })).toBe(false);
+    expect(trueforge.match({ registry: { url: 'notoci.trueforge.org' } })).toBe(false);
+});
+
 test('normalizeImage should return the proper registry v2 endpoint', async () => {
     expect(
         trueforge.normalizeImage({
@@ -76,6 +82,6 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('getAuthPull should return quay-compatible pull credentials', async () => {
     await expect(trueforge.getAuthPull()).resolves.toStrictEqual({
         username: 'namespace+account',
-        password: 'token',
+        password: 'token', // NOSONAR - test fixture, not a real credential
     });
 });

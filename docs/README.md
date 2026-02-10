@@ -17,7 +17,6 @@ Keep your containers up-to-date!
 
 `TRIGGERS` perform actions when updates are available
 
-![image](assets/wud-arch.png)
 
 ## Supported triggers
 
@@ -50,7 +49,7 @@ Many registries are supported.
 
 A Web UI allows to get container insights and to manually run the triggers.
 
-![image](assets/ui.png)
+![drydock containers view](assets/drydock-containers.png)
 
 ## Integration
 

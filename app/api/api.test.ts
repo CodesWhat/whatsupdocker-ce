@@ -1,44 +1,22 @@
 // @ts-nocheck
-// Mock all the router modules
-vi.mock('express', () => ({
-    default: {
-        Router: vi.fn(() => ({
-            use: vi.fn(),
-            get: vi.fn(),
-        })),
-    },
+const { mockInit } = vi.hoisted(() => ({
+    mockInit: () => ({ init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })) }),
 }));
 
-vi.mock('./app', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
+vi.mock('express', () => ({
+    default: { Router: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })) },
 }));
-vi.mock('./container', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./watcher', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./trigger', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./registry', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./authentication', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./log', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./store', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./server', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
-vi.mock('./agent', () => ({
-    init: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })),
-}));
+
+vi.mock('./app', mockInit);
+vi.mock('./container', mockInit);
+vi.mock('./watcher', mockInit);
+vi.mock('./trigger', mockInit);
+vi.mock('./registry', mockInit);
+vi.mock('./authentication', mockInit);
+vi.mock('./log', mockInit);
+vi.mock('./store', mockInit);
+vi.mock('./server', mockInit);
+vi.mock('./agent', mockInit);
 vi.mock('./auth', () => ({
     requireAuthentication: vi.fn((req, res, next) => next()),
 }));
@@ -84,5 +62,17 @@ describe('API Router', () => {
     test('should use requireAuthentication middleware', async () => {
         const auth = await import('./auth.js');
         expect(router.use).toHaveBeenCalledWith(auth.requireAuthentication);
+    });
+
+    test('should register catch-all 404 handler', () => {
+        const getCalls = router.get.mock.calls;
+        const catchAll = getCalls.find((c) => c[0] === '/{*path}');
+        expect(catchAll).toBeDefined();
+
+        // Invoke the handler
+        const handler = catchAll[1];
+        const res = { sendStatus: vi.fn() };
+        handler({}, res);
+        expect(res.sendStatus).toHaveBeenCalledWith(404);
     });
 });

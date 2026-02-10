@@ -2,9 +2,7 @@
 import * as app from './app.js';
 import * as migrate from './migrate.js';
 
-vi.mock('../log', () => ({
-    default: { child: vi.fn(() => ({ info: vi.fn() })) },
-}));
+vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
 vi.mock('../configuration', () => ({
     getVersion: () => '2.0.0',
     getLogLevel: () => 'info',

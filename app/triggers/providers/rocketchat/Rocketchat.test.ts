@@ -30,7 +30,7 @@ describe('Rocketchat Trigger', () => {
         const config = {
             url: 'https://open.rocket.chat',
             user: { id: 'jDdn8oh9BfJKnWdDY' },
-            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
+            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
 
@@ -40,7 +40,7 @@ describe('Rocketchat Trigger', () => {
     test('should throw error when URL is missing', async () => {
         const config = {
             user: { id: 'test' },
-            auth: { token: 'test' },
+            auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
 
@@ -51,7 +51,7 @@ describe('Rocketchat Trigger', () => {
         const config = {
             url: 'https://open.rocket.chat',
             user: {},
-            auth: { token: 'test' },
+            auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
 
@@ -73,7 +73,7 @@ describe('Rocketchat Trigger', () => {
         const config = {
             url: 'https://open.rocket.chat',
             user: { id: 'test' },
-            auth: { token: 'test' },
+            auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
         };
 
         expect(() => rocketchat.validateConfiguration(config)).toThrow();
@@ -81,7 +81,7 @@ describe('Rocketchat Trigger', () => {
 
     test('should mask configuration sensitive data', async () => {
         rocketchat.configuration = {
-            auth: { token: 'token' },
+            auth: { token: 'token' }, // NOSONAR - test fixture, not a real credential
             user: { id: 'some_user_id' },
             channel: '#general',
         };
@@ -96,7 +96,7 @@ describe('Rocketchat Trigger', () => {
         rocketchat.configuration = {
             url: 'https://open.rocket.chat',
             user: { id: 'jDdn8oh9BfJKnWdDY' },
-            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
+            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
         rocketchat.renderSimpleTitle = vi.fn().mockReturnValue('Title');
@@ -113,7 +113,7 @@ describe('Rocketchat Trigger', () => {
         rocketchat.configuration = {
             url: 'https://open.rocket.chat',
             user: { id: 'jDdn8oh9BfJKnWdDY' },
-            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
+            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
         rocketchat.renderBatchTitle = vi.fn().mockReturnValue('Batch Title');
@@ -130,7 +130,7 @@ describe('Rocketchat Trigger', () => {
         rocketchat.configuration = {
             url: 'https://open.rocket.chat',
             user: { id: 'jDdn8oh9BfJKnWdDY' },
-            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
+            auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
             channel: '#general',
         };
 
@@ -144,7 +144,7 @@ describe('Rocketchat Trigger', () => {
             {
                 headers: {
                     'X-Auth-Token':
-                        'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx',
+                        'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx', // NOSONAR - test fixture, not a real credential
                     'X-User-Id': 'jDdn8oh9BfJKnWdDY',
                     'content-type': 'application/json',
                     accept: 'application/json',
@@ -203,5 +203,23 @@ describe('Rocketchat Trigger', () => {
             text: 'Test',
             parseUrls: true,
         });
+    });
+
+    test('composeMessage should return only body when disabletitle is true', () => {
+        rocketchat.configuration = { disabletitle: true };
+        rocketchat.renderSimpleBody = vi.fn().mockReturnValue('Body only');
+        rocketchat.renderSimpleTitle = vi.fn().mockReturnValue('Title');
+        const result = rocketchat.composeMessage({ name: 'test' });
+        expect(result).toBe('Body only');
+        expect(rocketchat.renderSimpleTitle).not.toHaveBeenCalled();
+    });
+
+    test('composeBatchMessage should return only body when disabletitle is true', () => {
+        rocketchat.configuration = { disabletitle: true };
+        rocketchat.renderBatchBody = vi.fn().mockReturnValue('Batch body');
+        rocketchat.renderBatchTitle = vi.fn().mockReturnValue('Batch title');
+        const result = rocketchat.composeBatchMessage([{ name: 'c1' }]);
+        expect(result).toBe('Batch body');
+        expect(rocketchat.renderBatchTitle).not.toHaveBeenCalled();
     });
 });

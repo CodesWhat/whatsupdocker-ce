@@ -44,6 +44,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 const containerData = [
@@ -95,7 +96,7 @@ test('validateConfiguration should throw error when invalid', async () => {
 
 test('maskConfiguration should mask sensitive data', async () => {
     mqtt.configuration = {
-        password: 'password',
+        password: 'password', // NOSONAR - test fixture, not a real credential
         url: 'mqtt://host:1883',
         topic: 'dd/container',
         hass: {
@@ -120,7 +121,7 @@ test('initTrigger should init Mqtt client', async () => {
     mqtt.configuration = {
         ...configurationValid,
         user: 'user',
-        password: 'password',
+        password: 'password', // NOSONAR - test fixture, not a real credential
         clientid: 'wud',
         hass: {
             enabled: true,
@@ -133,7 +134,7 @@ test('initTrigger should init Mqtt client', async () => {
     expect(spy).toHaveBeenCalledWith('mqtt://host:1883', {
         clientId: 'wud',
         username: 'user',
-        password: 'password',
+        password: 'password', // NOSONAR - test fixture, not a real credential
         rejectUnauthorized: true,
     });
 });

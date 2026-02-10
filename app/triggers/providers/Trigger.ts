@@ -1,5 +1,6 @@
 import Component, { ComponentConfiguration } from '../../registry/Component.js';
 import * as event from '../../event/index.js';
+import { registerContainerUpdateApplied } from '../../event/index.js';
 import { getTriggerCounter } from '../../prometheus/trigger.js';
 import { fullName, Container } from '../../model/container.js';
 
@@ -12,6 +13,7 @@ export interface TriggerConfiguration extends ComponentConfiguration {
     simpletitle?: string;
     simplebody?: string;
     batchtitle?: string;
+    resolvenotifications?: boolean;
 }
 
 export interface ContainerReport {
@@ -101,7 +103,7 @@ function safeEvalExpr(
     }
 
     // --- method call: path.method(args) ---
-    const methodMatch = trimmed.match(
+    const methodMatch = trimmed.match( // NOSONAR - regex operates on bounded template expressions, not arbitrary user input
         /^([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*?)\.([a-zA-Z_]\w*)\(([^)]*)\)$/,
     );
     if (methodMatch) {
@@ -293,6 +295,8 @@ class Trigger extends Component {
     public strictAgentMatch = false;
     private unregisterContainerReport?: () => void;
     private unregisterContainerReports?: () => void;
+    private unregisterContainerUpdateApplied?: () => void;
+    private readonly notificationResults: Map<string, any> = new Map();
 
     static getSupportedThresholds() {
         return [
@@ -455,7 +459,13 @@ class Trigger extends Component {
                     logContainer.debug('Trigger conditions not met => ignore');
                 } else {
                     logContainer.debug('Run');
-                    await this.trigger(containerReport.container);
+                    const result = await this.trigger(containerReport.container);
+                    if (this.configuration.resolvenotifications && result) {
+                        this.notificationResults.set(
+                            fullName(containerReport.container),
+                            result,
+                        );
+                    }
                 }
                 status = 'success';
             } catch (e: any) {
@@ -611,6 +621,14 @@ class Trigger extends Component {
         } else {
             this.log.info(`Registering for manual execution`);
         }
+        if (this.configuration.resolvenotifications) {
+            this.log.info('Registering for notification resolution');
+            this.unregisterContainerUpdateApplied =
+                registerContainerUpdateApplied(
+                    async (containerId) =>
+                        this.handleContainerUpdateApplied(containerId),
+                );
+        }
     }
 
     async deregisterComponent(): Promise<void> {
@@ -621,6 +639,10 @@ class Trigger extends Component {
         if (this.unregisterContainerReports) {
             this.unregisterContainerReports();
             this.unregisterContainerReports = undefined;
+        }
+        if (this.unregisterContainerUpdateApplied) {
+            this.unregisterContainerUpdateApplied();
+            this.unregisterContainerUpdateApplied = undefined;
         }
     }
 
@@ -660,6 +682,7 @@ class Trigger extends Component {
             batchtitle: this.joi
                 .string()
                 .default('${containers.length} updates available'),
+            resolvenotifications: this.joi.boolean().default(false),
         });
         const schemaValidated =
             schemaWithDefaultOptions.validate(configuration);
@@ -700,6 +723,91 @@ class Trigger extends Component {
             'Cannot trigger container results; this trigger does not implement "batch" mode',
         );
         return containersWithResult;
+    }
+
+    /**
+     * Handle container update applied event.
+     * Dismiss the stored notification for the updated container.
+     * @param containerId
+     */
+    async handleContainerUpdateApplied(containerId: string) {
+        const triggerResult = this.notificationResults.get(containerId);
+        if (!triggerResult) {
+            return;
+        }
+        try {
+            this.log.info(
+                `Dismissing notification for container ${containerId}`,
+            );
+            await this.dismiss(containerId, triggerResult);
+        } catch (e: any) {
+            this.log.warn(
+                `Error dismissing notification for container ${containerId} (${e.message})`,
+            );
+            this.log.debug(e);
+        } finally {
+            this.notificationResults.delete(containerId);
+        }
+    }
+
+    /**
+     * Dismiss a previously sent notification.
+     * Override in trigger implementations that support notification deletion.
+     * @param containerId the container identifier
+     * @param triggerResult the result returned by trigger() when the notification was sent
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async dismiss(containerId: string, triggerResult: any): Promise<void> {
+        // do nothing by default
+    }
+
+    /**
+     * Compose a single-container message with optional title.
+     * Providers needing custom formatting should override formatTitleAndBody().
+     */
+    protected composeMessage(container: Container): string {
+        const body = this.renderSimpleBody(container);
+        if ((this.configuration as any).disabletitle) {
+            return body;
+        }
+        const title = this.renderSimpleTitle(container);
+        return this.formatTitleAndBody(title, body);
+    }
+
+    /**
+     * Compose a batch message with optional title.
+     * Providers needing custom formatting should override formatTitleAndBody().
+     */
+    protected composeBatchMessage(containers: Container[]): string {
+        const body = this.renderBatchBody(containers);
+        if ((this.configuration as any).disabletitle) {
+            return body;
+        }
+        const title = this.renderBatchTitle(containers);
+        return this.formatTitleAndBody(title, body);
+    }
+
+    /**
+     * Format title and body into a single message string.
+     * Override in subclasses for custom formatting (e.g. bold, markdown).
+     */
+    protected formatTitleAndBody(title: string, body: string): string {
+        return `${title}\n\n${body}`;
+    }
+
+    /**
+     * Mask the specified fields in the configuration, returning a copy.
+     * For simple flat-field masking; providers with nested fields should
+     * override maskConfiguration() directly.
+     */
+    protected maskFields(fieldsToMask: string[]): Record<string, any> {
+        const masked = { ...this.configuration };
+        for (const field of fieldsToMask) {
+            if ((masked as any)[field]) {
+                (masked as any)[field] = (this.constructor as typeof Trigger).mask((masked as any)[field]);
+            }
+        }
+        return masked;
     }
 
     /**

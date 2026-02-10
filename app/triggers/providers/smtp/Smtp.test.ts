@@ -25,6 +25,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -186,6 +187,42 @@ test('maskConfiguration should mask sensitive data', async () => {
         user: configurationValid.user,
         pass: 'p**s',
     });
+});
+
+test('init should create transporter without auth when no user/pass', async () => {
+    smtp.configuration = {
+        ...configurationValid,
+        user: undefined,
+        pass: undefined,
+    };
+    smtp.log = log;
+    smtp.initTrigger();
+    expect(smtp.transporter.options.auth).toBeUndefined();
+});
+
+test('init should create transporter with tls enabled and verify false', async () => {
+    smtp.configuration = {
+        ...configurationValid,
+        tls: {
+            enabled: true,
+            verify: false,
+        },
+    };
+    smtp.log = log;
+    smtp.initTrigger();
+    expect(smtp.transporter.options.secure).toBe(true);
+    expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(false);
+});
+
+test('init should default tls rejectUnauthorized to true when tls is undefined', async () => {
+    smtp.configuration = {
+        ...configurationValid,
+        tls: undefined,
+    };
+    smtp.log = log;
+    smtp.initTrigger();
+    expect(smtp.transporter.options.secure).toBeFalsy();
+    expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(true);
 });
 
 test('trigger should format mail as expected', async () => {

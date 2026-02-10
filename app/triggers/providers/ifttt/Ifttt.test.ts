@@ -23,6 +23,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 beforeEach(async () => {
@@ -84,6 +85,26 @@ test('trigger should send http request to IFTTT', async () => {
         },
         method: 'POST',
 
+        url: 'https://maker.ifttt.com/trigger/event/with/key/key',
+    });
+});
+
+test('triggerBatch should send http request with containers json', async () => {
+    ifttt.configuration = {
+        key: 'key',
+        event: 'event',
+    };
+    const containers = [{ name: 'c1' }, { name: 'c2' }];
+    axios.mockResolvedValue({ data: {} });
+    await ifttt.triggerBatch(containers);
+    expect(axios).toHaveBeenCalledWith({
+        data: {
+            value1: JSON.stringify(containers),
+        },
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        method: 'POST',
         url: 'https://maker.ifttt.com/trigger/event/with/key/key',
     });
 });

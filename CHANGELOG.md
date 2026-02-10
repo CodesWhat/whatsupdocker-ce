@@ -7,7 +7,55 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ---
 
-## 9.0.0-ce (398 files changed)
+## 2026.2.2
+
+### Security / CI
+
+- **Cosign keyless signing** — Container image releases are now signed with Sigstore cosign keyless signing for supply chain integrity.
+- **Least-privilege workflow permissions** — Replaced overly broad `read-all` with minimum specific permissions across all CI/CD workflows.
+- **CodeQL and Scorecard fixes** — Resolved all high-severity CodeQL and OpenSSF Scorecard security alerts.
+- **Pinned CI actions** — All CI action references pinned to commit hashes with Dockerfile base image digest.
+
+### Testing
+
+- **97% test coverage** — Boosted from 76% to 97% with 449 new tests (1,254 total across 95 test files).
+- **Fuzz testing** — Added property-based fuzz tests with fast-check for Docker image name parsing.
+
+### Code Quality
+
+- **Static analysis fixes** — Optional chaining, `String#replaceAll()`, `readonly` modifiers, `Number.NaN`, concise regex syntax, removed unused imports, moved functions to outer scope.
+- **Reduced code duplication** — Refactored duplicated code in registries, triggers, and store test files flagged by SonarCloud.
+
+### Dependencies
+
+- **Pino logging** — Replaced bunyan with pino to eliminate vulnerable transitive dependencies. Added pino-pretty for human-readable log output.
+
+### Maintenance
+
+- **Renamed wud to drydock** — Project references updated from upstream naming across Dockerfile, entrypoint, package files, scripts, and test fixtures.
+- **CONTRIBUTING.md** — Added contributor guidelines.
+- **OpenSSF Best Practices badge** — Added to README.
+- **SonarCloud integration** — Added project configuration.
+
+### Features
+
+- **Auto-dismiss notifications after container update** — New `resolvenotifications` option for triggers (default: `false`). When enabled, notification triggers automatically delete the sent message after the Docker trigger successfully updates the container. Implemented for Gotify via its `deleteMessage` API. Other providers (Slack, Discord, ntfy) can add support by overriding the new `dismiss()` method on the base Trigger class. New `containerUpdateApplied` event emitted by the Docker trigger on successful update.
+
+### Bug Fixes
+
+- **Agent mode Prometheus crash** — Guard `getWatchContainerGauge().set()` against undefined in Agent mode where Prometheus is not initialized, fixing "Cannot read properties of undefined (reading 'set')" crash (#23)
+- **Sanitize version logging** — Sanitize version strings from env vars before logging to resolve CodeQL clear-text-logging alerts in `index.ts` and `store/migrate.ts`
+- **Broken event test assertion** — Fix `expect()` without matcher in event test
+
+### Infrastructure
+
+- **Multi-arch container images** — Docker images now built for both `linux/amd64` and `linux/arm64` architectures, published to GHCR
+- **Lefthook pre-push hooks** — Added lefthook config with pre-push checks (lint + build + test) and `npm run check` convenience script
+- **CodeQL query exclusion** — Exclude `js/clear-text-logging` query (false positives on DD_VERSION env var)
+
+---
+
+## 2026.1.0 (398 files changed)
 
 ### Architecture / Tooling
 
@@ -67,7 +115,7 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ### Dependencies
 
-| Package | Upstream (8.1.1) | CE |
+| Package | Upstream (8.1.1) | drydock |
 | --- | --- | --- |
 | vitest | 3.x (Jest) | 4.x |
 | uuid | 9.x | 13.x |
@@ -92,7 +140,7 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ## Upstream Backports
 
-The following changes from `upstream/main` (post-fork) have been ported to CE:
+The following changes from `upstream/main` (post-fork) have been ported to drydock:
 
 | Description | Status |
 | --- | --- |
@@ -104,11 +152,11 @@ The following changes from `upstream/main` (post-fork) have been ported to CE:
 | Buffer Docker event stream before JSON parse | Already fixed independently |
 | SMTP trigger: allow display name in from address ([#908](https://github.com/getwud/wud/pull/908)) | Ported |
 
-Remaining upstream-only changes (not ported — not applicable to CE):
+Remaining upstream-only changes (not ported — not applicable to drydock):
 
 | Description | Reason |
 | --- | --- |
-| Fix e2e tests (x2) | JS-based, CE tests are TS |
-| Fix prettier | CE uses Biome |
-| Fix codeberg tests | Covered by CE's own tests |
+| Fix e2e tests (x2) | JS-based, drydock tests are TS |
+| Fix prettier | drydock uses Biome |
+| Fix codeberg tests | Covered by drydock's own tests |
 | Update changelog | Upstream-specific |

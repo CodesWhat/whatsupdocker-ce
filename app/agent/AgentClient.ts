@@ -30,11 +30,17 @@ export class AgentClient {
         this.name = name;
         this.config = config;
         this.log = logger.child({ component: `agent-client.${name}` });
-        this.baseUrl = `${this.config.host}:${this.config.port || 3000}`;
+        let candidateUrl = `${this.config.host}:${this.config.port || 3000}`;
         // Add protocol if not present
-        if (!this.baseUrl.startsWith('http')) {
-            this.baseUrl = `http${this.config.certfile ? 's' : ''}://${this.baseUrl}`;
+        if (!candidateUrl.startsWith('http')) {
+            candidateUrl = `http${this.config.certfile ? 's' : ''}://${candidateUrl}`;
         }
+        // Validate the URL to prevent request forgery (CodeQL js/request-forgery)
+        const parsed = new URL(candidateUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            throw new Error(`Invalid agent URL protocol: ${parsed.protocol}`);
+        }
+        this.baseUrl = parsed.origin;
 
         this.axiosOptions = {
             headers: {
@@ -43,6 +49,8 @@ export class AgentClient {
         };
 
         if (this.config.certfile) {
+            // Intentional: mTLS with optional self-signed CA for agent communication
+            // lgtm[js/disabling-certificate-validation]
             this.axiosOptions.httpsAgent = new https.Agent({
                 ca: this.config.cafile
                     ? fs.readFileSync(this.config.cafile)
@@ -53,7 +61,6 @@ export class AgentClient {
                 key: this.config.keyfile
                     ? fs.readFileSync(this.config.keyfile)
                     : undefined,
-                rejectUnauthorized: false,
             });
         }
 
@@ -283,7 +290,7 @@ export class AgentClient {
                 )})`,
             );
             await axios.post(
-                `${this.baseUrl}/api/triggers/${triggerType}/${triggerName}`,
+                `${this.baseUrl}/api/triggers/${encodeURIComponent(triggerType)}/${encodeURIComponent(triggerName)}`,
                 container,
                 this.axiosOptions,
             );
@@ -300,7 +307,7 @@ export class AgentClient {
     ) {
         try {
             await axios.post(
-                `${this.baseUrl}/api/triggers/${triggerType}/${triggerName}/batch`,
+                `${this.baseUrl}/api/triggers/${encodeURIComponent(triggerType)}/${encodeURIComponent(triggerName)}/batch`,
                 containers,
                 this.axiosOptions,
             );
@@ -314,7 +321,7 @@ export class AgentClient {
         try {
             this.log.debug(`Deleting container ${containerId} on agent`);
             await axios.delete(
-                `${this.baseUrl}/api/containers/${containerId}`,
+                `${this.baseUrl}/api/containers/${encodeURIComponent(containerId)}`,
                 this.axiosOptions,
             );
         } catch (e: any) {
@@ -326,7 +333,7 @@ export class AgentClient {
     async watch(watcherType: string, watcherName: string) {
         try {
             const response = await axios.post<ContainerReport[]>(
-                `${this.baseUrl}/api/watchers/${watcherType}/${watcherName}`,
+                `${this.baseUrl}/api/watchers/${encodeURIComponent(watcherType)}/${encodeURIComponent(watcherName)}`,
                 {},
                 this.axiosOptions,
             );
@@ -350,7 +357,7 @@ export class AgentClient {
     ) {
         try {
             const response = await axios.post<ContainerReport>(
-                `${this.baseUrl}/api/watchers/${watcherType}/${watcherName}/container/${container.id}`,
+                `${this.baseUrl}/api/watchers/${encodeURIComponent(watcherType)}/${encodeURIComponent(watcherName)}/container/${encodeURIComponent(container.id)}`,
                 {},
                 this.axiosOptions,
             );

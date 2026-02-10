@@ -1,12 +1,12 @@
 {
   "name": "drydock-doc",
-  "version": "2026.2.0",
+  "version": "2026.2.2",
   "description": "drydock - the docs",
   "main": "index.js",
   "scripts": {
     "doc": "docsify serve"
   },
-  "author": "fmartinou",
+  "author": "CodesWhat",
   "repository": "CodesWhat/drydock",
   "license": "MIT",
   "devDependencies": {

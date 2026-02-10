@@ -99,13 +99,13 @@ test('registerRegistries should register all registries', async () => {
         hub: {
             private: {
                 login: 'login',
-                token: 'token',
+                token: 'token', // NOSONAR - test fixture, not a real credential
             },
         },
         ecr: {
             private: {
                 accesskeyid: 'key',
-                secretaccesskey: 'secret',
+                secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
                 region: 'region',
             },
         },
@@ -348,13 +348,13 @@ test('init should register all components', async () => {
         hub: {
             private: {
                 login: 'login',
-                token: 'token',
+                token: 'token', // NOSONAR - test fixture, not a real credential
             },
         },
         ecr: {
             private: {
                 accesskeyid: 'key',
-                secretaccesskey: 'secret',
+                secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
                 region: 'region',
             },
         },
@@ -415,11 +415,11 @@ test('deregisterAll should deregister all components', async () => {
     registries = {
         hub: {
             login: 'login',
-            token: 'token',
+            token: 'token', // NOSONAR - test fixture, not a real credential
         },
         ecr: {
             accesskeyid: 'key',
-            secretaccesskey: 'secret',
+            secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
             region: 'region',
         },
     };
@@ -591,6 +591,53 @@ test('applyTriggerGroupDefaults should support multiple shared keys', () => {
     expect(result.notify).toBeUndefined();
 });
 
+test('applyTriggerGroupDefaults should handle non-record provider configs', () => {
+    const configurations = {
+        mock: 'not-a-record',
+        update: { threshold: 'minor' },
+    };
+    const result = registry.testable_applyTriggerGroupDefaults(
+        configurations,
+        'triggers/providers',
+    );
+    // Non-record provider config should be passed through unchanged
+    expect(result.mock).toBe('not-a-record');
+});
+
+test('applyTriggerGroupDefaults should handle non-record trigger within provider', () => {
+    const configurations = {
+        mock: {
+            update: 'not-a-record',
+            notify: { threshold: 'major' },
+        },
+        notify: { threshold: 'minor' },
+    };
+    const result = registry.testable_applyTriggerGroupDefaults(
+        configurations,
+        'triggers/providers',
+    );
+    // Non-record trigger config should be passed through
+    expect(result.mock.update).toBe('not-a-record');
+    expect(result.mock.notify.threshold).toBe('major');
+});
+
+test('applyTriggerGroupDefaults should handle trigger with no matching group', () => {
+    const configurations = {
+        mock: {
+            update: { mock: 'custom' },
+            unmatched: { foo: 'bar' },
+        },
+        update: { threshold: 'minor' },
+    };
+    const result = registry.testable_applyTriggerGroupDefaults(
+        configurations,
+        'triggers/providers',
+    );
+    expect(result.mock.update.threshold).toBe('minor');
+    // unmatched should pass through unchanged since there's no group for it
+    expect(result.mock.unmatched).toEqual({ foo: 'bar' });
+});
+
 test('applyTriggerGroupDefaults should not treat non-shared-key entries as groups', () => {
     // An entry with non-shared keys (e.g. url) should NOT be extracted as a group
     const configurations = {
@@ -654,4 +701,98 @@ test('registerTriggers should let explicit config override trigger group default
     expect(
         registry.getState().trigger['discord.update'].configuration.threshold,
     ).toEqual('minor');
+});
+
+test('init should register agents and their watchers/triggers', async () => {
+    agents = {
+        node1: {
+            host: 'http://10.0.0.1:3000', // NOSONAR - intentional http for test fixture
+            secret: 'mysecret', // NOSONAR - test fixture, not a real credential
+        },
+    };
+    triggers = {};
+    watchers = {};
+    registries = {};
+    authentications = {};
+    await registry.init();
+    expect(Object.keys(registry.getState().agent)).toContain('dd.node1');
+});
+
+test('deregisterAgentComponents should remove agent-specific watchers and triggers', async () => {
+    // Register a mock component as watcher and trigger with agent
+    const watcherComponent = new Component();
+    await watcherComponent.register('watcher', 'docker', 'agentw', {});
+    watcherComponent.agent = 'myagent';
+    registry.getState().watcher[watcherComponent.getId()] = watcherComponent;
+
+    const triggerComponent = new Component();
+    await triggerComponent.register('trigger', 'mock', 'agentt', {});
+    triggerComponent.agent = 'myagent';
+    registry.getState().trigger[triggerComponent.getId()] = triggerComponent;
+
+    await registry.deregisterAgentComponents('myagent');
+
+    expect(registry.getState().watcher[watcherComponent.getId()]).toBeUndefined();
+    expect(registry.getState().trigger[triggerComponent.getId()]).toBeUndefined();
+});
+
+test('registerTriggers in agent mode should filter out unsupported trigger types', async () => {
+    // Clean all existing triggers first
+    const state = registry.getState();
+    Object.keys(state.trigger).forEach((key) => delete state.trigger[key]);
+
+    triggers = {
+        mock: {
+            update: {},
+        },
+        docker: {
+            update: {},
+        },
+    };
+    await registry.testable_registerTriggers({ agent: true });
+    // mock is not in the allowed list for agent mode
+    expect(registry.getState().trigger['mock.update']).toBeUndefined();
+    expect(registry.getState().trigger['docker.update']).toBeDefined();
+});
+
+test('registerTriggers in agent mode should warn when registration fails', async () => {
+    const spyLog = vi.spyOn(registry.testable_log, 'warn');
+    const state = registry.getState();
+    Object.keys(state.trigger).forEach((key) => delete state.trigger[key]);
+
+    triggers = {
+        docker: {
+            fail: {
+                invalid: true, // This should cause registration failure
+            },
+        },
+    };
+    await registry.testable_registerTriggers({ agent: true });
+    expect(spyLog).toHaveBeenCalledWith(
+        expect.stringContaining('Some triggers failed to register'),
+    );
+});
+
+test('init should handle agent registration failures gracefully', async () => {
+    agents = {
+        badagent: {
+            // Missing required fields should cause failure
+        },
+    };
+    triggers = {};
+    watchers = {};
+    registries = {};
+    authentications = {};
+    // Should not throw
+    await registry.init();
+    // The agent should not be registered
+    expect(registry.getState().agent['dd.badagent']).toBeUndefined();
+});
+
+test('registerWatchers in agent mode should exit when no watchers configured', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    watchers = {};
+    await registry.testable_registerWatchers({ agent: true });
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    exitSpy.mockRestore();
 });

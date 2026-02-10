@@ -88,12 +88,12 @@ test('getRegistryConfigurations should return configured registries when overrid
 
 test('getAgentConfigurations should return configured agents when overridden', async () => {
     configuration.ddEnvVars.DD_AGENT_NODE1_HOST = '10.0.0.1';
-    configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1';
+    configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1'; // NOSONAR - test fixture
     configuration.ddEnvVars.DD_AGENT_NODE2_HOST = '10.0.0.2';
-    configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2';
+    configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2'; // NOSONAR - test fixture
     expect(configuration.getAgentConfigurations()).toStrictEqual({
-        node1: { host: '10.0.0.1', secret: 'secret1' },
-        node2: { host: '10.0.0.2', secret: 'secret2' },
+        node1: { host: '10.0.0.1', secret: 'secret1' }, // NOSONAR
+        node2: { host: '10.0.0.2', secret: 'secret2' }, // NOSONAR
     });
 });
 
@@ -185,5 +185,92 @@ describe('WUD_ legacy dual-prefix support', () => {
         const result = configuration.getWatcherConfigurations();
         expect(result.dualtest).toStrictEqual({ host: 'example.com' });
         delete configuration.ddEnvVars.DD_WATCHER_DUALTEST_HOST;
+    });
+});
+
+describe('getPublicUrl', () => {
+    test('should return DD_PUBLIC_URL when set', () => {
+        configuration.ddEnvVars.DD_PUBLIC_URL = 'https://my.public.url';
+        const result = configuration.getPublicUrl({});
+        expect(result).toBe('https://my.public.url');
+        delete configuration.ddEnvVars.DD_PUBLIC_URL;
+    });
+
+    test('should guess from request when DD_PUBLIC_URL is not set', () => {
+        delete configuration.ddEnvVars.DD_PUBLIC_URL;
+        const result = configuration.getPublicUrl({
+            protocol: 'https',
+            hostname: 'example.com',
+        });
+        expect(result).toBe('https://example.com');
+    });
+
+    test('should return / when URL construction fails', () => {
+        delete configuration.ddEnvVars.DD_PUBLIC_URL;
+        const result = configuration.getPublicUrl({
+            protocol: '',
+            hostname: '',
+        });
+        expect(result).toBe('/');
+    });
+
+    test('should return / for non-http protocols', () => {
+        delete configuration.ddEnvVars.DD_PUBLIC_URL;
+        const result = configuration.getPublicUrl({
+            protocol: 'ftp',
+            hostname: 'example.com',
+        });
+        expect(result).toBe('/');
+    });
+});
+
+describe('getPrometheusConfiguration errors', () => {
+    test('should throw when configuration is invalid', () => {
+        configuration.ddEnvVars.DD_PROMETHEUS_ENABLED = 'not-a-boolean';
+        expect(() => configuration.getPrometheusConfiguration()).toThrow();
+        delete configuration.ddEnvVars.DD_PROMETHEUS_ENABLED;
+    });
+});
+
+describe('getVersion', () => {
+    test('should return unknown when DD_VERSION is not set', () => {
+        delete configuration.ddEnvVars.DD_VERSION;
+        expect(configuration.getVersion()).toBe('unknown');
+    });
+});
+
+describe('getServerConfiguration errors', () => {
+    test('should throw when server configuration is invalid', () => {
+        configuration.ddEnvVars.DD_SERVER_PORT = 'not-a-number';
+        expect(() => configuration.getServerConfiguration()).toThrow();
+        delete configuration.ddEnvVars.DD_SERVER_PORT;
+    });
+});
+
+describe('getPublicUrl edge cases', () => {
+    test('should return url for http protocol', () => {
+        delete configuration.ddEnvVars.DD_PUBLIC_URL;
+        const result = configuration.getPublicUrl({
+            protocol: 'http',
+            hostname: 'localhost',
+        });
+        expect(result).toBe('http://localhost');
+    });
+});
+
+describe('getAuthenticationConfigurations', () => {
+    test('should return empty object by default', () => {
+        delete configuration.ddEnvVars.DD_AUTH_AUTH1_X;
+        expect(configuration.getAuthenticationConfigurations()).toStrictEqual({});
+    });
+
+    test('should return configured authentications when overridden', () => {
+        configuration.ddEnvVars.DD_AUTH_BASIC_JOHN_USER = 'john';
+        configuration.ddEnvVars.DD_AUTH_BASIC_JOHN_HASH = 'hash';
+        const result = configuration.getAuthenticationConfigurations();
+        expect(result.basic).toBeDefined();
+        expect(result.basic.john).toBeDefined();
+        delete configuration.ddEnvVars.DD_AUTH_BASIC_JOHN_USER;
+        delete configuration.ddEnvVars.DD_AUTH_BASIC_JOHN_HASH;
     });
 });

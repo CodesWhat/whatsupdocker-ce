@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { createContainerFixture } from '../test/helpers.js';
 import * as container from './container.js';
 import * as event from '../event/index.js';
 
@@ -44,33 +45,7 @@ test('insertContainer should insert doc and emit an event', async () => {
         getCollection: () => collection,
         addCollection: () => null,
     };
-    const containerToSave = {
-        id: 'container-123456789',
-        name: 'test',
-        watcher: 'test',
-        image: {
-            id: 'image-123456789',
-            registry: {
-                name: 'registry',
-                url: 'https://hub',
-            },
-            name: 'organization/image',
-            tag: {
-                value: 'version',
-                semver: false,
-            },
-            digest: {
-                watch: false,
-                repo: undefined,
-            },
-            architecture: 'arch',
-            os: 'os',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            tag: 'version',
-        },
-    };
+    const containerToSave = createContainerFixture();
     const spyInsert = vi.spyOn(collection, 'insert');
     const spyEvent = vi.spyOn(event, 'emitContainerAdded');
     container.createCollections(db);
@@ -92,33 +67,7 @@ test('updateContainer should update doc and emit an event', async () => {
         getCollection: () => collection,
         addCollection: () => null,
     };
-    const containerToSave = {
-        id: 'container-123456789',
-        name: 'test',
-        watcher: 'test',
-        image: {
-            id: 'image-123456789',
-            registry: {
-                name: 'registry',
-                url: 'https://hub',
-            },
-            name: 'organization/image',
-            tag: {
-                value: 'version',
-                semver: false,
-            },
-            digest: {
-                watch: false,
-                repo: undefined,
-            },
-            architecture: 'arch',
-            os: 'os',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            tag: 'version',
-        },
-    };
+    const containerToSave = createContainerFixture();
     const spyInsert = vi.spyOn(collection, 'insert');
     const spyEvent = vi.spyOn(event, 'emitContainerUpdated');
     container.createCollections(db);
@@ -129,36 +78,9 @@ test('updateContainer should update doc and emit an event', async () => {
 
 test('updateContainer should preserve updatePolicy when omitted from payload', async () => {
     const existingContainer = {
-        data: {
-            id: 'container-123456789',
-            name: 'test',
-            watcher: 'test',
-            updatePolicy: {
-                skipTags: ['2.0.0'],
-            },
-            image: {
-                id: 'image-123456789',
-                registry: {
-                    name: 'registry',
-                    url: 'https://hub',
-                },
-                name: 'organization/image',
-                tag: {
-                    value: 'version',
-                    semver: false,
-                },
-                digest: {
-                    watch: false,
-                    repo: undefined,
-                },
-                architecture: 'arch',
-                os: 'os',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                tag: 'version',
-            },
-        },
+        data: createContainerFixture({
+            updatePolicy: { skipTags: ['2.0.0'] },
+        }),
     };
     const collection = {
         findOne: () => existingContainer,
@@ -173,33 +95,7 @@ test('updateContainer should preserve updatePolicy when omitted from payload', a
         getCollection: () => collection,
         addCollection: () => null,
     };
-    const containerToSave = {
-        id: 'container-123456789',
-        name: 'test',
-        watcher: 'test',
-        image: {
-            id: 'image-123456789',
-            registry: {
-                name: 'registry',
-                url: 'https://hub',
-            },
-            name: 'organization/image',
-            tag: {
-                value: 'version',
-                semver: false,
-            },
-            digest: {
-                watch: false,
-                repo: undefined,
-            },
-            architecture: 'arch',
-            os: 'os',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            tag: 'version',
-        },
-    };
+    const containerToSave = createContainerFixture();
 
     container.createCollections(db);
     const updated = container.updateContainer(containerToSave);
@@ -210,36 +106,9 @@ test('updateContainer should preserve updatePolicy when omitted from payload', a
 
 test('updateContainer should clear updatePolicy when explicitly set to undefined', async () => {
     const existingContainer = {
-        data: {
-            id: 'container-123456789',
-            name: 'test',
-            watcher: 'test',
-            updatePolicy: {
-                skipTags: ['2.0.0'],
-            },
-            image: {
-                id: 'image-123456789',
-                registry: {
-                    name: 'registry',
-                    url: 'https://hub',
-                },
-                name: 'organization/image',
-                tag: {
-                    value: 'version',
-                    semver: false,
-                },
-                digest: {
-                    watch: false,
-                    repo: undefined,
-                },
-                architecture: 'arch',
-                os: 'os',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                tag: 'version',
-            },
-        },
+        data: createContainerFixture({
+            updatePolicy: { skipTags: ['2.0.0'] },
+        }),
     };
     const collection = {
         findOne: () => existingContainer,
@@ -254,34 +123,7 @@ test('updateContainer should clear updatePolicy when explicitly set to undefined
         getCollection: () => collection,
         addCollection: () => null,
     };
-    const containerToSave = {
-        id: 'container-123456789',
-        name: 'test',
-        watcher: 'test',
-        updatePolicy: undefined,
-        image: {
-            id: 'image-123456789',
-            registry: {
-                name: 'registry',
-                url: 'https://hub',
-            },
-            name: 'organization/image',
-            tag: {
-                value: 'version',
-                semver: false,
-            },
-            digest: {
-                watch: false,
-                repo: undefined,
-            },
-            architecture: 'arch',
-            os: 'os',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            tag: 'version',
-        },
-    };
+    const containerToSave = createContainerFixture({ updatePolicy: undefined });
 
     container.createCollections(db);
     const updated = container.updateContainer(containerToSave);
@@ -289,52 +131,11 @@ test('updateContainer should clear updatePolicy when explicitly set to undefined
 });
 
 test('getContainers should return all containers sorted by name', async () => {
-    const containerExample = {
-        id: 'container-123456789',
-        name: 'test',
-        watcher: 'test',
-        image: {
-            id: 'image-123456789',
-            registry: {
-                name: 'registry',
-                url: 'https://hub',
-            },
-            name: 'organization/image',
-            tag: {
-                value: 'version',
-                semver: false,
-            },
-            digest: {
-                watch: false,
-                repo: undefined,
-            },
-            architecture: 'arch',
-            os: 'os',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            tag: 'version',
-        },
-    };
+    const containerExample = createContainerFixture();
     const containers = [
-        {
-            data: {
-                ...containerExample,
-                name: 'container3',
-            },
-        },
-        {
-            data: {
-                ...containerExample,
-                name: 'container2',
-            },
-        },
-        {
-            data: {
-                ...containerExample,
-                name: 'container1',
-            },
-        },
+        { data: { ...containerExample, name: 'container3' } },
+        { data: { ...containerExample, name: 'container2' } },
+        { data: { ...containerExample, name: 'container1' } },
     ];
     const collection = {
         find: () => containers,
@@ -354,35 +155,7 @@ test('getContainers should return all containers sorted by name', async () => {
 });
 
 test('getContainer should return 1 container by id', async () => {
-    const containerExample = {
-        data: {
-            id: 'container-123456789',
-            name: 'test',
-            watcher: 'test',
-            image: {
-                id: 'image-123456789',
-                registry: {
-                    name: 'registry',
-                    url: 'https://hub',
-                },
-                name: 'organization/image',
-                tag: {
-                    value: 'version',
-                    semver: false,
-                },
-                digest: {
-                    watch: false,
-                    repo: undefined,
-                },
-                architecture: 'arch',
-                os: 'os',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                tag: 'version',
-            },
-        },
-    };
+    const containerExample = { data: createContainerFixture() };
     const collection = {
         findOne: () => containerExample,
     };
@@ -406,36 +179,48 @@ test('getContainer should return undefined when not found', async () => {
     expect(result).toEqual(undefined);
 });
 
-test('deleteContainer should delete doc and emit an event', async () => {
-    const containerExample = {
-        data: {
-            id: 'container-123456789',
-            name: 'test',
-            watcher: 'test',
-            image: {
-                id: 'image-123456789',
-                registry: {
-                    name: 'registry',
-                    url: 'https://hub',
-                },
-                name: 'organization/image',
-                tag: {
-                    value: 'version',
-                    semver: false,
-                },
-                digest: {
-                    watch: false,
-                    repo: undefined,
-                },
-                architecture: 'arch',
-                os: 'os',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                tag: 'version',
-            },
-        },
+test('getContainers should return empty array when collection is not initialized', async () => {
+    vi.resetModules();
+    const freshContainer = await import('./container.js');
+    const result = freshContainer.getContainers();
+    expect(result).toEqual([]);
+});
+
+test('getContainers should filter by query parameters', async () => {
+    const containerExample = createContainerFixture();
+    const collection = {
+        find: vi.fn(() => [{ data: containerExample }]),
     };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    container.createCollections(db);
+    container.getContainers({ watcher: 'test' });
+    expect(collection.find).toHaveBeenCalledWith({ 'data.watcher': 'test' });
+});
+
+test('deleteContainer should do nothing when container is not found', async () => {
+    const collection = {
+        findOne: () => null,
+        chain: () => ({
+            find: () => ({
+                remove: () => ({}),
+            }),
+        }),
+    };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    const spyEvent = vi.spyOn(event, 'emitContainerRemoved');
+    container.createCollections(db);
+    container.deleteContainer('nonexistent-id');
+    expect(spyEvent).not.toHaveBeenCalled();
+});
+
+test('deleteContainer should delete doc and emit an event', async () => {
+    const containerExample = { data: createContainerFixture() };
     const collection = {
         findOne: () => containerExample,
         chain: () => ({

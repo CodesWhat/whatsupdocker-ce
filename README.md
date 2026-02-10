@@ -4,15 +4,14 @@
 
 <h1>drydock &nbsp;<img src="docs/assets/codeswhat-logo-original.svg" alt="CodesWhat" height="32"></h1>
 
-**Open source container update monitoring with an open community.**
-
-Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — rebuilt in TypeScript, modernized tooling, new features.
+**Open source container update monitoring — built in TypeScript with modern tooling.**
 
 </div>
 
 <p align="center">
-  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-9.0.0--ce-blue" alt="Version"></a>
+  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-2026.2.2-blue" alt="Version"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
+  <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-informational?logo=linux&logoColor=white" alt="Multi-arch"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-C9A227" alt="License MIT"></a>
 </p>
 
@@ -24,6 +23,7 @@ Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — r
 </p>
 
 <p align="center">
+  <a href="https://www.bestpractices.dev/projects/11915"><img src="https://www.bestpractices.dev/projects/11915/badge" alt="OpenSSF Best Practices"></a>
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/CodesWhat/drydock"><img src="https://api.securityscorecards.dev/projects/github.com/CodesWhat/drydock/badge" alt="OpenSSF Scorecard"></a>
   <a href="https://app.codecov.io/gh/CodesWhat/drydock"><img src="https://codecov.io/gh/CodesWhat/drydock/graph/badge.svg?token=b90d4863-46c5-40d2-bf00-f6e4a79c8656" alt="Codecov"></a>
   <a href="https://app.codacy.com/gh/CodesWhat/drydock/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/7d85925194a545519a07687a9061fb38" alt="Codacy Badge"></a>
@@ -42,8 +42,9 @@ Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — r
 ## Contents
 
 - [Quick Start](#quick-start)
+- [Screenshots](#screenshots)
 - [Features](#features)
-- [Where CE Diverges from Upstream](#where-ce-diverges-from-upstream)
+- [Architecture](#architecture)
 - [Supported Registries](#supported-registries)
 - [Supported Triggers](#supported-triggers)
 - [Authentication](#authentication)
@@ -105,6 +106,18 @@ docker pull ghcr.io/codeswhat/drydock:latest
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/drydock-dashboard.png" alt="drydock dashboard" width="700">
+</p>
+
+<p align="center">
+  <img src="docs/assets/drydock-containers.png" alt="drydock containers view" width="700">
+</p>
+
+---
+
 ## Features
 
 <table>
@@ -154,15 +167,11 @@ Browse application logs directly in the web UI
 
 ---
 
-## Where CE Diverges from Upstream
-
-drydock is a full rewrite of the WUD codebase. The core monitoring logic is the same, but the architecture, tooling, and feature set have diverged significantly.
+## Architecture
 
 > For the full itemized changelog, see [CHANGELOG.md](CHANGELOG.md).
 
-### Architecture
-
-| | Upstream WUD | drydock |
+| | WUD | drydock |
 |---|---|---|
 | **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
 | **Test runner** | Jest | Vitest 4 |
@@ -171,8 +180,6 @@ drydock is a full rewrite of the WUD codebase. The core monitoring logic is the 
 | **Build system** | Babel | `tsc` (no transpiler) |
 
 ### drydock-Only Features
-
-These exist in drydock but **not** in upstream WUD:
 
 | Feature | Description |
 |---------|-------------|
@@ -190,7 +197,7 @@ These exist in drydock but **not** in upstream WUD:
 | **Semver tag recovery** | Recover mismatched semver tags from include filters |
 | **Per-image config presets** | `imgset` defaults for per-image configuration |
 
-### drydock Bug Fixes (not in upstream)
+### Bug Fixes (not in WUD)
 
 | Fix | Impact |
 |-----|--------|
@@ -200,19 +207,6 @@ These exist in drydock but **not** in upstream WUD:
 | Multi-network container recreate | Reconnects additional networks after recreation |
 | docker-compose post_start hooks | Hooks now execute after updates |
 | Express 5 wildcard routes | Named wildcard params for Express 5 compat |
-
-### Upstream Backports
-
-Changes from upstream `main` (post-fork) that have been ported to drydock:
-
-| Change | Status |
-|--------|--------|
-| Codeberg default registry | Ported (new TS provider) |
-| YAML `maxAliasCount` increase | Ported |
-| Async `getAuthPull` for ECR | Ported across all registries |
-| `DD_PROMETHEUS_ENABLED` config | Ported |
-| Authelia OIDC doc field names | Ported |
-| Docker event stream buffering | Already fixed independently |
 
 ---
 
@@ -303,14 +297,24 @@ All triggers support **threshold filtering** (`all`, `major`, `minor`, `patch`) 
 
 ## Migrating from WUD
 
-If you're running `getwud/wud`, switch only the image reference:
+drydock is a drop-in replacement for [What's Up Docker (WUD)](https://github.com/getwud/wud). Switch only the image reference — everything else stays the same:
 
 ```diff
 - image: getwud/wud:8.1.1
 + image: ghcr.io/codeswhat/drydock:latest
 ```
 
-Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix and `dd.` label prefix.
+**Full backwards compatibility is built in.** You do not need to rename anything in your compose file, environment, or labels:
+
+| WUD (legacy) | drydock (new) | Status |
+|---|---|---|
+| `WUD_` env vars | `DD_` env vars | Both work — `WUD_` vars are automatically mapped to their `DD_` equivalents at startup. If both are set, `DD_` takes priority. |
+| `wud.*` container labels | `dd.*` container labels | Both work — all `wud.*` labels (`wud.watch`, `wud.tag.include`, `wud.display.name`, etc.) are recognized alongside their `dd.*` counterparts. |
+| `/store/wud.json` state file | `/store/dd.json` state file | Automatic migration — on first start, if `wud.json` exists and `dd.json` does not, drydock renames it in place. No data loss. |
+| Docker socket mount | Docker socket mount | Unchanged — same `/var/run/docker.sock` bind mount. |
+| Health endpoint `/health` | Health endpoint `/health` | Unchanged — same path, same port (default 3000). |
+
+**In short:** swap the image, restart the container, done. Your watchers, triggers, registries, and authentication config all carry over with zero changes.
 
 ---
 
@@ -322,7 +326,6 @@ Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix a
 | Configuration | [`docs/configuration/README.md`](docs/configuration/README.md) |
 | Quick Start | [`docs/quickstart/README.md`](docs/quickstart/README.md) |
 | Changelog | [`CHANGELOG.md`](CHANGELOG.md) |
-| Upstream Docs | [getwud.github.io/wud](https://getwud.github.io/wud/) |
 | Issues | [GitHub Issues](https://github.com/CodesWhat/drydock/issues) |
 
 ---
@@ -341,7 +344,7 @@ Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix a
 
 ---
 
-**[MIT License](LICENSE)** | Forked from [getwud/wud](https://github.com/getwud/wud)
+**[MIT License](LICENSE)**
 
 <a href="#drydock">Back to top</a>
 

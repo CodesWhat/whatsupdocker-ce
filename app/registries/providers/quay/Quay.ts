@@ -1,11 +1,10 @@
 // @ts-nocheck
-import axios from 'axios';
-import Registry from '../../Registry.js';
+import BaseRegistry from '../../BaseRegistry.js';
 
 /**
  * Quay.io Registry integration.
  */
-class Quay extends Registry {
+class Quay extends BaseRegistry {
     getConfigurationSchema() {
         return this.joi.alternatives([
             // Anonymous configuration
@@ -25,12 +24,7 @@ class Quay extends Registry {
      * @returns {*}
      */
     maskConfiguration() {
-        return {
-            ...this.configuration,
-            namespace: this.configuration.namespace,
-            account: this.configuration.account,
-            token: Quay.mask(this.configuration.token),
-        };
+        return this.maskSensitiveFields(['token']);
     }
 
     /**
@@ -38,55 +32,31 @@ class Quay extends Registry {
      * @param image the image
      * @returns {boolean}
      */
-
     match(image) {
-        return /^.*\.?quay\.io$/.test(image.registry.url);
+        return this.matchUrlPattern(image, /^.*\.?quay\.io$/);
     }
 
     /**
-     * Normalize image according to Github Container Registry characteristics.
+     * Normalize image according to Quay.io Registry characteristics.
      * @param image
      * @returns {*}
      */
-
     normalizeImage(image) {
-        const imageNormalized = image;
-        if (!imageNormalized.registry.url.startsWith('https://')) {
-            imageNormalized.registry.url = `https://${imageNormalized.registry.url}/v2`;
-        }
-        return imageNormalized;
+        return this.normalizeImageUrl(image);
     }
 
     async authenticate(image, requestOptions) {
-        const requestOptionsWithAuth = requestOptions;
-        let token;
-
-        // Add Authorization if any
         const credentials = this.getAuthCredentials();
-        if (credentials) {
-            const request = {
-                method: 'GET',
-                url: `https://quay.io/v2/auth?service=quay.io&scope=repository:${image.name}:pull`,
-                headers: {
-                    Accept: 'application/json',
-                    Authorization: `Basic ${credentials}`,
-                },
-            };
-            try {
-                const response = await axios(request);
-                token = response.token;
-            } catch (e) {
-                this.log.warn(
-                    `Error when trying to get an access token (${e.message})`,
-                );
-            }
+        if (!credentials) {
+            return requestOptions;
         }
-
-        // Token? Put it in authorization header
-        if (token) {
-            requestOptionsWithAuth.headers.Authorization = `Bearer ${token}`;
-        }
-        return requestOptionsWithAuth;
+        const authUrl = `https://quay.io/v2/auth?service=quay.io&scope=repository:${image.name}:pull`;
+        return this.authenticateBearerFromAuthUrl(
+            requestOptions,
+            authUrl,
+            credentials,
+            (response) => response.token,
+        );
     }
 
     /**
