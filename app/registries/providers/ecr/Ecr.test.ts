@@ -111,7 +111,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should call ecr auth endpoint', async () => {
     await expect(ecr.authenticate(undefined, { headers: {} })).resolves.toEqual({
         headers: {
-            Authorization: 'Basic QVdTOnh4eHg=',
+            Authorization: 'Basic QVdTOnh4eHg=', // NOSONAR - test fixture, not a real credential
         },
     });
 });
@@ -119,7 +119,7 @@ test('authenticate should call ecr auth endpoint', async () => {
 test('getAuthPull should return decoded ECR credentials', async () => {
     await expect(ecr.getAuthPull()).resolves.toEqual({
         username: 'AWS',
-        password: 'xxxx',
+        password: 'xxxx', // NOSONAR - test fixture, not a real credential
     });
 });
 

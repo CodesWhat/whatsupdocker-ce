@@ -71,7 +71,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should add basic auth', async () => {
     expect(acr.authenticate(undefined, { headers: {} })).resolves.toEqual({
         headers: {
-            Authorization: 'Basic Y2xpZW50aWQ6Y2xpZW50c2VjcmV0',
+            Authorization: 'Basic Y2xpZW50aWQ6Y2xpZW50c2VjcmV0', // NOSONAR - test fixture, not a real credential
         },
     });
 });

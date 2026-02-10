@@ -102,7 +102,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should call gcr auth endpoint', async () => {
     expect(gcr.authenticate({}, { headers: {} })).resolves.toEqual({
         headers: {
-            Authorization: 'Bearer xxxxx',
+            Authorization: 'Bearer xxxxx', // NOSONAR - test fixture, not a real credential
         },
     });
 });

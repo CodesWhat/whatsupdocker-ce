@@ -102,7 +102,7 @@ describe('Docker Hub Registry', () => {
             url: 'https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/nginx:pull&grant_type=password',
             headers: {
                 Accept: 'application/json',
-                Authorization: 'Basic base64credentials',
+                Authorization: 'Basic base64credentials', // NOSONAR - test fixture, not a real credential
             },
         });
         expect(result.headers.Authorization).toBe('Bearer auth-token');

@@ -266,7 +266,7 @@ describe('Docker Watcher', () => {
                 port: 443,
                 protocol: 'https',
                 headers: {
-                    Authorization: 'Basic am9objpkb2U=',
+                    Authorization: 'Basic am9objpkb2U=', // NOSONAR - test fixture, not a real credential
                 },
             });
         });
@@ -290,7 +290,7 @@ describe('Docker Watcher', () => {
                 port: 443,
                 protocol: 'https',
                 headers: {
-                    Authorization: 'Bearer seed-access-token',
+                    Authorization: 'Bearer seed-access-token', // NOSONAR - test fixture, not a real credential
                 },
             });
         });

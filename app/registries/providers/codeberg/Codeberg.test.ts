@@ -53,7 +53,7 @@ test('getConfigurationSchema should accept login/password combo', async () => {
     expect(() =>
         cb.validateConfiguration({
             login: 'user',
-            password: 'pass',
+            password: 'pass', // NOSONAR - test fixture, not a real credential
         }),
     ).not.toThrow();
 });
