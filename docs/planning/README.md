@@ -23,7 +23,7 @@ No open items — all tracked issues resolved.
 | #870 Lower semver detected as update | Numeric segment matching prevents cross-version-depth comparisons |
 | #866 Old semver tag considered for update | Same fix as #870; prefix + segment filtering prevents year-based tags |
 | #862 Digest-only changes not triggering update | Fixed Docker trigger prune logic for digest-only updates |
-| #911 `dd.tag.include` regex inconsistency | Already fixed in 9.0.0-ce via Swarm service label lookup; added debug logging |
+| #911 `dd.tag.include` regex inconsistency | Already fixed in 2026.1.0 via Swarm service label lookup; added debug logging |
 | #789 eval() code injection in triggers | Replaced unsafe `eval()` with safe template interpolation |
 | #910 Distributed Monitoring (Agent Mode) | Merged to `main` (`f3cee9b`, `00968f3`) |
 | #868 docker-compose `post_start` not run | `dockercompose` trigger now executes post-start hooks (`7debff9`) |

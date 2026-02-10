@@ -16,14 +16,14 @@ docker tag nginx:1.10-alpine 229211676173.dkr.ecr.eu-west-1.amazonaws.com/sub/te
 docker tag nginx:1.10-alpine 229211676173.dkr.ecr.eu-west-1.amazonaws.com/sub/sub/test:1.0.0
 
 # GCR
-docker tag nginx:1.10-alpine gcr.io/wud-test/test:1.0.0
-docker tag nginx:1.10-alpine gcr.io/wud-test/sub/test:1.0.0
-docker tag nginx:1.10-alpine gcr.io/wud-test/sub/sub/test:1.0.0
+docker tag nginx:1.10-alpine gcr.io/drydock-test/test:1.0.0
+docker tag nginx:1.10-alpine gcr.io/drydock-test/sub/test:1.0.0
+docker tag nginx:1.10-alpine gcr.io/drydock-test/sub/sub/test:1.0.0
 
 # ACR
-docker tag nginx:1.10-alpine wudtest.azurecr.io/test:1.0.0
-docker tag nginx:1.10-alpine wudtest.azurecr.io/sub/test:1.0.0
-docker tag nginx:1.10-alpine wudtest.azurecr.io/sub/sub/test:1.0.0
+docker tag nginx:1.10-alpine drydocktest.azurecr.io/test:1.0.0
+docker tag nginx:1.10-alpine drydocktest.azurecr.io/sub/test:1.0.0
+docker tag nginx:1.10-alpine drydocktest.azurecr.io/sub/sub/test:1.0.0
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 

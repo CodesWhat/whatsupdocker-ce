@@ -17,7 +17,6 @@ Keep your containers up-to-date!
 
 `TRIGGERS` perform actions when updates are available
 
-![image](assets/wud-arch.png)
 
 ## Supported triggers
 
