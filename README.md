@@ -4,9 +4,7 @@
 
 <h1>drydock &nbsp;<img src="docs/assets/codeswhat-logo-original.svg" alt="CodesWhat" height="32"></h1>
 
-**Open source container update monitoring with an open community.**
-
-Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — rebuilt in TypeScript, modernized tooling, new features.
+**Open source container update monitoring — built in TypeScript with modern tooling.**
 
 </div>
 
@@ -40,7 +38,7 @@ Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — r
 
 - [Quick Start](#quick-start)
 - [Features](#features)
-- [Where CE Diverges from Upstream](#where-ce-diverges-from-upstream)
+- [Architecture](#architecture)
 - [Supported Registries](#supported-registries)
 - [Supported Triggers](#supported-triggers)
 - [Authentication](#authentication)
@@ -151,15 +149,11 @@ Browse application logs directly in the web UI
 
 ---
 
-## Where CE Diverges from Upstream
-
-drydock is a full rewrite of the WUD codebase. The core monitoring logic is the same, but the architecture, tooling, and feature set have diverged significantly.
+## Architecture
 
 > For the full itemized changelog, see [CHANGELOG.md](CHANGELOG.md).
 
-### Architecture
-
-| | Upstream WUD | drydock |
+| | WUD | drydock |
 |---|---|---|
 | **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
 | **Test runner** | Jest | Vitest 4 |
@@ -168,8 +162,6 @@ drydock is a full rewrite of the WUD codebase. The core monitoring logic is the 
 | **Build system** | Babel | `tsc` (no transpiler) |
 
 ### drydock-Only Features
-
-These exist in drydock but **not** in upstream WUD:
 
 | Feature | Description |
 |---------|-------------|
@@ -187,7 +179,7 @@ These exist in drydock but **not** in upstream WUD:
 | **Semver tag recovery** | Recover mismatched semver tags from include filters |
 | **Per-image config presets** | `imgset` defaults for per-image configuration |
 
-### drydock Bug Fixes (not in upstream)
+### Bug Fixes (not in WUD)
 
 | Fix | Impact |
 |-----|--------|
@@ -197,19 +189,6 @@ These exist in drydock but **not** in upstream WUD:
 | Multi-network container recreate | Reconnects additional networks after recreation |
 | docker-compose post_start hooks | Hooks now execute after updates |
 | Express 5 wildcard routes | Named wildcard params for Express 5 compat |
-
-### Upstream Backports
-
-Changes from upstream `main` (post-fork) that have been ported to drydock:
-
-| Change | Status |
-|--------|--------|
-| Codeberg default registry | Ported (new TS provider) |
-| YAML `maxAliasCount` increase | Ported |
-| Async `getAuthPull` for ECR | Ported across all registries |
-| `DD_PROMETHEUS_ENABLED` config | Ported |
-| Authelia OIDC doc field names | Ported |
-| Docker event stream buffering | Already fixed independently |
 
 ---
 
@@ -319,7 +298,6 @@ Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix a
 | Configuration | [`docs/configuration/README.md`](docs/configuration/README.md) |
 | Quick Start | [`docs/quickstart/README.md`](docs/quickstart/README.md) |
 | Changelog | [`CHANGELOG.md`](CHANGELOG.md) |
-| Upstream Docs | [getwud.github.io/wud](https://getwud.github.io/wud/) |
 | Issues | [GitHub Issues](https://github.com/CodesWhat/drydock/issues) |
 
 ---
@@ -338,7 +316,7 @@ Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix a
 
 ---
 
-**[MIT License](LICENSE)** | Forked from [getwud/wud](https://github.com/getwud/wud)
+**[MIT License](LICENSE)**
 
 <a href="#drydock">Back to top</a>
 
