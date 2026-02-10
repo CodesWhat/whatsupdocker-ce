@@ -1,6 +1,6 @@
 {
   "name": "drydock-ui",
-  "version": "2026.2.2",
+  "version": "2026.2.3",
   "private": true,
   "scripts": {
     "dev": "vite",

@@ -7,6 +7,23 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ---
 
+## 2026.2.3
+
+### Bug Fixes
+
+- **NTFY trigger auth 401** — Bearer token auth used unsupported `axios.auth.bearer` property; now sends `Authorization: Bearer <token>` header. Basic auth property names corrected to `username`/`password`. (#27)
+- **Agent mode missing /health** — Added unauthenticated `/health` endpoint to the agent server, mounted before the auth middleware so Docker healthchecks work without the agent secret. (#27)
+
+### Infrastructure
+
+- **Lefthook pre-push hooks** — Added `lefthook.yml` with pre-push checks (lint + build + test).
+
+### Maintenance
+
+- **Removed startup warning** — Removed "Known Issue" notice from README now that container startup issues are resolved.
+
+---
+
 ## 2026.2.2
 
 ### Security / CI

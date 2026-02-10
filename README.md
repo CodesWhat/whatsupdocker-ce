@@ -9,7 +9,7 @@
 </div>
 
 <p align="center">
-  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-2026.2.2-blue" alt="Version"></a>
+  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-2026.2.3-blue" alt="Version"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-informational?logo=linux&logoColor=white" alt="Multi-arch"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-C9A227" alt="License MIT"></a>
@@ -32,10 +32,6 @@
 
   <a href="https://qlty.sh/gh/CodesWhat/projects/drydock"><img src="https://qlty.sh/gh/CodesWhat/projects/drydock/maintainability.svg" alt="Maintainability"></a>
 </p>
-
-> **Known Issue — Container startup failures (Feb 2025)**
->
-> We're aware that some users are experiencing container startup issues following the rename from WUD to Drydock. The rebrand introduced changes to image paths, environment variable prefixes, and volume mounts that we're still working through. We apologise for the disruption — this is our top priority and fixes are actively landing. If you're blocked, please check the [open issues](https://github.com/CodesWhat/drydock/issues). Thanks for your patience.
 
 ---
 
