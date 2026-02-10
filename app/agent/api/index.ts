@@ -69,6 +69,9 @@ export async function init() {
     // Init Event Listeners
     eventApi.initEvents();
 
+    // Health endpoint (unauthenticated, before auth middleware)
+    app.get('/health', (_req, res) => res.json({ uptime: process.uptime() }));
+
     // Auth Middleware
     app.use(authenticate);
 

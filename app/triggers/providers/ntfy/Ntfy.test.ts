@@ -120,7 +120,7 @@ test('trigger should use basic auth when configured like that', async () => {
         method: 'POST',
 
         url: 'http://xxx.com',
-        auth: { user: 'user', pass: 'pass' }, // NOSONAR - test fixture, not a real credential
+        auth: { username: 'user', password: 'pass' }, // NOSONAR - test fixture, not a real credential
     });
 });
 
@@ -149,11 +149,11 @@ test('trigger should use bearer auth when configured like that', async () => {
         },
         headers: {
             'Content-Type': 'application/json',
+            Authorization: 'Bearer token',
         },
         method: 'POST',
 
         url: 'http://xxx.com',
-        auth: { bearer: 'token' },
     });
 });
 

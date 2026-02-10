@@ -144,6 +144,21 @@ describe('Agent API index', () => {
             expect(mockApp.use).toHaveBeenCalled();
         });
 
+        test('should mount /health before auth middleware', async () => {
+            process.env.DD_AGENT_SECRET = 'secret'; // NOSONAR - test fixture, not a real credential
+            await init();
+            const getCalls = mockApp.get.mock.calls;
+            const healthCall = getCalls.find(([path]) => path === '/health');
+            expect(healthCall).toBeDefined();
+
+            // /health should be registered before authenticate middleware
+            const useCallOrder = mockApp.use.mock.invocationCallOrder;
+            const authUseIndex = mockApp.use.mock.calls.findIndex(([arg]) => arg === authenticate);
+            const getCallOrder = mockApp.get.mock.invocationCallOrder;
+            const healthGetIdx = getCalls.findIndex(([path]) => path === '/health');
+            expect(getCallOrder[healthGetIdx]).toBeLessThan(useCallOrder[authUseIndex]);
+        });
+
         test('should start HTTPS server when TLS is enabled', async () => {
             process.env.DD_AGENT_SECRET = 'secret'; // NOSONAR - test fixture, not a real credential
             Object.assign(mockServerConfig, {
