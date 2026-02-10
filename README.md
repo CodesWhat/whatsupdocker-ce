@@ -292,14 +292,24 @@ All triggers support **threshold filtering** (`all`, `major`, `minor`, `patch`) 
 
 ## Migrating from WUD
 
-If you're running `getwud/wud`, switch only the image reference:
+drydock is a drop-in replacement for [What's Up Docker (WUD)](https://github.com/getwud/wud). Switch only the image reference — everything else stays the same:
 
 ```diff
 - image: getwud/wud:8.1.1
 + image: ghcr.io/codeswhat/drydock:latest
 ```
 
-Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix and `dd.` label prefix.
+**Full backwards compatibility is built in.** You do not need to rename anything in your compose file, environment, or labels:
+
+| WUD (legacy) | drydock (new) | Status |
+|---|---|---|
+| `WUD_` env vars | `DD_` env vars | Both work — `WUD_` vars are automatically mapped to their `DD_` equivalents at startup. If both are set, `DD_` takes priority. |
+| `wud.*` container labels | `dd.*` container labels | Both work — all `wud.*` labels (`wud.watch`, `wud.tag.include`, `wud.display.name`, etc.) are recognized alongside their `dd.*` counterparts. |
+| `/store/wud.json` state file | `/store/dd.json` state file | Automatic migration — on first start, if `wud.json` exists and `dd.json` does not, drydock renames it in place. No data loss. |
+| Docker socket mount | Docker socket mount | Unchanged — same `/var/run/docker.sock` bind mount. |
+| Health endpoint `/health` | Health endpoint `/health` | Unchanged — same path, same port (default 3000). |
+
+**In short:** swap the image, restart the container, done. Your watchers, triggers, registries, and authentication config all carry over with zero changes.
 
 ---
 
