@@ -5,6 +5,8 @@ on:
     branches: [main]
     tags: ['*']
 
+permissions: read-all
+
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
 

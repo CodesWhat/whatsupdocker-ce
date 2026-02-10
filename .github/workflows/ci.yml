@@ -10,6 +10,8 @@ on:
       CODECOV_TOKEN:
         required: false
 
+permissions: read-all
+
 jobs:
   lint:
     name: Lint
