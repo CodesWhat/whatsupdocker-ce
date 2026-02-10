@@ -19,6 +19,8 @@ RUN apk add --no-cache \
     git \
     jq \
     openssl \
+    su-exec \
+    tini \
     tzdata \
  && mkdir /store && chown node:node /store
 
@@ -57,7 +59,7 @@ FROM base AS release
 
 # Default entrypoint
 COPY --chmod=755 Docker.entrypoint.sh /usr/bin/entrypoint.sh
-ENTRYPOINT ["/usr/bin/entrypoint.sh"]
+ENTRYPOINT ["tini", "-g", "--", "/usr/bin/entrypoint.sh"]
 CMD ["node", "dist/index.js"]
 
 ## Copy node_modules
@@ -70,5 +72,5 @@ COPY --from=app-build /home/node/app/package.json ./package.json
 # Copy ui
 COPY --from=ui-build /home/node/ui/dist/ ./ui
 
-# WUD upstream runs as root (no USER directive) — required for docker.sock access.
-# See #25 for planned su-exec privilege-dropping entrypoint.
+# No USER directive — entrypoint handles privilege drop via su-exec.
+# See Docker.entrypoint.sh for GID-conditional logic.
