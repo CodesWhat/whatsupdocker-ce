@@ -1,4 +1,5 @@
 // @ts-nocheck
+import axios from 'axios';
 import Registry from './Registry.js';
 
 /**
@@ -34,6 +35,47 @@ class BaseRegistry extends Registry {
      */
     async authenticateBearer(requestOptions, token) {
         const requestOptionsWithAuth = { ...requestOptions };
+        if (token) {
+            requestOptionsWithAuth.headers.Authorization = `Bearer ${token}`;
+        }
+        return requestOptionsWithAuth;
+    }
+
+    /**
+     * Common Bearer token authentication via auth URL.
+     * Fetches a token from an auth endpoint using optional Basic credentials,
+     * then sets the Bearer token on the request options.
+     * @param requestOptions - the request options to augment with auth
+     * @param authUrl - the URL to fetch the bearer token from
+     * @param credentials - optional Base64 credentials for Basic auth on the token request
+     * @param tokenExtractor - function to extract the token from the axios response (default: response.data.token)
+     * @returns the request options with Authorization header set
+     */
+    async authenticateBearerFromAuthUrl(requestOptions, authUrl, credentials, tokenExtractor = (response) => response.data.token) {
+        const requestOptionsWithAuth = requestOptions;
+        let token;
+
+        const request = {
+            method: 'GET',
+            url: authUrl,
+            headers: {
+                Accept: 'application/json',
+            },
+        };
+
+        if (credentials) {
+            request.headers.Authorization = `Basic ${credentials}`;
+        }
+
+        try {
+            const response = await axios(request);
+            token = tokenExtractor(response);
+        } catch (e) {
+            this.log.warn(
+                `Error when trying to get an access token (${e.message})`,
+            );
+        }
+
         if (token) {
             requestOptionsWithAuth.headers.Authorization = `Bearer ${token}`;
         }

@@ -2,38 +2,77 @@
 import fs from 'node:fs';
 import * as store from './index.js';
 
-// Mock dependencies
-vi.mock('lokijs', () => ({
-    default: vi.fn().mockImplementation(function () {
+// vi.hoisted ensures these are available when vi.mock factories execute (hoisted above imports)
+const {
+    STORE_CONFIG,
+    createLokiMock,
+    createFsMock,
+    createConfigMock,
+    createCollectionsMock,
+    createLogMock,
+    registerCommonMocks,
+} = vi.hoisted(() => {
+    const STORE_CONFIG = { path: '/test/store', file: 'test.json' };
+
+    function createLokiMock(loadDbCallback = (options, callback) => callback(null)) {
         return {
-            loadDatabase: vi.fn((options, callback) => {
-                // Simulate successful database load
-                callback(null);
+            default: vi.fn().mockImplementation(function () {
+                return { loadDatabase: vi.fn(loadDbCallback) };
             }),
         };
-    }),
-}));
+    }
 
-vi.mock('node:fs', () => ({
-    default: { existsSync: vi.fn(), mkdirSync: vi.fn() },
-}));
+    function createFsMock(overrides = {}) {
+        return {
+            default: { existsSync: vi.fn(), mkdirSync: vi.fn(), ...overrides },
+        };
+    }
 
-vi.mock('../configuration', () => ({
-    getStoreConfiguration: vi.fn(() => ({
-        path: '/test/store',
-        file: 'test.json',
-    })),
-}));
+    function createConfigMock(config = STORE_CONFIG) {
+        return { getStoreConfiguration: vi.fn(() => config) };
+    }
 
-vi.mock('./app', () => ({
-    createCollections: vi.fn(),
-}));
+    function createCollectionsMock() {
+        return { createCollections: vi.fn() };
+    }
 
-vi.mock('./container', () => ({
-    createCollections: vi.fn(),
-}));
+    function createLogMock() {
+        return { default: { child: vi.fn(() => ({ info: vi.fn() })) } };
+    }
 
-vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
+    /** Register the standard set of doMock calls needed after vi.resetModules. */
+    function registerCommonMocks(overrides: {
+        loki?: Parameters<typeof createLokiMock>[0];
+        fs?: Record<string, unknown>;
+        config?: Record<string, unknown>;
+    } = {}) {
+        vi.doMock('lokijs', () => createLokiMock(overrides.loki));
+        vi.doMock('node:fs', () => createFsMock(overrides.fs));
+        vi.doMock('../configuration', () => createConfigMock(overrides.config ?? STORE_CONFIG));
+        vi.doMock('./app', createCollectionsMock);
+        vi.doMock('./container', createCollectionsMock);
+        vi.doMock('../log', createLogMock);
+    }
+
+    return {
+        STORE_CONFIG,
+        createLokiMock,
+        createFsMock,
+        createConfigMock,
+        createCollectionsMock,
+        createLogMock,
+        registerCommonMocks,
+    };
+});
+
+// --- Top-level mocks (hoisted, used for the non-resetModules tests) ---
+
+vi.mock('lokijs', () => createLokiMock());
+vi.mock('node:fs', () => createFsMock());
+vi.mock('../configuration', () => createConfigMock());
+vi.mock('./app', createCollectionsMock);
+vi.mock('./container', createCollectionsMock);
+vi.mock('../log', createLogMock);
 
 describe('Store Module', () => {
     beforeEach(async () => {
@@ -63,26 +102,17 @@ describe('Store Module', () => {
     test('should return configuration', async () => {
         const config = store.getConfiguration();
 
-        expect(config).toEqual({
-            path: '/test/store',
-            file: 'test.json',
-        });
+        expect(config).toEqual(STORE_CONFIG);
     });
 
     test('should handle database load error', async () => {
-        // Reset modules to get a fresh instance
         vi.resetModules();
 
-        // Mock Loki to simulate error
-        vi.doMock('lokijs', () => ({
-            default: vi.fn().mockImplementation(function () {
-                return {
-                    loadDatabase: vi.fn((options, callback) => {
-                        callback(new Error('Database load failed'));
-                    }),
-                };
+        vi.doMock('lokijs', () =>
+            createLokiMock((options, callback) => {
+                callback(new Error('Database load failed'));
             }),
-        }));
+        );
 
         const storeWithError = await import('./index.js');
         await expect(storeWithError.init()).rejects.toThrow(
@@ -92,37 +122,10 @@ describe('Store Module', () => {
 
     test('should initialize store in memory mode', async () => {
         vi.resetModules();
-
-        vi.doMock('lokijs', () => ({
-            default: vi.fn().mockImplementation(function () {
-                return {
-                    loadDatabase: vi.fn(),
-                };
-            }),
-        }));
-
-        vi.doMock('node:fs', () => ({
-            default: { existsSync: vi.fn(), mkdirSync: vi.fn(), renameSync: vi.fn() },
-        }));
-
-        vi.doMock('../configuration', () => ({
-            getStoreConfiguration: vi.fn(() => ({
-                path: '/test/store',
-                file: 'test.json',
-            })),
-        }));
-
-        vi.doMock('./app', () => ({
-            createCollections: vi.fn(),
-        }));
-
-        vi.doMock('./container', () => ({
-            createCollections: vi.fn(),
-        }));
-
-        vi.doMock('../log', () => ({
-            default: { child: vi.fn(() => ({ info: vi.fn() })) },
-        }));
+        registerCommonMocks({
+            loki: vi.fn(),
+            fs: { renameSync: vi.fn() },
+        });
 
         const storeMemory = await import('./index.js');
         await storeMemory.init({ memory: true });
@@ -136,31 +139,16 @@ describe('Store Module', () => {
     test('should throw when store configuration is invalid', async () => {
         vi.resetModules();
 
-        vi.doMock('../configuration', () => ({
-            getStoreConfiguration: vi.fn(() => ({
-                path: 123, // invalid: path should be a string
-            })),
-        }));
-
-        vi.doMock('../log', () => ({
-            default: { child: vi.fn(() => ({ info: vi.fn() })) },
-        }));
+        vi.doMock('../configuration', () =>
+            createConfigMock({ path: 123 }),
+        );
+        vi.doMock('../log', createLogMock);
 
         await expect(import('./index.js')).rejects.toThrow();
     });
 
     test('should migrate from wud.json when dd.json does not exist', async () => {
         vi.resetModules();
-
-        vi.doMock('lokijs', () => ({
-            default: vi.fn().mockImplementation(function () {
-                return {
-                    loadDatabase: vi.fn((options, callback) => {
-                        callback(null);
-                    }),
-                };
-            }),
-        }));
 
         const mockFs = {
             existsSync: vi.fn((path) => {
@@ -173,28 +161,9 @@ describe('Store Module', () => {
             renameSync: vi.fn(),
         };
 
-        vi.doMock('node:fs', () => ({
-            default: mockFs,
-        }));
-
-        vi.doMock('../configuration', () => ({
-            getStoreConfiguration: vi.fn(() => ({
-                path: '/test/store',
-                file: 'test.json',
-            })),
-        }));
-
-        vi.doMock('./app', () => ({
-            createCollections: vi.fn(),
-        }));
-
-        vi.doMock('./container', () => ({
-            createCollections: vi.fn(),
-        }));
-
-        vi.doMock('../log', () => ({
-            default: { child: vi.fn(() => ({ info: vi.fn() })) },
-        }));
+        registerCommonMocks();
+        // Override the fs mock with the custom one for migration logic
+        vi.doMock('node:fs', () => ({ default: mockFs }));
 
         const storeMigrate = await import('./index.js');
         await storeMigrate.init();
