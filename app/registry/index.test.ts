@@ -457,6 +457,27 @@ test('deregisterAll should deregister all components', async () => {
     expect(Object.keys(registry.getState().authentication).length).toEqual(0);
 });
 
+test('shutdown should deregister all and exit 0', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    registry.getState().trigger = {};
+    registry.getState().registry = {};
+    registry.getState().watcher = {};
+    registry.getState().authentication = {};
+    await registry.testable_shutdown();
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    exitSpy.mockRestore();
+});
+
+test('shutdown should exit 1 when deregisterAll throws', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    const component = new Component();
+    component.deregister = () => { throw new Error('Fail!!!'); };
+    registry.getState().trigger = { trigger1: component };
+    await registry.testable_shutdown();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    exitSpy.mockRestore();
+});
+
 test('deregisterAll should throw an error when any component fails to deregister', async () => {
     const component = new Component();
     component.deregister = () => {

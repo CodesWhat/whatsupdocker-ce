@@ -796,6 +796,16 @@ async function deregisterAll() {
     }
 }
 
+async function shutdown() {
+    try {
+        await deregisterAll();
+        process.exit(0);
+    } catch (e: any) {
+        log.error(e.message);
+        process.exit(1);
+    }
+}
+
 export async function init(options: RegistrationOptions = {}) {
     // Register triggers
     await registerTriggers(options);
@@ -815,8 +825,8 @@ export async function init(options: RegistrationOptions = {}) {
     }
 
     // Gracefully exit when possible
-    process.on('SIGINT', deregisterAll);
-    process.on('SIGTERM', deregisterAll);
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
 }
 
 // The following exports are meant for testing only
@@ -833,6 +843,7 @@ export {
     deregisterWatchers as testable_deregisterWatchers,
     deregisterAuthentications as testable_deregisterAuthentications,
     deregisterAll as testable_deregisterAll,
+    shutdown as testable_shutdown,
     applyTriggerGroupDefaults as testable_applyTriggerGroupDefaults,
     applySharedTriggerConfigurationByName as testable_applySharedTriggerConfigurationByName,
     log as testable_log,
