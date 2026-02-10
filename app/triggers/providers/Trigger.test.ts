@@ -27,6 +27,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 beforeEach(async () => {
@@ -699,4 +700,313 @@ test('renderBatchBody should replace placeholders when called', async () => {
     ).toEqual(
         '- Container container-name running with tag 1.0.0 can be updated to tag 2.0.0\nhttp://test\n',
     );
+});
+
+test('init should invoke registered simple callback when handleContainerReport is called', async () => {
+    let capturedCallback;
+    vi.spyOn(event, 'registerContainerReport').mockImplementation((cb) => {
+        capturedCallback = cb;
+        return vi.fn();
+    });
+    trigger.configuration.mode = 'simple';
+    trigger.configuration.auto = true;
+    trigger.configuration.threshold = 'all';
+    await trigger.init();
+    const spy = vi.spyOn(trigger, 'trigger').mockResolvedValue();
+    await capturedCallback({
+        changed: true,
+        container: { name: 'c1', updateAvailable: true, updateKind: { kind: 'tag', semverDiff: 'major' } },
+    });
+    expect(spy).toHaveBeenCalled();
+});
+
+test('init should invoke registered batch callback when handleContainerReports is called', async () => {
+    let capturedCallback;
+    vi.spyOn(event, 'registerContainerReports').mockImplementation((cb) => {
+        capturedCallback = cb;
+        return vi.fn();
+    });
+    trigger.configuration.mode = 'batch';
+    trigger.configuration.auto = true;
+    trigger.configuration.threshold = 'all';
+    await trigger.init();
+    const spy = vi.spyOn(trigger, 'triggerBatch').mockResolvedValue();
+    await capturedCallback([{
+        changed: true,
+        container: { name: 'c1', updateAvailable: true, updateKind: { kind: 'tag', semverDiff: 'major' } },
+    }]);
+    expect(spy).toHaveBeenCalled();
+});
+
+test('deregister should unregister batch container reports handler', async () => {
+    const unregisterHandler = vi.fn();
+    vi.spyOn(event, 'registerContainerReports').mockReturnValue(unregisterHandler);
+    trigger.configuration.mode = 'batch';
+    trigger.configuration.auto = true;
+    await trigger.init();
+    await trigger.deregister();
+    expect(unregisterHandler).toHaveBeenCalled();
+});
+
+test('init should log manual execution when auto is false', async () => {
+    trigger.configuration.auto = false;
+    const spyLog = vi.spyOn(log, 'info');
+    await trigger.init();
+    expect(spyLog).toHaveBeenCalledWith('Registering for manual execution');
+});
+
+test('init should register for notification resolution when resolvenotifications is true', async () => {
+    const unregisterFn = vi.fn();
+    vi.spyOn(event, 'registerContainerReport').mockReturnValue(vi.fn());
+    const registerSpy = vi.fn().mockReturnValue(unregisterFn);
+    // We need to mock registerContainerUpdateApplied from event/index
+    const eventModule = await import('../../event/index.js');
+    vi.spyOn(eventModule, 'registerContainerUpdateApplied').mockImplementation(registerSpy);
+
+    trigger.configuration.resolvenotifications = true;
+    trigger.configuration.auto = true;
+    trigger.configuration.mode = 'simple';
+    const spyLog = vi.spyOn(log, 'info');
+    await trigger.init();
+    expect(spyLog).toHaveBeenCalledWith('Registering for notification resolution');
+    expect(registerSpy).toHaveBeenCalled();
+});
+
+test('deregister should unregister containerUpdateApplied handler when resolvenotifications was true', async () => {
+    const unregisterUpdateApplied = vi.fn();
+    trigger.unregisterContainerUpdateApplied = unregisterUpdateApplied;
+    await trigger.deregister();
+    expect(unregisterUpdateApplied).toHaveBeenCalled();
+});
+
+test('handleContainerUpdateApplied should call dismiss for stored notification', async () => {
+    const mockResult = { messageId: '123' };
+    trigger.notificationResults = new Map();
+    trigger.notificationResults.set('docker.local/nginx', mockResult);
+    trigger.dismiss = vi.fn().mockResolvedValue(undefined);
+    const spyLog = vi.spyOn(log, 'info');
+
+    await trigger.handleContainerUpdateApplied('docker.local/nginx');
+
+    expect(trigger.dismiss).toHaveBeenCalledWith('docker.local/nginx', mockResult);
+    expect(spyLog).toHaveBeenCalledWith(expect.stringContaining('Dismissing notification'));
+    expect(trigger.notificationResults.has('docker.local/nginx')).toBe(false);
+});
+
+test('handleContainerUpdateApplied should return early when no stored notification', async () => {
+    trigger.notificationResults = new Map();
+    trigger.dismiss = vi.fn();
+    await trigger.handleContainerUpdateApplied('docker.local/unknown');
+    expect(trigger.dismiss).not.toHaveBeenCalled();
+});
+
+test('handleContainerUpdateApplied should warn on dismiss error and still clean up', async () => {
+    trigger.notificationResults = new Map();
+    trigger.notificationResults.set('docker.local/nginx', { id: '1' });
+    trigger.dismiss = vi.fn().mockRejectedValue(new Error('dismiss failed'));
+    const spyLog = vi.spyOn(log, 'warn');
+
+    await trigger.handleContainerUpdateApplied('docker.local/nginx');
+
+    expect(spyLog).toHaveBeenCalledWith(expect.stringContaining('dismiss failed'));
+    expect(trigger.notificationResults.has('docker.local/nginx')).toBe(false);
+});
+
+test('dismiss should be a no-op by default', async () => {
+    await expect(trigger.dismiss('test', {})).resolves.toBeUndefined();
+});
+
+test('mustTrigger should return false when agent does not match', async () => {
+    trigger.agent = 'remote-agent';
+    trigger.type = 'docker';
+    trigger.name = 'update';
+    expect(trigger.mustTrigger({ agent: 'local-agent' })).toBe(false);
+});
+
+test('mustTrigger should return false when strictAgentMatch and agent mismatch', async () => {
+    trigger.strictAgentMatch = true;
+    trigger.agent = undefined;
+    trigger.type = 'docker';
+    trigger.name = 'update';
+    expect(trigger.mustTrigger({ agent: 'remote-agent' })).toBe(false);
+});
+
+test('isTriggerIncludedOrExcluded should return false when trigger not found in list', () => {
+    trigger.type = 'docker';
+    trigger.name = 'update';
+    expect(trigger.isTriggerIncludedOrExcluded(
+        { updateKind: { kind: 'tag', semverDiff: 'major' } },
+        'slack.notify:major',
+    )).toBe(false);
+});
+
+test('handleContainerReport should store result when resolvenotifications is enabled', async () => {
+    trigger.configuration = {
+        threshold: 'all',
+        mode: 'simple',
+        resolvenotifications: true,
+    };
+    trigger.notificationResults = new Map();
+    const mockResult = { messageId: '456' };
+    trigger.trigger = vi.fn().mockResolvedValue(mockResult);
+    await trigger.init();
+    await trigger.handleContainerReport({
+        changed: true,
+        container: {
+            name: 'container1',
+            watcher: 'local',
+            updateAvailable: true,
+            updateKind: { kind: 'tag', semverDiff: 'major' },
+        },
+    });
+    expect(trigger.notificationResults.size).toBe(1);
+});
+
+test('doesReferenceMatchId should match provider.name against 3-part trigger id', () => {
+    // When triggerId is 'prefix.docker.update', reference 'docker.update' should match
+    expect(Trigger.doesReferenceMatchId('docker.update', 'prefix.docker.update')).toBe(true);
+});
+
+test('handleContainerReport should log when mustTrigger returns false', async () => {
+    trigger.configuration = {
+        threshold: 'all',
+        mode: 'simple',
+    };
+    trigger.agent = 'remote-agent';
+    await trigger.init();
+    const spy = vi.spyOn(trigger, 'trigger');
+    await trigger.handleContainerReport({
+        changed: true,
+        container: {
+            name: 'container1',
+            agent: 'local-agent',
+            updateAvailable: true,
+            updateKind: { kind: 'tag', semverDiff: 'major' },
+        },
+    });
+    expect(spy).not.toHaveBeenCalled();
+});
+
+test('isThresholdReached should return true for major-only when semverDiff is major', () => {
+    expect(
+        Trigger.isThresholdReached(
+            { updateKind: { kind: 'tag', semverDiff: 'major' } },
+            'major-only',
+        ),
+    ).toBe(true);
+});
+
+test('isThresholdReached should return false for major-only when semverDiff is minor', () => {
+    expect(
+        Trigger.isThresholdReached(
+            { updateKind: { kind: 'tag', semverDiff: 'minor' } },
+            'major-only',
+        ),
+    ).toBe(false);
+});
+
+test('doesReferenceMatchId should match provider.name when trigger id has 3+ parts', () => {
+    // Trigger id: scope.docker.update -> provider.name = "docker.update"
+    expect(Trigger.doesReferenceMatchId('docker.update', 'scope.docker.update')).toBe(true);
+    expect(Trigger.doesReferenceMatchId('slack.notify', 'scope.docker.update')).toBe(false);
+});
+
+test('handleContainerReport should debug log when mustTrigger returns false', async () => {
+    trigger.configuration = {
+        threshold: 'all',
+        mode: 'simple',
+    };
+    trigger.type = 'docker';
+    trigger.name = 'update';
+    await trigger.init();
+    const spy = vi.spyOn(trigger, 'trigger');
+    await trigger.handleContainerReport({
+        changed: true,
+        container: {
+            name: 'container1',
+            updateAvailable: true,
+            triggerExclude: 'update',
+            updateKind: { kind: 'tag', semverDiff: 'major' },
+        },
+    });
+    expect(spy).not.toHaveBeenCalled();
+});
+
+test('init with resolvenotifications should invoke handleContainerUpdateApplied callback', async () => {
+    let capturedCallback;
+    vi.spyOn(event, 'registerContainerReport').mockReturnValue(vi.fn());
+    const eventModule = await import('../../event/index.js');
+    vi.spyOn(eventModule, 'registerContainerUpdateApplied').mockImplementation((cb) => {
+        capturedCallback = cb;
+        return vi.fn();
+    });
+    trigger.configuration.resolvenotifications = true;
+    trigger.configuration.auto = true;
+    trigger.configuration.mode = 'simple';
+    trigger.notificationResults = new Map();
+    trigger.notificationResults.set('docker.local/nginx', { id: 'msg1' });
+    trigger.dismiss = vi.fn().mockResolvedValue(undefined);
+
+    await trigger.init();
+    expect(capturedCallback).toBeDefined();
+
+    await capturedCallback('docker.local/nginx');
+    expect(trigger.dismiss).toHaveBeenCalledWith('docker.local/nginx', { id: 'msg1' });
+});
+
+test('renderSimpleBody should return empty for disallowed method calls', async () => {
+    trigger.configuration.simplebody = 'Result: ${name.constructor()}';
+    expect(
+        trigger.renderSimpleBody({ name: 'test' }),
+    ).toBe('Result: ');
+});
+
+test('renderSimpleBody should return empty for method on unresolvable path', async () => {
+    trigger.configuration.simplebody = 'Result: ${nonexistent.substring(0, 5)}';
+    expect(
+        trigger.renderSimpleBody({}),
+    ).toBe('Result: ');
+});
+
+test('renderSimpleBody should return empty when method target has no such method', async () => {
+    trigger.configuration.simplebody = 'Result: ${name.nonExistentMethod()}';
+    expect(
+        trigger.renderSimpleBody({ name: 'test' }),
+    ).toBe('Result: ');
+});
+
+test('renderSimpleBody should return empty for unsupported expression syntax', async () => {
+    trigger.configuration.simplebody = 'Result: ${[1,2,3]}';
+    expect(
+        trigger.renderSimpleBody({}),
+    ).toBe('Result: ');
+});
+
+test('renderSimpleBody should handle templates with single-quoted strings in expressions', async () => {
+    trigger.configuration.simplebody =
+        "Container ${name} status is ${'running'}";
+    expect(
+        trigger.renderSimpleBody({
+            name: 'test-container',
+        }),
+    ).toContain('Container test-container');
+});
+
+test('handleContainerReports should warn when triggerBatch fails', async () => {
+    trigger.configuration = {
+        threshold: 'all',
+        mode: 'batch',
+    };
+    trigger.triggerBatch = vi.fn().mockRejectedValue(new Error('batch fail'));
+    await trigger.init();
+    const spyLog = vi.spyOn(log, 'warn');
+    await trigger.handleContainerReports([{
+        changed: true,
+        container: {
+            name: 'c1',
+            updateAvailable: true,
+            updateKind: { kind: 'tag', semverDiff: 'major' },
+        },
+    }]);
+    expect(spyLog).toHaveBeenCalledWith('Error (batch fail)');
 });

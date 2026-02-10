@@ -85,4 +85,16 @@ describe('API Router', () => {
         const auth = await import('./auth.js');
         expect(router.use).toHaveBeenCalledWith(auth.requireAuthentication);
     });
+
+    test('should register catch-all 404 handler', () => {
+        const getCalls = router.get.mock.calls;
+        const catchAll = getCalls.find((c) => c[0] === '/{*path}');
+        expect(catchAll).toBeDefined();
+
+        // Invoke the handler
+        const handler = catchAll[1];
+        const res = { sendStatus: vi.fn() };
+        handler({}, res);
+        expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
 });

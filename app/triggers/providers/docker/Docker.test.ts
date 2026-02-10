@@ -17,6 +17,7 @@ const configurationValid = {
     simplebody:
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 const docker = new Docker();
@@ -112,6 +113,8 @@ vi.mock('../../../registry', () => ({
 
 beforeEach(async () => {
     vi.resetAllMocks();
+    docker.configuration = configurationValid;
+    docker.log = log;
 });
 
 test('validateConfiguration should return validated configuration when valid', async () => {
@@ -679,6 +682,98 @@ test('pruneImages should not exclude current tag when updateKind is tag', async 
     expect(mockDockerApi.getImage).toHaveBeenCalledWith('image-other');
 });
 
+test('pruneImages should exclude images from different registries', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            { Id: 'image-diff-registry', RepoTags: ['other-registry.com/repo:1.0.0'] },
+        ]),
+        getImage: vi.fn().mockReturnValue({ name: 'img', remove: vi.fn() }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'other-reg' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    await docker.pruneImages(mockDockerApi, mockRegistry, {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    }, log);
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should exclude images with different names', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            { Id: 'image-diff-name', RepoTags: ['ecr.example.com/other-repo:0.9.0'] },
+        ]),
+        getImage: vi.fn().mockReturnValue({ name: 'img', remove: vi.fn() }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'ecr' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    await docker.pruneImages(mockDockerApi, mockRegistry, {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    }, log);
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should exclude images matching remoteValue', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            { Id: 'image-remote', RepoTags: ['ecr.example.com/repo:2.0.0'] },
+        ]),
+        getImage: vi.fn().mockReturnValue({ name: 'img', remove: vi.fn() }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'ecr' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    await docker.pruneImages(mockDockerApi, mockRegistry, {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    }, log);
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should warn when error occurs during pruning', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockRejectedValue(new Error('list failed')),
+    };
+    const spyLog = vi.spyOn(log, 'warn');
+    await docker.pruneImages(mockDockerApi, {}, {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    }, log);
+    expect(spyLog).toHaveBeenCalledWith(
+        expect.stringContaining('Some errors occurred when trying to prune'),
+    );
+});
+
+test('pruneImages should exclude images without RepoTags', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            { Id: 'image-no-tags', RepoTags: null },
+            { Id: 'image-empty-tags', RepoTags: [] },
+        ]),
+        getImage: vi.fn().mockReturnValue({ name: 'img', remove: vi.fn() }),
+    };
+    await docker.pruneImages(mockDockerApi, { normalizeImage: vi.fn() }, {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    }, log);
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
 test('getNewImageFullName should use tag value for digest updates', () => {
     const mockRegistry = {
         getImageFullName: (image, tagOrDigest) =>
@@ -697,4 +792,464 @@ test('getNewImageFullName should use tag value for digest updates', () => {
     };
     const result = docker.getNewImageFullName(mockRegistry, containerDigest);
     expect(result).toBe('my-registry/test/test:nginx-prod');
+});
+
+test('trigger should not throw in dryrun mode', async () => {
+    docker.configuration = { ...configurationValid, dryrun: true };
+    docker.log = log;
+    await expect(
+        docker.trigger({
+            watcher: 'test',
+            id: '123456789',
+            name: 'test-container',
+            image: {
+                name: 'test/test',
+                registry: { name: 'hub', url: 'my-registry' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '4.5.6' },
+        }),
+    ).resolves.toBeUndefined();
+});
+
+test('trigger should use waitContainerRemoved when AutoRemove is true', async () => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: false };
+    docker.log = log;
+    const waitSpy = vi.fn().mockResolvedValue();
+    vi.spyOn(docker, 'getCurrentContainer').mockResolvedValue({
+        inspect: () =>
+            Promise.resolve({
+                Name: '/container-name',
+                Id: '123',
+                State: { Running: true },
+                Config: {},
+                HostConfig: { AutoRemove: true },
+                NetworkSettings: { Networks: {} },
+            }),
+        stop: () => Promise.resolve(),
+        wait: waitSpy,
+    });
+    vi.spyOn(docker, 'inspectContainer').mockResolvedValue({
+        Name: '/container-name',
+        Id: '123',
+        State: { Running: true },
+        Config: {},
+        HostConfig: { AutoRemove: true },
+        NetworkSettings: { Networks: {} },
+    });
+    vi.spyOn(docker, 'pullImage').mockResolvedValue();
+    vi.spyOn(docker, 'cloneContainer').mockReturnValue({ name: 'container-name' });
+    vi.spyOn(docker, 'stopContainer').mockResolvedValue();
+    vi.spyOn(docker, 'createContainer').mockResolvedValue({ start: vi.fn() });
+    vi.spyOn(docker, 'startContainer').mockResolvedValue();
+
+    await docker.trigger({
+        watcher: 'test',
+        id: '123456789',
+        name: 'container-name',
+        image: {
+            name: 'test/test',
+            registry: { name: 'hub', url: 'my-registry' },
+            tag: { value: '1.0.0' },
+        },
+        updateKind: { kind: 'tag', remoteValue: '4.5.6' },
+    });
+
+    expect(waitSpy).toHaveBeenCalled();
+});
+
+test('trigger should prune old image by tag after non-dryrun update', async () => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: true };
+    docker.log = log;
+    vi.spyOn(docker, 'getCurrentContainer').mockResolvedValue({
+        inspect: () => Promise.resolve(),
+        remove: vi.fn(),
+    });
+    vi.spyOn(docker, 'inspectContainer').mockResolvedValue({
+        Name: '/container-name',
+        Id: '123',
+        State: { Running: false },
+        Config: {},
+        HostConfig: {},
+        NetworkSettings: { Networks: {} },
+    });
+    vi.spyOn(docker, 'pruneImages').mockResolvedValue();
+    vi.spyOn(docker, 'pullImage').mockResolvedValue();
+    vi.spyOn(docker, 'cloneContainer').mockReturnValue({ name: 'container-name' });
+    vi.spyOn(docker, 'removeContainer').mockResolvedValue();
+    vi.spyOn(docker, 'createContainer').mockResolvedValue({ start: vi.fn() });
+    const removeImageSpy = vi.spyOn(docker, 'removeImage').mockResolvedValue();
+
+    await docker.trigger({
+        watcher: 'test',
+        id: '123456789',
+        name: 'container-name',
+        image: {
+            name: 'test/test',
+            registry: { name: 'hub', url: 'my-registry' },
+            tag: { value: '1.0.0' },
+        },
+        updateKind: { kind: 'tag', remoteValue: '4.5.6' },
+    });
+
+    expect(removeImageSpy).toHaveBeenCalled();
+});
+
+test('trigger should prune old image by digest repo after non-dryrun update', async () => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: true };
+    docker.log = log;
+    vi.spyOn(docker, 'getCurrentContainer').mockResolvedValue({
+        inspect: () => Promise.resolve(),
+        remove: vi.fn(),
+    });
+    vi.spyOn(docker, 'inspectContainer').mockResolvedValue({
+        Name: '/container-name',
+        Id: '123',
+        State: { Running: false },
+        Config: {},
+        HostConfig: {},
+        NetworkSettings: { Networks: {} },
+    });
+    vi.spyOn(docker, 'pruneImages').mockResolvedValue();
+    vi.spyOn(docker, 'pullImage').mockResolvedValue();
+    vi.spyOn(docker, 'cloneContainer').mockReturnValue({ name: 'container-name' });
+    vi.spyOn(docker, 'removeContainer').mockResolvedValue();
+    vi.spyOn(docker, 'createContainer').mockResolvedValue({ start: vi.fn() });
+    const removeImageSpy = vi.spyOn(docker, 'removeImage').mockResolvedValue();
+
+    await docker.trigger({
+        watcher: 'test',
+        id: '123456789',
+        name: 'container-name',
+        image: {
+            name: 'test/test',
+            registry: { name: 'hub', url: 'my-registry' },
+            tag: { value: 'latest' },
+            digest: { repo: 'sha256:olddigest' },
+        },
+        updateKind: { kind: 'digest', remoteValue: 'sha256:newdigest' },
+    });
+
+    expect(removeImageSpy).toHaveBeenCalled();
+});
+
+test('trigger should catch error when removing digest image fails', async () => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: true };
+    docker.log = log;
+    vi.spyOn(docker, 'getCurrentContainer').mockResolvedValue({
+        inspect: () => Promise.resolve(),
+        remove: vi.fn(),
+    });
+    vi.spyOn(docker, 'inspectContainer').mockResolvedValue({
+        Name: '/container-name',
+        Id: '123',
+        State: { Running: false },
+        Config: {},
+        HostConfig: {},
+        NetworkSettings: { Networks: {} },
+    });
+    vi.spyOn(docker, 'pruneImages').mockResolvedValue();
+    vi.spyOn(docker, 'pullImage').mockResolvedValue();
+    vi.spyOn(docker, 'cloneContainer').mockReturnValue({ name: 'container-name' });
+    vi.spyOn(docker, 'removeContainer').mockResolvedValue();
+    vi.spyOn(docker, 'createContainer').mockResolvedValue({ start: vi.fn() });
+    vi.spyOn(docker, 'removeImage').mockRejectedValue(new Error('remove failed'));
+
+    // Should not throw
+    await docker.trigger({
+        watcher: 'test',
+        id: '123456789',
+        name: 'container-name',
+        image: {
+            name: 'test/test',
+            registry: { name: 'hub', url: 'my-registry' },
+            tag: { value: 'latest' },
+            digest: { repo: 'sha256:olddigest' },
+        },
+        updateKind: { kind: 'digest', remoteValue: 'sha256:newdigest' },
+    });
+});
+
+test('trigger should not throw when container does not exist', async () => {
+    docker.configuration = { ...configurationValid, dryrun: false };
+    docker.log = log;
+    vi.spyOn(docker, 'getCurrentContainer').mockResolvedValue(null);
+
+    await expect(docker.trigger({
+        watcher: 'test',
+        id: '123456789',
+        name: 'test-container',
+        image: {
+            name: 'test/test',
+            registry: { name: 'hub', url: 'my-registry' },
+            tag: { value: '1.0.0' },
+        },
+        updateKind: { kind: 'tag', remoteValue: '2.0.0' },
+    })).resolves.toBeUndefined();
+});
+
+test('triggerBatch should call trigger for each container', async () => {
+    const triggerSpy = vi.spyOn(docker, 'trigger').mockResolvedValue();
+    const containers = [{ name: 'c1' }, { name: 'c2' }];
+    await docker.triggerBatch(containers);
+    expect(triggerSpy).toHaveBeenCalledTimes(2);
+    expect(triggerSpy).toHaveBeenCalledWith({ name: 'c1' });
+    expect(triggerSpy).toHaveBeenCalledWith({ name: 'c2' });
+});
+
+test('cloneContainer should remove Hostname and ExposedPorts when NetworkMode starts with container:', () => {
+    const clone = docker.cloneContainer(
+        {
+            Name: '/sidecar',
+            Id: 'abc123',
+            HostConfig: {
+                NetworkMode: 'container:mainapp',
+            },
+            Config: {
+                Hostname: 'sidecar-host',
+                ExposedPorts: { '80/tcp': {} },
+                configA: 'a',
+            },
+            NetworkSettings: {
+                Networks: {},
+            },
+        },
+        'test/test:2.0.0',
+    );
+    expect(clone.Hostname).toBeUndefined();
+    expect(clone.ExposedPorts).toBeUndefined();
+    expect(clone.HostConfig.NetworkMode).toBe('container:mainapp');
+});
+
+test('createPullProgressLogger should throttle duplicate snapshots within interval', () => {
+    const logContainer = { debug: vi.fn() };
+    const logger = docker.createPullProgressLogger(logContainer, 'test:1.0');
+
+    // First call should log
+    logger.onProgress({ status: 'Downloading', id: 'layer-1', progressDetail: { current: 50, total: 100 } });
+    expect(logContainer.debug).toHaveBeenCalledTimes(1);
+
+    // Immediate repeat with same data should be throttled
+    logger.onProgress({ status: 'Downloading', id: 'layer-1', progressDetail: { current: 50, total: 100 } });
+    expect(logContainer.debug).toHaveBeenCalledTimes(1);
+
+    // Different data but within interval should still be throttled (line 239)
+    logger.onProgress({ status: 'Downloading', id: 'layer-1', progressDetail: { current: 75, total: 100 } });
+    expect(logContainer.debug).toHaveBeenCalledTimes(1);
+});
+
+test('createPullProgressLogger should handle null/undefined progressEvent', () => {
+    const logContainer = { debug: vi.fn() };
+    const logger = docker.createPullProgressLogger(logContainer, 'test:1.0');
+    logger.onProgress(null);
+    logger.onProgress(undefined);
+    expect(logContainer.debug).not.toHaveBeenCalled();
+});
+
+test('createPullProgressLogger onDone should force log regardless of interval', () => {
+    const logContainer = { debug: vi.fn() };
+    const logger = docker.createPullProgressLogger(logContainer, 'test:1.0');
+    logger.onProgress({ status: 'Downloading', id: 'l1', progressDetail: { current: 50, total: 100 } });
+    // onDone should force log even though within interval
+    logger.onDone({ status: 'Download complete', id: 'l1' });
+    expect(logContainer.debug).toHaveBeenCalledTimes(2);
+});
+
+test('formatPullProgress should return string progress when progressDetail is missing', () => {
+    expect(docker.formatPullProgress({ progress: '[==> ] 50%' })).toBe('[==> ] 50%');
+});
+
+test('formatPullProgress should return undefined when no progress data', () => {
+    expect(docker.formatPullProgress({ status: 'Waiting' })).toBeUndefined();
+    expect(docker.formatPullProgress({})).toBeUndefined();
+});
+
+test('formatPullProgress should return formatted percentage', () => {
+    expect(docker.formatPullProgress({ progressDetail: { current: 50, total: 200 } })).toBe('50/200 (25%)');
+});
+
+test('sanitizeEndpointConfig should return empty object for undefined config', () => {
+    expect(docker.sanitizeEndpointConfig(undefined, 'abc')).toEqual({});
+});
+
+test('sanitizeEndpointConfig should copy IPAMConfig, Links, DriverOpts, MacAddress', () => {
+    const config = {
+        IPAMConfig: { IPv4Address: '10.0.0.5' },
+        Links: ['link1'],
+        DriverOpts: { opt: 'val' },
+        MacAddress: '02:42:ac:11:00:02',
+    };
+    const result = docker.sanitizeEndpointConfig(config, 'abc');
+    expect(result).toEqual(config);
+});
+
+test('getPrimaryNetworkName should return NetworkMode when it exists in network names', () => {
+    const container = { HostConfig: { NetworkMode: 'custom_net' } };
+    expect(docker.getPrimaryNetworkName(container, ['bridge', 'custom_net'])).toBe('custom_net');
+});
+
+test('getPrimaryNetworkName should return first network when NetworkMode not in list', () => {
+    const container = { HostConfig: { NetworkMode: 'host' } };
+    expect(docker.getPrimaryNetworkName(container, ['bridge', 'custom'])).toBe('bridge');
+});
+
+test('pruneImages should exclude images with different names', async () => {
+    const removeSpy = vi.fn().mockResolvedValue(undefined);
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            {
+                Id: 'image-different-name',
+                RepoTags: ['ecr.example.com/different-repo:1.0.0'],
+            },
+        ]),
+        getImage: vi.fn().mockReturnValue({
+            name: 'should-not-be-called',
+            remove: removeSpy,
+        }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'ecr' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    const containerTagUpdate = {
+        image: {
+            registry: { name: 'ecr' },
+            name: 'repo',
+            tag: { value: '1.0.0' },
+        },
+        updateKind: {
+            kind: 'tag',
+            localValue: '1.0.0',
+            remoteValue: '2.0.0',
+        },
+    };
+
+    await docker.pruneImages(mockDockerApi, mockRegistry, containerTagUpdate, log);
+
+    // Image has different name ('different-repo' vs 'repo'), should NOT be pruned
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should exclude candidate image (remoteValue)', async () => {
+    const removeSpy = vi.fn().mockResolvedValue(undefined);
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            {
+                Id: 'image-candidate',
+                RepoTags: ['ecr.example.com/repo:2.0.0'],
+            },
+        ]),
+        getImage: vi.fn().mockReturnValue({
+            name: 'should-not-be-called',
+            remove: removeSpy,
+        }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'ecr' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    const containerTagUpdate = {
+        image: {
+            registry: { name: 'ecr' },
+            name: 'repo',
+            tag: { value: '1.0.0' },
+        },
+        updateKind: {
+            kind: 'tag',
+            localValue: '1.0.0',
+            remoteValue: '2.0.0',
+        },
+    };
+
+    await docker.pruneImages(mockDockerApi, mockRegistry, containerTagUpdate, log);
+
+    // Image tag matches remoteValue (2.0.0) so it should NOT be pruned
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should exclude images without RepoTags', async () => {
+    const removeSpy = vi.fn().mockResolvedValue(undefined);
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            {
+                Id: 'image-no-tags',
+                RepoTags: [],
+            },
+            {
+                Id: 'image-null-tags',
+            },
+        ]),
+        getImage: vi.fn().mockReturnValue({
+            name: 'should-not-be-called',
+            remove: removeSpy,
+        }),
+    };
+    const mockRegistry = {
+        normalizeImage: vi.fn(),
+    };
+    const container = {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    };
+
+    await docker.pruneImages(mockDockerApi, mockRegistry, container, log);
+
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+    expect(mockRegistry.normalizeImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should exclude images with different registry', async () => {
+    const removeSpy = vi.fn().mockResolvedValue(undefined);
+    const mockDockerApi = {
+        listImages: vi.fn().mockResolvedValue([
+            {
+                Id: 'image-diff-registry',
+                RepoTags: ['other-registry.io/repo:0.8.0'],
+            },
+        ]),
+        getImage: vi.fn().mockReturnValue({
+            name: 'should-not-be-called',
+            remove: removeSpy,
+        }),
+    };
+    const mockRegistry = {
+        normalizeImage: (img) => ({
+            registry: { name: 'other-registry' },
+            name: img.name,
+            tag: { value: img.tag.value },
+        }),
+    };
+    const container = {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    };
+
+    await docker.pruneImages(mockDockerApi, mockRegistry, container, log);
+
+    // Registry is different ('other-registry' vs 'ecr') so image should NOT be pruned
+    expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+});
+
+test('pruneImages should warn when error occurs during pruning', async () => {
+    const mockDockerApi = {
+        listImages: vi.fn().mockRejectedValue(new Error('list failed')),
+    };
+    const mockRegistry = {};
+    const container = {
+        image: { registry: { name: 'ecr' }, name: 'repo', tag: { value: '1.0.0' } },
+        updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+    };
+
+    const logContainer = { info: vi.fn(), warn: vi.fn() };
+    await docker.pruneImages(mockDockerApi, mockRegistry, container, logContainer);
+
+    expect(logContainer.warn).toHaveBeenCalledWith(
+        expect.stringContaining('list failed'),
+    );
 });

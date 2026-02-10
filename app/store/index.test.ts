@@ -135,6 +135,22 @@ describe('Store Module', () => {
         expect(container.createCollections).toHaveBeenCalled();
     });
 
+    test('should throw when store configuration is invalid', async () => {
+        vi.resetModules();
+
+        vi.doMock('../configuration', () => ({
+            getStoreConfiguration: vi.fn(() => ({
+                path: 123, // invalid: path should be a string
+            })),
+        }));
+
+        vi.doMock('../log', () => ({
+            default: { child: vi.fn(() => ({ info: vi.fn() })) },
+        }));
+
+        await expect(import('./index.js')).rejects.toThrow();
+    });
+
     test('should migrate from wud.json when dd.json does not exist', async () => {
         vi.resetModules();
 

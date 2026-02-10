@@ -23,6 +23,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
 };
 
 beforeEach(async () => {
@@ -154,4 +155,28 @@ test('trigger should use bearer auth when configured like that', async () => {
         url: 'http://xxx.com',
         auth: { bearer: 'token' },
     });
+});
+
+test('triggerBatch should call http client with batch body', async () => {
+    ntfy.configuration = configurationValid;
+    const containers = [
+        {
+            name: 'container1',
+            updateKind: { kind: 'tag', localValue: '1.0.0', remoteValue: '2.0.0' },
+        },
+        {
+            name: 'container2',
+            updateKind: { kind: 'tag', localValue: '3.0.0', remoteValue: '4.0.0' },
+        },
+    ];
+    axios.mockResolvedValue({ data: {} });
+    await ntfy.triggerBatch(containers);
+    expect(axios).toHaveBeenCalledWith(
+        expect.objectContaining({
+            data: expect.objectContaining({
+                topic: 'xxx',
+                priority: 2,
+            }),
+        }),
+    );
 });

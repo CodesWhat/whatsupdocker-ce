@@ -204,4 +204,22 @@ describe('Rocketchat Trigger', () => {
             parseUrls: true,
         });
     });
+
+    test('composeMessage should return only body when disabletitle is true', () => {
+        rocketchat.configuration = { disabletitle: true };
+        rocketchat.renderSimpleBody = vi.fn().mockReturnValue('Body only');
+        rocketchat.renderSimpleTitle = vi.fn().mockReturnValue('Title');
+        const result = rocketchat.composeMessage({ name: 'test' });
+        expect(result).toBe('Body only');
+        expect(rocketchat.renderSimpleTitle).not.toHaveBeenCalled();
+    });
+
+    test('composeBatchMessage should return only body when disabletitle is true', () => {
+        rocketchat.configuration = { disabletitle: true };
+        rocketchat.renderBatchBody = vi.fn().mockReturnValue('Batch body');
+        rocketchat.renderBatchTitle = vi.fn().mockReturnValue('Batch title');
+        const result = rocketchat.composeBatchMessage([{ name: 'c1' }]);
+        expect(result).toBe('Batch body');
+        expect(rocketchat.renderBatchTitle).not.toHaveBeenCalled();
+    });
 });

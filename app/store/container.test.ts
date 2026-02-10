@@ -406,6 +406,69 @@ test('getContainer should return undefined when not found', async () => {
     expect(result).toEqual(undefined);
 });
 
+test('getContainers should return empty array when collection is not initialized', async () => {
+    // Reset the containers collection by using a db that returns null
+    const db = {
+        getCollection: () => null,
+        addCollection: () => null,
+    };
+    // This won't actually set containers to null due to the check,
+    // but we can test the fallback by never calling createCollections
+    // Create a fresh import to test the uninitialized state
+    vi.resetModules();
+    const freshContainer = await import('./container.js');
+    const result = freshContainer.getContainers();
+    expect(result).toEqual([]);
+});
+
+test('getContainers should filter by query parameters', async () => {
+    const containerExample = {
+        id: 'container-123456789',
+        name: 'test',
+        watcher: 'test',
+        image: {
+            id: 'image-123456789',
+            registry: { name: 'registry', url: 'https://hub' },
+            name: 'organization/image',
+            tag: { value: 'version', semver: false },
+            digest: { watch: false, repo: undefined },
+            architecture: 'arch',
+            os: 'os',
+            created: '2021-06-12T05:33:38.440Z',
+        },
+        result: { tag: 'version' },
+    };
+    const collection = {
+        find: vi.fn(() => [{ data: containerExample }]),
+    };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    container.createCollections(db);
+    container.getContainers({ watcher: 'test' });
+    expect(collection.find).toHaveBeenCalledWith({ 'data.watcher': 'test' });
+});
+
+test('deleteContainer should do nothing when container is not found', async () => {
+    const collection = {
+        findOne: () => null,
+        chain: () => ({
+            find: () => ({
+                remove: () => ({}),
+            }),
+        }),
+    };
+    const db = {
+        getCollection: () => collection,
+        addCollection: () => null,
+    };
+    const spyEvent = vi.spyOn(event, 'emitContainerRemoved');
+    container.createCollections(db);
+    container.deleteContainer('nonexistent-id');
+    expect(spyEvent).not.toHaveBeenCalled();
+});
+
 test('deleteContainer should delete doc and emit an event', async () => {
     const containerExample = {
         data: {

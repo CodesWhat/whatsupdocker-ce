@@ -3,6 +3,7 @@ import parse from 'parse-docker-image-name';
 import Trigger from '../Trigger.js';
 import { getState } from '../../../registry/index.js';
 import { fullName } from '../../../model/container.js';
+import { emitContainerUpdateApplied } from '../../../event/index.js';
 
 const PULL_PROGRESS_LOG_INTERVAL_MS = 2000;
 
@@ -705,6 +706,10 @@ class Docker extends Trigger {
                         }
                     }
                 }
+
+                // Notify that this container has been updated so notification
+                // triggers can dismiss previously sent messages.
+                await emitContainerUpdateApplied(fullName(container));
             }
         } else {
             logContainer.warn(

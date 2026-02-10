@@ -415,3 +415,267 @@ test('callback should return explicit error when callback state does not match s
         'OIDC session state mismatch or expired. Please retry authentication.',
     );
 });
+
+test('callback should return 401 when login fails with error', async () => {
+    openidClientMock.authorizationCodeGrant = vi
+        .fn()
+        .mockResolvedValue({ access_token: 'token' });
+    openidClientMock.fetchUserInfo = vi
+        .fn()
+        .mockResolvedValue({ email: 'user@example.com' });
+
+    const session = {
+        save: vi.fn((cb) => cb()),
+    };
+    const resRedirect = {
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+    };
+
+    await oidc.redirect(
+        { protocol: 'https', hostname: 'dd.example.com', session },
+        resRedirect,
+    );
+
+    const pendingStates = Object.keys(session.oidc.default.pending);
+    const state = pendingStates[0];
+
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        originalUrl: `/auth/oidc/default/cb?code=abc&state=${state}`,
+        session,
+        login: vi.fn((user, done) => done(new Error('login failed'))),
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        send: vi.fn(),
+        redirect: vi.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication failed' });
+});
+
+test('callback should return 401 when authorizationCodeGrant throws', async () => {
+    openidClientMock.authorizationCodeGrant = vi
+        .fn()
+        .mockRejectedValue(new Error('grant failed'));
+
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        originalUrl: '/auth/oidc/default/cb?code=abc&state=valid-state',
+        session: {
+            oidc: {
+                default: {
+                    pending: {
+                        'valid-state': {
+                            codeVerifier: 'code-verifier',
+                            createdAt: Date.now(),
+                        },
+                    },
+                },
+            },
+        },
+        login: vi.fn(),
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        send: vi.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication failed' });
+});
+
+test('redirect should respond with 500 when session is unavailable', async () => {
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+        json: vi.fn(),
+    };
+
+    await oidc.redirect(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith('Unable to initialize OIDC session');
+});
+
+test('redirect should respond with 500 when session save fails', async () => {
+    const session = {
+        save: vi.fn((cb) => cb(new Error('save failed'))),
+    };
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        session,
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+        json: vi.fn(),
+    };
+
+    await oidc.redirect(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith('Unable to initialize OIDC session');
+});
+
+test('callback should return 401 when access_token is missing', async () => {
+    openidClientMock.authorizationCodeGrant = vi
+        .fn()
+        .mockResolvedValue({});
+
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        originalUrl: '/auth/oidc/default/cb?code=abc&state=valid-state',
+        session: {
+            oidc: {
+                default: {
+                    pending: {
+                        'valid-state': {
+                            codeVerifier: 'code-verifier',
+                            createdAt: Date.now(),
+                        },
+                    },
+                },
+            },
+        },
+        login: vi.fn(),
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        send: vi.fn(),
+    };
+
+    await oidc.callback(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication failed' });
+});
+
+test('initAuthentication should discover and configure client', async () => {
+    const mockClient = {};
+    openidClientMock.discovery = vi.fn().mockResolvedValue(mockClient);
+    openidClientMock.buildEndSessionUrl = vi.fn().mockReturnValue(new URL('https://idp/logout'));
+
+    await oidc.initAuthentication();
+
+    expect(openidClientMock.discovery).toHaveBeenCalled();
+    expect(oidc.logoutUrl).toBe('https://idp/logout');
+});
+
+test('initAuthentication should handle missing end session url', async () => {
+    const mockClient = {};
+    openidClientMock.discovery = vi.fn().mockResolvedValue(mockClient);
+    openidClientMock.buildEndSessionUrl = vi.fn().mockImplementation(() => {
+        throw new Error('not supported');
+    });
+
+    await oidc.initAuthentication();
+
+    expect(openidClientMock.discovery).toHaveBeenCalled();
+    expect(oidc.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('End session url is not supported'),
+    );
+});
+
+test('getSessionKey should return name when set', () => {
+    oidc.name = 'my-oidc';
+    expect(oidc.getSessionKey()).toBe('my-oidc');
+});
+
+test('callback should use req.url as fallback when originalUrl is missing', async () => {
+    openidClientMock.authorizationCodeGrant = vi
+        .fn()
+        .mockResolvedValue({ access_token: 'token' });
+    openidClientMock.fetchUserInfo = vi
+        .fn()
+        .mockResolvedValue({ email: 'user@example.com' });
+
+    const session = {
+        save: vi.fn((cb) => cb()),
+    };
+    const resRedirect = {
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+    };
+    await oidc.redirect(
+        { protocol: 'https', hostname: 'dd.example.com', session },
+        resRedirect,
+    );
+
+    const pendingStates = Object.keys(session.oidc.default.pending);
+    const state = pendingStates[0];
+
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        url: `/auth/oidc/default/cb?code=abc&state=${state}`,
+        session,
+        login: vi.fn((user, done) => done()),
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        send: vi.fn(),
+        redirect: vi.fn(),
+    };
+    await oidc.callback(req, res);
+    expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
+});
+
+test('redirect should handle session reload error gracefully', async () => {
+    const session = {
+        reload: vi.fn((cb) => cb(new Error('reload failed'))),
+        save: vi.fn((cb) => cb()),
+    };
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        session,
+    };
+    const res = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+        json: vi.fn(),
+    };
+
+    await oidc.redirect(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('redirect should skip session lock when sessionID is empty', async () => {
+    const save = vi.fn((cb) => cb());
+    const req = {
+        protocol: 'https',
+        hostname: 'dd.example.com',
+        sessionID: '',
+        session: { save },
+    };
+    const res = {
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+    };
+
+    await oidc.redirect(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({ url: 'https://idp/auth' });
+});

@@ -28,3 +28,32 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
         },
     });
 });
+
+test('init should handle string configuration by resetting to object', async () => {
+    const cb = new Codeberg();
+    cb.configuration = 'some-string';
+    cb.init();
+    expect(cb.configuration).toEqual({ url: 'https://codeberg.org' });
+});
+
+test('init should handle undefined configuration', async () => {
+    const cb = new Codeberg();
+    cb.configuration = undefined;
+    cb.init();
+    expect(cb.configuration).toEqual({ url: 'https://codeberg.org' });
+});
+
+test('getConfigurationSchema should accept empty string', async () => {
+    const cb = new Codeberg();
+    expect(() => cb.validateConfiguration('')).not.toThrow();
+});
+
+test('getConfigurationSchema should accept login/password combo', async () => {
+    const cb = new Codeberg();
+    expect(() =>
+        cb.validateConfiguration({
+            login: 'user',
+            password: 'pass',
+        }),
+    ).not.toThrow();
+});

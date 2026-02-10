@@ -75,3 +75,27 @@ test('authenticate should add basic auth', async () => {
         },
     });
 });
+
+test('getAuthPull should return clientid and clientsecret', async () => {
+    const result = await acr.getAuthPull();
+    expect(result).toEqual({
+        username: 'clientid',
+        password: 'clientsecret',
+    });
+});
+
+test('normalizeImage should not double-prepend https when url already has it', async () => {
+    expect(
+        acr.normalizeImage({
+            name: 'test/image',
+            registry: {
+                url: 'https://test.azurecr.io/v2',
+            },
+        }),
+    ).toStrictEqual({
+        name: 'test/image',
+        registry: {
+            url: 'https://test.azurecr.io/v2',
+        },
+    });
+});

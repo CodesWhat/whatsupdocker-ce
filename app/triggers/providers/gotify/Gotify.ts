@@ -55,6 +55,20 @@ class Gotify extends Trigger {
     }
 
     /**
+     * Dismiss a previously sent Gotify notification.
+     * @param containerId the container identifier
+     * @param triggerResult the result from createMessage containing the message id
+     */
+    async dismiss(containerId, triggerResult) {
+        if (triggerResult && triggerResult.id) {
+            this.log.info(
+                `Deleting Gotify message ${triggerResult.id} for container ${containerId}`,
+            );
+            await this.client.message.deleteMessage(triggerResult.id);
+        }
+    }
+
+    /**
      * Send an HTTP Request to Gotify.
      * @param containers
      * @returns {Promise<*>}

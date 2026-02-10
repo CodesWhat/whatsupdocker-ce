@@ -1,5 +1,13 @@
 // @ts-nocheck
+// Force v8 coverage to pick up the Forgejo module by importing directly
 import Forgejo from './Forgejo.js';
+
+// Verify the Forgejo class is properly a subclass of Gitea
+test('Forgejo should be an instance of Gitea', async () => {
+    const { default: Gitea } = await import('../gitea/Gitea.js');
+    const forgejo = new Forgejo();
+    expect(forgejo).toBeInstanceOf(Gitea);
+});
 
 const forgejo = new Forgejo();
 forgejo.configuration = {

@@ -1029,6 +1029,227 @@ describe('Dockercompose Trigger', () => {
         );
     });
 
+    test('runServicePostStartHooks should return early when normalized hooks array is empty', async () => {
+        trigger.configuration.dryrun = false;
+        const container = { name: 'netbox', watcher: 'local' };
+
+        await trigger.runServicePostStartHooks(container, 'netbox', {
+            post_start: [],
+        });
+
+        expect(mockDockerApi.getContainer).not.toHaveBeenCalled();
+    });
+
+    test('getComposeFile should log error and throw when fs.readFile throws synchronously', () => {
+        const readFileMock = fs.readFile;
+        readFileMock.mockImplementationOnce(() => {
+            throw new Error('sync read error');
+        });
+        trigger.configuration.file = '/tmp/compose.yml';
+
+        expect(() => trigger.getComposeFile('/tmp/compose.yml')).toThrow('sync read error');
+        expect(mockLog.error).toHaveBeenCalledWith(
+            expect.stringContaining('sync read error'),
+        );
+    });
+
+    test('processComposeFile should filter out containers where mapCurrentVersionToUpdateVersion returns undefined', async () => {
+        const container1 = {
+            name: 'nginx',
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '1.1.0' },
+        };
+        const container2 = {
+            name: 'unknown-container',
+            image: {
+                name: 'unknown',
+                registry: { name: 'hub' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '1.1.0' },
+        };
+
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { image: 'nginx:1.0.0' },
+            },
+        });
+
+        const dockerTriggerSpy = vi
+            .spyOn(Docker.prototype, 'trigger')
+            .mockResolvedValue();
+        vi.spyOn(trigger, 'getComposeFile').mockResolvedValue(
+            Buffer.from('image: nginx:1.0.0'),
+        );
+        vi.spyOn(trigger, 'writeComposeFile').mockResolvedValue();
+        vi.spyOn(trigger, 'runServicePostStartHooks').mockResolvedValue();
+        trigger.configuration.dryrun = false;
+
+        await trigger.processComposeFile('/tmp/stack.yml', [container1, container2]);
+
+        // Only nginx should be triggered, unknown-container should be filtered out
+        expect(dockerTriggerSpy).toHaveBeenCalledTimes(1);
+        expect(dockerTriggerSpy).toHaveBeenCalledWith(container1);
+    });
+
+    test('processComposeFile should handle digest images with @ in compose file', async () => {
+        trigger.configuration.dryrun = false;
+        trigger.configuration.backup = false;
+
+        const container = {
+            name: 'nginx',
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: 'latest' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '1.1.0' },
+        };
+
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { image: 'nginx@sha256:abc123' },
+            },
+        });
+
+        // Container's currentFullImage is 'nginx:latest' which won't match 'nginx@sha256:abc123'
+        // so it won't find the service, and the container should be filtered out
+        await trigger.processComposeFile('/tmp/stack.yml', [container]);
+
+        expect(mockLog.warn).toHaveBeenCalledWith(
+            expect.stringContaining('No containers found'),
+        );
+    });
+
+    test('processComposeFile should handle null image in mapCurrentVersionToUpdateVersion', async () => {
+        trigger.configuration.dryrun = false;
+
+        const container = {
+            name: 'nginx',
+            labels: { 'com.docker.compose.service': 'nginx' },
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '1.1.0' },
+        };
+
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { build: './nginx' },
+            },
+        });
+
+        // mapCurrentVersionToUpdateVersion returns undefined for service without image
+        await trigger.processComposeFile('/tmp/stack.yml', [container]);
+
+        expect(mockLog.warn).toHaveBeenCalledWith(
+            expect.stringContaining('image is missing'),
+        );
+    });
+
+    test('getConfigurationSchema should extend Docker schema with file, backup, composeFileLabel', () => {
+        const schema = trigger.getConfigurationSchema();
+        expect(schema).toBeDefined();
+        // Validate a config with dockercompose-specific fields
+        const { error } = schema.validate({
+            prune: false,
+            dryrun: false,
+            autoremovetimeout: 10000,
+            file: '/tmp/compose.yml',
+            backup: true,
+            composeFileLabel: 'dd.compose.file',
+        });
+        expect(error).toBeUndefined();
+    });
+
+    test('processComposeFile should treat image with digest reference as up to date', async () => {
+        trigger.configuration.dryrun = false;
+        const container = {
+            name: 'nginx',
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: 'latest' },
+            },
+            updateKind: {
+                kind: 'digest',
+                remoteValue: 'sha256:deadbeef',
+            },
+        };
+
+        // Use image with @digest to exercise normalizeImplicitLatest "@" branch (line 37-38)
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { image: 'nginx@sha256:abc123' },
+            },
+        });
+
+        const dockerTriggerSpy = vi
+            .spyOn(Docker.prototype, 'trigger')
+            .mockResolvedValue();
+
+        await trigger.processComposeFile('/tmp/stack.yml', [container]);
+
+        // The container won't match because image formats differ
+        expect(mockLog.warn).toHaveBeenCalledWith(
+            expect.stringContaining('No containers found'),
+        );
+        expect(dockerTriggerSpy).not.toHaveBeenCalled();
+    });
+
+    test('processComposeFile should handle mapCurrentVersionToUpdateVersion returning undefined', async () => {
+        trigger.configuration.dryrun = false;
+
+        const container1 = {
+            name: 'nginx',
+            labels: { 'com.docker.compose.service': 'nginx' },
+            image: {
+                name: 'nginx',
+                registry: { name: 'hub' },
+                tag: { value: '1.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '1.1.0' },
+        };
+        const container2 = {
+            name: 'redis',
+            labels: { 'com.docker.compose.service': 'redis' },
+            image: {
+                name: 'redis',
+                registry: { name: 'hub' },
+                tag: { value: '7.0.0' },
+            },
+            updateKind: { kind: 'tag', remoteValue: '7.1.0' },
+        };
+
+        vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
+            services: {
+                nginx: { image: 'nginx:1.0.0' },
+                redis: { build: './redis' }, // service has no image -> returns undefined
+            },
+        });
+
+        vi.spyOn(trigger, 'getComposeFile').mockResolvedValue(
+            Buffer.from('image: nginx:1.0.0'),
+        );
+        vi.spyOn(trigger, 'writeComposeFile').mockResolvedValue();
+        const dockerTriggerSpy = vi
+            .spyOn(Docker.prototype, 'trigger')
+            .mockResolvedValue();
+        vi.spyOn(trigger, 'runServicePostStartHooks').mockResolvedValue();
+
+        await trigger.processComposeFile('/tmp/stack.yml', [container1, container2]);
+
+        // Only nginx should be triggered (redis returns undefined from mapCurrentVersionToUpdateVersion)
+        expect(dockerTriggerSpy).toHaveBeenCalledTimes(1);
+        expect(dockerTriggerSpy).toHaveBeenCalledWith(container1);
+    });
+
     test('runServicePostStartHooks should handle environment with null values', async () => {
         trigger.configuration.dryrun = false;
         const container = { name: 'netbox', watcher: 'local' };

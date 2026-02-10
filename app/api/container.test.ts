@@ -1,13 +1,17 @@
 // @ts-nocheck
+const { mockRouter } = vi.hoisted(() => ({
+    mockRouter: {
+        use: vi.fn(),
+        get: vi.fn(),
+        post: vi.fn(),
+        delete: vi.fn(),
+        patch: vi.fn(),
+    },
+}));
+
 vi.mock('express', () => ({
     default: {
-        Router: vi.fn(() => ({
-            use: vi.fn(),
-            get: vi.fn(),
-            post: vi.fn(),
-            delete: vi.fn(),
-            patch: vi.fn(),
-        })),
+        Router: vi.fn(() => mockRouter),
     },
 }));
 
@@ -40,7 +44,7 @@ vi.mock('./component', () => ({
 vi.mock('../triggers/providers/Trigger', () => ({
     __esModule: true,
     default: {
-        parseIncludeOrIncludeTriggerString: vi.fn(),
+        parseIncludeOrIncludeTriggerString: vi.fn((str) => ({ id: str })),
         doesReferenceMatchId: vi.fn(() => false),
     },
 }));
@@ -60,22 +64,26 @@ vi.mock('../agent/manager', () => ({
 }));
 
 import * as storeContainer from '../store/container.js';
+import * as registry from '../registry/index.js';
+import { getServerConfiguration } from '../configuration/index.js';
+import { mapComponentsToList } from './component.js';
+import Trigger from '../triggers/providers/Trigger.js';
+import { getAgent } from '../agent/manager.js';
 import * as containerRouter from './container.js';
-
-function getUpdatePolicyHandler() {
-    const router = containerRouter.init();
-    const route = router.patch.mock.calls.find(
-        (call) => call[0] === '/:id/update-policy',
-    );
-    return route[1];
-}
 
 function createResponse() {
     return {
         sendStatus: vi.fn(),
         status: vi.fn().mockReturnThis(),
         json: vi.fn(),
+        send: vi.fn(),
     };
+}
+
+function getHandler(method, path) {
+    containerRouter.init();
+    const call = mockRouter[method].mock.calls.find((c) => c[0] === path);
+    return call[1];
 }
 
 describe('Container Router', () => {
@@ -83,154 +91,641 @@ describe('Container Router', () => {
         vi.clearAllMocks();
     });
 
-    test('should register update policy route', async () => {
-        const router = containerRouter.init();
-        expect(router.patch).toHaveBeenCalledWith(
-            '/:id/update-policy',
-            expect.any(Function),
-        );
-    });
-
-    test('should return 404 when updating policy for unknown container', async () => {
-        storeContainer.getContainer.mockReturnValue(undefined);
-        const updatePolicyHandler = getUpdatePolicyHandler();
-        const response = createResponse();
-
-        updatePolicyHandler(
-            {
-                params: { id: 'missing' },
-                body: { action: 'skip-current' },
-            },
-            response,
-        );
-
-        expect(response.sendStatus).toHaveBeenCalledWith(404);
-        expect(storeContainer.updateContainer).not.toHaveBeenCalled();
-    });
-
-    test('should skip current tag update and persist updatePolicy', async () => {
-        storeContainer.getContainer.mockReturnValue({
-            id: 'container-1',
-            updateKind: {
-                kind: 'tag',
-                remoteValue: '2.0.0',
-            },
-            result: {
-                tag: '2.0.0',
-            },
+    describe('init', () => {
+        test('should register all routes', () => {
+            const router = containerRouter.init();
+            expect(router.use).toHaveBeenCalledWith('nocache-middleware');
+            expect(router.get).toHaveBeenCalledWith('/', expect.any(Function));
+            expect(router.post).toHaveBeenCalledWith('/watch', expect.any(Function));
+            expect(router.get).toHaveBeenCalledWith('/:id', expect.any(Function));
+            expect(router.delete).toHaveBeenCalledWith('/:id', expect.any(Function));
+            expect(router.get).toHaveBeenCalledWith('/:id/triggers', expect.any(Function));
+            expect(router.post).toHaveBeenCalledWith('/:id/triggers/:triggerType/:triggerName', expect.any(Function));
+            expect(router.post).toHaveBeenCalledWith('/:id/triggers/:triggerAgent/:triggerType/:triggerName', expect.any(Function));
+            expect(router.patch).toHaveBeenCalledWith('/:id/update-policy', expect.any(Function));
+            expect(router.post).toHaveBeenCalledWith('/:id/watch', expect.any(Function));
         });
-        const updatePolicyHandler = getUpdatePolicyHandler();
-        const response = createResponse();
-
-        updatePolicyHandler(
-            {
-                params: { id: 'container-1' },
-                body: { action: 'skip-current' },
-            },
-            response,
-        );
-
-        expect(storeContainer.updateContainer).toHaveBeenCalledTimes(1);
-        expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toEqual(
-            { skipTags: ['2.0.0'] },
-        );
-        expect(response.status).toHaveBeenCalledWith(200);
     });
 
-    test('should reject snooze with invalid days', async () => {
-        storeContainer.getContainer.mockReturnValue({
-            id: 'container-1',
-            updateKind: {
-                kind: 'tag',
-                remoteValue: '2.0.0',
-            },
-            result: {
-                tag: '2.0.0',
-            },
+    describe('getContainers', () => {
+        test('should return containers from store', () => {
+            storeContainer.getContainers.mockReturnValue([{ id: 'c1' }]);
+            const handler = getHandler('get', '/');
+            const res = createResponse();
+            handler({ query: {} }, res);
+
+            expect(storeContainer.getContainers).toHaveBeenCalledWith({});
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith([{ id: 'c1' }]);
         });
-        const updatePolicyHandler = getUpdatePolicyHandler();
-        const response = createResponse();
-
-        updatePolicyHandler(
-            {
-                params: { id: 'container-1' },
-                body: { action: 'snooze', days: 0 },
-            },
-            response,
-        );
-
-        expect(response.status).toHaveBeenCalledWith(400);
-        expect(response.json).toHaveBeenCalledWith(
-            expect.objectContaining({
-                error: expect.stringContaining('Invalid snooze days value'),
-            }),
-        );
     });
 
-    test('should clear update policy when action is clear', async () => {
-        storeContainer.getContainer.mockReturnValue({
-            id: 'container-1',
-            updatePolicy: {
-                skipTags: ['2.0.0'],
-                snoozeUntil: '2099-01-01T00:00:00.000Z',
-            },
-            updateKind: {
-                kind: 'tag',
-                remoteValue: '2.0.0',
-            },
-            result: {
-                tag: '2.0.0',
-            },
+    describe('getContainersFromStore', () => {
+        test('should delegate to store getContainers', () => {
+            storeContainer.getContainers.mockReturnValue([{ id: 'c1' }]);
+            const result = containerRouter.getContainersFromStore({ watcher: 'docker' });
+            expect(storeContainer.getContainers).toHaveBeenCalledWith({ watcher: 'docker' });
+            expect(result).toEqual([{ id: 'c1' }]);
         });
-        const updatePolicyHandler = getUpdatePolicyHandler();
-        const response = createResponse();
-
-        updatePolicyHandler(
-            {
-                params: { id: 'container-1' },
-                body: { action: 'clear' },
-            },
-            response,
-        );
-
-        expect(storeContainer.updateContainer).toHaveBeenCalledTimes(1);
-        expect(
-            Object.prototype.hasOwnProperty.call(
-                storeContainer.updateContainer.mock.calls[0][0],
-                'updatePolicy',
-            ),
-        ).toBe(true);
-        expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toBeUndefined();
-        expect(response.status).toHaveBeenCalledWith(200);
     });
 
-    test('should reject skip-current when no update kind is available', async () => {
-        storeContainer.getContainer.mockReturnValue({
-            id: 'container-1',
-            updateKind: {
-                kind: 'unknown',
-            },
-            result: {
-                tag: '2.0.0',
-            },
+    describe('getContainer', () => {
+        test('should return container when found', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'test' });
+            const handler = getHandler('get', '/:id');
+            const res = createResponse();
+            handler({ params: { id: 'c1' } }, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ id: 'c1', name: 'test' });
         });
-        const updatePolicyHandler = getUpdatePolicyHandler();
-        const response = createResponse();
 
-        updatePolicyHandler(
-            {
-                params: { id: 'container-1' },
-                body: { action: 'skip-current' },
-            },
-            response,
-        );
+        test('should return 404 when container not found', () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const handler = getHandler('get', '/:id');
+            const res = createResponse();
+            handler({ params: { id: 'missing' } }, res);
 
-        expect(response.status).toHaveBeenCalledWith(400);
-        expect(response.json).toHaveBeenCalledWith(
-            expect.objectContaining({
-                error: expect.stringContaining('No current update available to skip'),
-            }),
-        );
-        expect(storeContainer.updateContainer).not.toHaveBeenCalled();
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+    });
+
+    describe('deleteContainer', () => {
+        test('should return 403 when delete feature is disabled', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: false } });
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(res.sendStatus).toHaveBeenCalledWith(403);
+        });
+
+        test('should return 404 when container not found', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+
+        test('should delete local container and return 204', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(storeContainer.deleteContainer).toHaveBeenCalledWith('c1');
+            expect(res.sendStatus).toHaveBeenCalledWith(204);
+        });
+
+        test('should return 500 when agent not found for remote container', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            getAgent.mockReturnValue(undefined);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('Agent remote not found'),
+            }));
+        });
+
+        test('should delete remote container successfully', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const mockAgentObj = { deleteContainer: vi.fn().mockResolvedValue(undefined) };
+            getAgent.mockReturnValue(mockAgentObj);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(mockAgentObj.deleteContainer).toHaveBeenCalledWith('c1');
+            expect(storeContainer.deleteContainer).toHaveBeenCalledWith('c1');
+            expect(res.sendStatus).toHaveBeenCalledWith(204);
+        });
+
+        test('should handle 404 from agent delete and still clean up', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const error = new Error('Not found');
+            error.response = { status: 404 };
+            const mockAgentObj = { deleteContainer: vi.fn().mockRejectedValue(error) };
+            getAgent.mockReturnValue(mockAgentObj);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(storeContainer.deleteContainer).toHaveBeenCalledWith('c1');
+            expect(res.sendStatus).toHaveBeenCalledWith(204);
+        });
+
+        test('should return 500 on agent delete error (non-404)', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const error = new Error('Server error');
+            error.response = { status: 500 };
+            const mockAgentObj = { deleteContainer: vi.fn().mockRejectedValue(error) };
+            getAgent.mockReturnValue(mockAgentObj);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('Error deleting container on agent'),
+            }));
+        });
+
+        test('should handle agent delete error without response', async () => {
+            getServerConfiguration.mockReturnValue({ feature: { delete: true } });
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const error = new Error('Network error');
+            const mockAgentObj = { deleteContainer: vi.fn().mockRejectedValue(error) };
+            getAgent.mockReturnValue(mockAgentObj);
+            const res = createResponse();
+            await containerRouter.deleteContainer({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+    });
+
+    describe('watchContainers', () => {
+        test('should watch all watchers and return containers', async () => {
+            const mockWatcher = { watch: vi.fn().mockResolvedValue(undefined) };
+            registry.getState.mockReturnValue({
+                watcher: { 'docker.local': mockWatcher },
+                trigger: {},
+            });
+            storeContainer.getContainers.mockReturnValue([{ id: 'c1' }]);
+
+            const handler = getHandler('post', '/watch');
+            const res = createResponse();
+            await handler({ query: {} }, res);
+
+            expect(mockWatcher.watch).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should return 500 when watcher fails', async () => {
+            const mockWatcher = { watch: vi.fn().mockRejectedValue(new Error('watch failed')) };
+            registry.getState.mockReturnValue({
+                watcher: { 'docker.local': mockWatcher },
+                trigger: {},
+            });
+
+            const handler = getHandler('post', '/watch');
+            const res = createResponse();
+            await handler({ query: {} }, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('watch failed'),
+            }));
+        });
+    });
+
+    describe('getContainerTriggers', () => {
+        test('should return 404 when container not found', async () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'missing' } }, res);
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+
+        test('should return associated triggers for container', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            mapComponentsToList.mockReturnValue([
+                { type: 'slack', name: 'default', configuration: {} },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.any(Array));
+        });
+
+        test('should filter triggers with triggerInclude', async () => {
+            storeContainer.getContainer.mockReturnValue({
+                id: 'c1',
+                triggerInclude: 'slack.default',
+            });
+            Trigger.parseIncludeOrIncludeTriggerString.mockReturnValue({ id: 'slack.default' });
+            Trigger.doesReferenceMatchId.mockImplementation((ref, id) => ref === id);
+            mapComponentsToList.mockReturnValue([
+                { type: 'slack', name: 'default', configuration: {} },
+                { type: 'email', name: 'default', configuration: {} },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            const triggers = res.json.mock.calls[0][0];
+            expect(triggers).toHaveLength(1);
+            expect(triggers[0].type).toBe('slack');
+        });
+
+        test('should filter triggers with triggerExclude', async () => {
+            storeContainer.getContainer.mockReturnValue({
+                id: 'c1',
+                triggerExclude: 'slack.default',
+            });
+            Trigger.parseIncludeOrIncludeTriggerString.mockReturnValue({ id: 'slack.default' });
+            Trigger.doesReferenceMatchId.mockImplementation((ref, id) => ref === id);
+            mapComponentsToList.mockReturnValue([
+                { type: 'slack', name: 'default', configuration: {} },
+                { type: 'email', name: 'default', configuration: {} },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            const triggers = res.json.mock.calls[0][0];
+            expect(triggers).toHaveLength(1);
+            expect(triggers[0].type).toBe('email');
+        });
+
+        test('should exclude remote triggers for different agent', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'agent-1' });
+            mapComponentsToList.mockReturnValue([
+                { type: 'slack', name: 'default', configuration: {}, agent: 'agent-2' },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            const triggers = res.json.mock.calls[0][0];
+            expect(triggers).toHaveLength(0);
+        });
+
+        test('should exclude local docker triggers for remote containers', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'agent-1' });
+            mapComponentsToList.mockReturnValue([
+                { type: 'docker', name: 'default', configuration: {} },
+                { type: 'dockercompose', name: 'default', configuration: {} },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            const triggers = res.json.mock.calls[0][0];
+            expect(triggers).toHaveLength(0);
+        });
+
+        test('should include triggers with matching include threshold', async () => {
+            storeContainer.getContainer.mockReturnValue({
+                id: 'c1',
+                triggerInclude: 'slack.default(all)',
+            });
+            Trigger.parseIncludeOrIncludeTriggerString.mockReturnValue({ id: 'slack.default', threshold: 'all' });
+            Trigger.doesReferenceMatchId.mockReturnValue(true);
+            mapComponentsToList.mockReturnValue([
+                { type: 'slack', name: 'default', configuration: {} },
+            ]);
+
+            const res = createResponse();
+            await containerRouter.getContainerTriggers({ params: { id: 'c1' } }, res);
+
+            const triggers = res.json.mock.calls[0][0];
+            expect(triggers).toHaveLength(1);
+            expect(triggers[0].configuration.threshold).toBe('all');
+        });
+    });
+
+    describe('runTrigger', () => {
+        test('should return 404 when container not found', async () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'missing', triggerType: 'slack', triggerName: 'default' } }, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Container not found' }));
+        });
+
+        test('should return 400 for local docker trigger on remote container', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerType: 'docker', triggerName: 'restart' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 for local dockercompose trigger on remote container', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', agent: 'remote' });
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerType: 'dockercompose', triggerName: 'restart' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 404 when trigger not found', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: {} });
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerType: 'slack', triggerName: 'default' } }, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Trigger not found' }));
+        });
+
+        test('should run trigger successfully', async () => {
+            const mockTrigger = { trigger: vi.fn().mockResolvedValue(undefined) };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: { 'slack.default': mockTrigger } });
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerType: 'slack', triggerName: 'default' } }, res);
+            expect(mockTrigger.trigger).toHaveBeenCalledWith({ id: 'c1' });
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should return 500 when trigger execution fails', async () => {
+            const mockTrigger = { trigger: vi.fn().mockRejectedValue(new Error('trigger error')) };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: { 'slack.default': mockTrigger } });
+            const handler = getHandler('post', '/:id/triggers/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerType: 'slack', triggerName: 'default' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+
+        test('should use triggerAgent in trigger id when provided', async () => {
+            const mockTrigger = { trigger: vi.fn().mockResolvedValue(undefined) };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: { 'myagent.slack.default': mockTrigger } });
+            const handler = getHandler('post', '/:id/triggers/:triggerAgent/:triggerType/:triggerName');
+            const res = createResponse();
+            await handler({ params: { id: 'c1', triggerAgent: 'myagent', triggerType: 'slack', triggerName: 'default' } }, res);
+            expect(mockTrigger.trigger).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+    });
+
+    describe('watchContainer', () => {
+        test('should return 404 when container not found', async () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'missing' } }, res);
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+
+        test('should return 500 when watcher not found', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('No provider found') }));
+        });
+
+        test('should use agent prefix for watcher id when container has agent', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local', agent: 'remote' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('remote.docker.local') }));
+        });
+
+        test('should watch container successfully', async () => {
+            const mockWatcher = {
+                watchContainer: vi.fn().mockResolvedValue({ container: { id: 'c1', result: {} } }),
+            };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ id: 'c1', result: {} });
+        });
+
+        test('should return 500 when watch fails', async () => {
+            const mockWatcher = {
+                watchContainer: vi.fn().mockRejectedValue(new Error('watch error')),
+            };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('watch error') }));
+        });
+
+        test('should check getContainers and return 404 when container not in list', async () => {
+            const mockWatcher = {
+                getContainers: vi.fn().mockResolvedValue([{ id: 'other' }]),
+                watchContainer: vi.fn(),
+            };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+
+        test('should proceed when container is found in getContainers list', async () => {
+            const mockWatcher = {
+                getContainers: vi.fn().mockResolvedValue([{ id: 'c1' }]),
+                watchContainer: vi.fn().mockResolvedValue({ container: { id: 'c1' } }),
+            };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+            const handler = getHandler('post', '/:id/watch');
+            const res = createResponse();
+            await handler({ params: { id: 'c1' } }, res);
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+    });
+
+    describe('patchContainerUpdatePolicy', () => {
+        function getUpdatePolicyHandler() {
+            containerRouter.init();
+            const route = mockRouter.patch.mock.calls.find((call) => call[0] === '/:id/update-policy');
+            return route[1];
+        }
+
+        test('should return 404 when container not found', () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'missing' }, body: { action: 'clear' } }, res);
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+
+        test('should return 400 when no action provided', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: {} }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Action is required' }));
+        });
+
+        test('should handle missing body', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: undefined }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 for unknown action', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'unknown-action' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('Unknown action') }));
+        });
+
+        test('should skip current tag update', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'tag', remoteValue: '2.0.0' }, result: { tag: '2.0.0' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toEqual({ skipTags: ['2.0.0'] });
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should skip current digest update', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'digest', remoteValue: 'sha256:abc' }, result: { digest: 'sha256:abc' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toEqual({ skipDigests: ['sha256:abc'] });
+        });
+
+        test('should fall back to result.tag when remoteValue is missing', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'tag' }, result: { tag: '3.0.0' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toEqual({ skipTags: ['3.0.0'] });
+        });
+
+        test('should fall back to result.digest when remoteValue is missing', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'digest' }, result: { digest: 'sha256:def' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toEqual({ skipDigests: ['sha256:def'] });
+        });
+
+        test('should return 400 when updateKind is unknown', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'unknown' }, result: { tag: '2.0.0' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('No current update available') }));
+        });
+
+        test('should return 400 when no update value available', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updateKind: { kind: 'tag' }, result: {} });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('No update value available') }));
+        });
+
+        test('should clear skip tags and digests', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updatePolicy: { skipTags: ['2.0.0'], skipDigests: ['sha256:abc'] } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'clear-skips' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toBeUndefined();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should snooze with default 7 days', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze' } }, res);
+            const policy = storeContainer.updateContainer.mock.calls[0][0].updatePolicy;
+            expect(policy.snoozeUntil).toBeDefined();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should snooze with custom days', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze', days: 30 } }, res);
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should snooze with custom snoozeUntil date', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze', snoozeUntil: '2099-01-01T00:00:00.000Z' } }, res);
+            const policy = storeContainer.updateContainer.mock.calls[0][0].updatePolicy;
+            expect(policy.snoozeUntil).toBe('2099-01-01T00:00:00.000Z');
+        });
+
+        test('should return 400 with invalid days', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze', days: 0 } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 with days > 365', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze', days: 400 } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 with invalid snoozeUntil date', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'snooze', snoozeUntil: 'not-a-date' } }, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should remove snoozeUntil on unsnooze', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updatePolicy: { snoozeUntil: '2099-01-01T00:00:00.000Z' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'unsnooze' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toBeUndefined();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should clear entire update policy', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updatePolicy: { skipTags: ['2.0.0'], snoozeUntil: '2099-01-01T00:00:00.000Z' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'clear' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toBeUndefined();
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test('should handle existing policy with dedup and valid data on skip-current', () => {
+            storeContainer.getContainer.mockReturnValue({
+                id: 'c1',
+                updateKind: { kind: 'tag', remoteValue: '3.0.0' },
+                updatePolicy: { skipTags: ['1.0.0', '1.0.0', 123], skipDigests: ['sha256:abc', 'sha256:abc'], snoozeUntil: '2099-06-15T00:00:00.000Z' },
+            });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'skip-current' } }, res);
+            const policy = storeContainer.updateContainer.mock.calls[0][0].updatePolicy;
+            expect(policy.skipTags).toEqual(['1.0.0', '3.0.0']);
+            expect(policy.skipDigests).toEqual(['sha256:abc']);
+            expect(policy.snoozeUntil).toBe('2099-06-15T00:00:00.000Z');
+        });
+
+        test('should ignore invalid snoozeUntil in existing policy', () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', updatePolicy: { snoozeUntil: 'not-a-date' } });
+            const handler = getUpdatePolicyHandler();
+            const res = createResponse();
+            handler({ params: { id: 'c1' }, body: { action: 'unsnooze' } }, res);
+            expect(storeContainer.updateContainer.mock.calls[0][0].updatePolicy).toBeUndefined();
+        });
     });
 });

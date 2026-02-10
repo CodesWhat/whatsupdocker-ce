@@ -45,3 +45,39 @@ test('authenticate should get & validate Bearer token', async () => {
     });
     expect(verify).toHaveBeenCalledWith('XXXXX', expect.any(Function));
 });
+
+test('authenticate should fail when bearer token verify returns no user', async () => {
+    oidcStrategy.verify = vi.fn((token, cb) => cb(null, null));
+    oidcStrategy.authenticate({
+        isAuthenticated: () => false,
+        headers: {
+            authorization: 'Bearer invalid-token',
+        },
+    });
+    expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
+});
+
+test('authenticate should fail when bearer token verify returns error', async () => {
+    oidcStrategy.verify = vi.fn((token, cb) =>
+        cb(new Error('verification error'), null),
+    );
+    oidcStrategy.authenticate({
+        isAuthenticated: () => false,
+        headers: {
+            authorization: 'Bearer bad-token',
+        },
+    });
+    expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
+});
+
+test('authenticate should succeed when bearer token verify returns valid user', async () => {
+    const user = { username: 'test@example.com' };
+    oidcStrategy.verify = vi.fn((token, cb) => cb(null, user));
+    oidcStrategy.authenticate({
+        isAuthenticated: () => false,
+        headers: {
+            authorization: 'Bearer valid-token',
+        },
+    });
+    expect(oidcStrategy.success).toHaveBeenCalledWith(user);
+});

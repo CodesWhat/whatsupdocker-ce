@@ -81,6 +81,29 @@ describe('runtime/paths', () => {
         expect(typeof result).toBe('string');
     });
 
+    test('resolveRuntimeRoot should use module directory candidate when markers exist', async () => {
+        // Make all statSync calls pass (markers exist for all candidates)
+        fs.statSync.mockImplementation(() => ({
+            isDirectory: () => true,
+        }));
+
+        const { resolveRuntimeRoot } = await import('./paths.js');
+        const result = resolveRuntimeRoot();
+        // Should return a string (the first candidate with markers)
+        expect(typeof result).toBe('string');
+    });
+
+    test('isDirectory should return false when statSync throws', async () => {
+        // statSync throws for all paths
+        fs.statSync.mockImplementation(() => {
+            throw new Error('ENOENT');
+        });
+
+        const { resolveRuntimeRoot } = await import('./paths.js');
+        // When no markers found, falls back to cwd
+        expect(resolveRuntimeRoot()).toBe(process.cwd());
+    });
+
     test('resolveUiDirectory should return first candidate as fallback when no ui dir exists', async () => {
         fs.statSync.mockImplementation(() => {
             throw new Error('not found');

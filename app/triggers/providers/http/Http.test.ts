@@ -121,6 +121,41 @@ describe('HTTP Trigger', () => {
         });
     });
 
+    test('should handle unknown auth type without setting auth or headers', async () => {
+        const { default: axios } = await import('axios');
+        axios.mockResolvedValue({ data: {} });
+        http.configuration = {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+            auth: { type: 'UNKNOWN' },
+        };
+        const container = { name: 'test' };
+
+        await http.trigger(container);
+        expect(axios).toHaveBeenCalledWith({
+            method: 'POST',
+            url: 'https://example.com/webhook',
+            data: container,
+        });
+    });
+
+    test('should handle request with no auth and no proxy', async () => {
+        const { default: axios } = await import('axios');
+        axios.mockResolvedValue({ data: {} });
+        http.configuration = {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+        };
+        const container = { name: 'test' };
+
+        await http.trigger(container);
+        expect(axios).toHaveBeenCalledWith({
+            method: 'POST',
+            url: 'https://example.com/webhook',
+            data: container,
+        });
+    });
+
     test('should use proxy', async () => {
         const { default: axios } = await import('axios');
         axios.mockResolvedValue({ data: {} });

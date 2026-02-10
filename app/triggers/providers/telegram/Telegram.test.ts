@@ -27,6 +27,7 @@ const configurationValid = {
         'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
     batchtitle: '${containers.length} updates available',
+    resolvenotifications: false,
     disabletitle: false,
     messageformat: 'Markdown',
 };
@@ -64,6 +65,7 @@ test('maskConfiguration should mask sensitive data', async () => {
         simpletitle:
             'New ${container.updateKind.kind} found for container ${container.name}',
         threshold: 'all',
+        resolvenotifications: false,
         disabletitle: false,
         messageformat: 'Markdown',
     });

@@ -1925,6 +1925,44 @@ describe('Docker Watcher', () => {
             expect(container.image.digest.value).toBe('sha256:legacy123');
         });
 
+        test('should use tag candidate for digest lookup when digest watch is true and candidates exist', async () => {
+            const container = {
+                image: {
+                    id: 'image123',
+                    registry: { name: 'hub' },
+                    tag: { value: '1.0.0', semver: true },
+                    digest: { watch: true, repo: 'sha256:abc123' },
+                },
+            };
+            const mockRegistry = {
+                getTags: vi.fn().mockResolvedValue(['1.0.0', '2.0.0']),
+                getImageManifestDigest: vi
+                    .fn()
+                    .mockResolvedValueOnce({
+                        digest: 'sha256:def456',
+                        created: '2023-01-01',
+                        version: 2,
+                    })
+                    .mockResolvedValueOnce({
+                        digest: 'sha256:manifest123',
+                    }),
+            };
+            registry.getState.mockReturnValue({
+                registry: { hub: mockRegistry },
+            });
+            mockTag.parse.mockReturnValue({ major: 1, minor: 0, patch: 0 });
+            mockTag.isGreater.mockImplementation((t2, t1) => {
+                return t2 === '2.0.0' && t1 === '1.0.0';
+            });
+            const mockLogChild = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+
+            const result = await docker.findNewVersion(container, mockLogChild);
+
+            // Should have used the tag candidate (2.0.0) for digest lookup
+            expect(result.tag).toBe('2.0.0');
+            expect(result.digest).toBe('sha256:def456');
+        });
+
         test('should handle tag candidates with semver', async () => {
             const container = {
                 includeTags: String.raw`^v\d+`,
