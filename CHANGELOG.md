@@ -7,7 +7,9 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ---
 
-## 2026.2.4
+## 1.0.0
+
+First semver release. Drydock adopts semantic versioning starting with this release, replacing the previous CalVer (YYYY.MM.PATCH) scheme.
 
 ### Security
 
