@@ -35,7 +35,7 @@ Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — r
 
 > **Known Issue — Container startup failures (Feb 2025)**
 >
-> We're aware that some users are experiencing container startup issues following the rename from WUD to Drydock. The rebrand introduced changes to image paths, environment variable prefixes, and volume mounts that we're still working through. We apologise for the disruption — this is our top priority and fixes are actively landing. If you're blocked, please check the [open issues](https://github.com/CodesWhat/drydock/issues) or pin to the last known-good WUD tag while we sort this out. Thanks for your patience.
+> We're aware that some users are experiencing container startup issues following the rename from WUD to Drydock. The rebrand introduced changes to image paths, environment variable prefixes, and volume mounts that we're still working through. We apologise for the disruption — this is our top priority and fixes are actively landing. If you're blocked, please check the [open issues](https://github.com/CodesWhat/drydock/issues). Thanks for your patience.
 
 ---
 
