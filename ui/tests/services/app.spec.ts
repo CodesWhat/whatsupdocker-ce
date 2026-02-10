@@ -12,7 +12,7 @@ describe('App Service', () => {
   });
 
   it('should get app infos', async () => {
-    const mockResponse = { name: 'WUD', version: '1.0.0' };
+    const mockResponse = { name: 'drydock', version: '1.0.0' };
     global.fetch.mockResolvedValue({
       json: vi.fn().mockResolvedValue(mockResponse)
     });

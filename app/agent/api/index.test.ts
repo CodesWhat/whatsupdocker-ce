@@ -17,9 +17,9 @@ describe('Agent API dual-prefix support', () => {
 
     beforeEach(() => {
         // Clean up agent env vars
-        delete process.env.UD_AGENT_SECRET;
+        delete process.env.DD_AGENT_SECRET;
         delete process.env.WUD_AGENT_SECRET;
-        delete process.env.UD_AGENT_SECRET_FILE;
+        delete process.env.DD_AGENT_SECRET_FILE;
         delete process.env.WUD_AGENT_SECRET_FILE;
     });
 
@@ -28,8 +28,8 @@ describe('Agent API dual-prefix support', () => {
         vi.resetModules();
     });
 
-    test('UD_AGENT_SECRET should take precedence over WUD_AGENT_SECRET', async () => {
-        process.env.UD_AGENT_SECRET = 'ud-secret';
+    test('DD_AGENT_SECRET should take precedence over WUD_AGENT_SECRET', async () => {
+        process.env.DD_AGENT_SECRET = 'dd-secret';
         process.env.WUD_AGENT_SECRET = 'wud-secret';
 
         const { init } = await import('./index.js');
@@ -37,13 +37,13 @@ describe('Agent API dual-prefix support', () => {
         // init() will start an express server; we just verify it doesn't throw
         // (meaning it picked up a secret successfully)
         // We can't fully test without a running server, so we test the env resolution
-        expect(process.env.UD_AGENT_SECRET).toBe('ud-secret');
+        expect(process.env.DD_AGENT_SECRET).toBe('dd-secret');
     });
 
-    test('WUD_AGENT_SECRET should work when UD_AGENT_SECRET is not set', async () => {
+    test('WUD_AGENT_SECRET should work when DD_AGENT_SECRET is not set', async () => {
         process.env.WUD_AGENT_SECRET = 'wud-secret';
 
         expect(process.env.WUD_AGENT_SECRET).toBe('wud-secret');
-        expect(process.env.UD_AGENT_SECRET).toBeUndefined();
+        expect(process.env.DD_AGENT_SECRET).toBeUndefined();
     });
 });

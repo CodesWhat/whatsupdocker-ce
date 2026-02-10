@@ -1,7 +1,7 @@
 {
-  "name": "updocker-e2e",
+  "name": "drydock-e2e",
   "version": "2026.2.0",
-  "description": "upDocker - e2e",
+  "description": "drydock - e2e",
   "main": "index.js",
   "scripts": {
     "format": "biome format --write .",
@@ -14,7 +14,7 @@
     "test:cleanup": "../scripts/cleanup-test-containers.sh"
   },
   "author": "fmartinou",
-  "repository": "CodesWhat/updocker",
+  "repository": "CodesWhat/drydock",
   "license": "MIT",
   "dependencies": {
     "@cucumber/cucumber": "12.6.0",

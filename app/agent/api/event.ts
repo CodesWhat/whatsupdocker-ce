@@ -34,7 +34,7 @@ function sendSseEvent(eventName: string, data: any) {
  * Subscribe to Events (SSE).
  */
 export function subscribeEvents(req: Request, res: Response) {
-    log.info(`Controller WUD with ip ${req.ip} connected.`);
+    log.info(`Controller drydock with ip ${req.ip} connected.`);
 
     const headers = {
         'Content-Type': 'text/event-stream',
@@ -51,13 +51,13 @@ export function subscribeEvents(req: Request, res: Response) {
 
     // Send Welcome / Ack
     const ackMessage = {
-        type: 'wud:ack',
+        type: 'dd:ack',
         data: { version: getVersion() },
     };
     client.res.write(`data: ${JSON.stringify(ackMessage)}\n\n`);
 
     req.on('close', () => {
-        log.info(`Controller WUD with ip ${req.ip} disconnected.`);
+        log.info(`Controller drydock with ip ${req.ip} disconnected.`);
         sseClients = sseClients.filter((c) => c.id !== client.id);
     });
 }
@@ -67,12 +67,12 @@ export function subscribeEvents(req: Request, res: Response) {
  */
 export function initEvents() {
     event.registerContainerAdded((container: Container) =>
-        sendSseEvent('wud:container-added', container),
+        sendSseEvent('dd:container-added', container),
     );
     event.registerContainerUpdated((container: Container) =>
-        sendSseEvent('wud:container-updated', container),
+        sendSseEvent('dd:container-updated', container),
     );
     event.registerContainerRemoved((container: Container) =>
-        sendSseEvent('wud:container-removed', { id: container.id }),
+        sendSseEvent('dd:container-removed', { id: container.id }),
     );
 }

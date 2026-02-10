@@ -65,7 +65,7 @@ describe('Main Application', () => {
         // Verify initialization order and calls
         expect(getVersion).toHaveBeenCalled();
         expect(log.info).toHaveBeenCalledWith(
-            'WUD is starting in Controller mode (version = 1.0.0)',
+            'drydock is starting in Controller mode (version = 1.0.0)',
         );
         expect(store.init).toHaveBeenCalledWith({ memory: false });
         expect(prometheus.init).toHaveBeenCalled();
@@ -90,7 +90,7 @@ describe('Main Application', () => {
         await new Promise((resolve) => setImmediate(resolve));
 
         expect(log.info).toHaveBeenCalledWith(
-            'WUD is starting in Agent mode (version = 1.0.0)',
+            'drydock is starting in Agent mode (version = 1.0.0)',
         );
         expect(store.init).toHaveBeenCalledWith({ memory: true });
         expect(registry.init).toHaveBeenCalledWith({ agent: true });

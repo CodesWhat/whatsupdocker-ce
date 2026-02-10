@@ -180,7 +180,7 @@ describe('Docker Watcher', () => {
                     type: 'oidc',
                     oidc: {
                         tokenurl: 'https://idp.example.com/oauth/token',
-                        clientid: 'wud-client',
+                        clientid: 'dd-client',
                         clientsecret: 'super-secret',
                         scope: 'docker.read',
                     },
@@ -394,8 +394,8 @@ describe('Docker Watcher', () => {
                     type: 'oidc',
                     oidc: {
                         tokenurl: 'https://idp.example.com/oauth/token',
-                        clientid: 'wud-client',
-                        clientsecret: 'wud-secret',
+                        clientid: 'dd-client',
+                        clientsecret: 'dd-secret',
                         scope: 'docker.read',
                     },
                 },
@@ -483,7 +483,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                         scope: 'docker.read',
                     },
                 },
@@ -502,7 +502,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -524,7 +524,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                         refreshtoken: 'existing-refresh-token',
                     },
                 },
@@ -588,7 +588,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                         scope: 'docker.read',
                     },
                 },
@@ -602,7 +602,7 @@ describe('Docker Watcher', () => {
             // Verify device authorization request
             expect(mockAxios.post).toHaveBeenCalledWith(
                 'https://idp.example.com/oauth/device/code',
-                expect.stringContaining('client_id=wud-device-client'),
+                expect.stringContaining('client_id=dd-device-client'),
                 expect.objectContaining({
                     headers: {
                         'Content-Type':
@@ -680,7 +680,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -732,7 +732,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -779,7 +779,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -820,7 +820,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -906,7 +906,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -965,7 +965,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                         scope: 'docker.read openid',
                         audience: 'https://docker-api.example.com',
                     },
@@ -1031,7 +1031,7 @@ describe('Docker Watcher', () => {
                         tokenurl: 'https://idp.example.com/oauth/token',
                         deviceurl:
                             'https://idp.example.com/oauth/device/code',
-                        clientid: 'wud-device-client',
+                        clientid: 'dd-device-client',
                     },
                 },
             });
@@ -1382,7 +1382,7 @@ describe('Docker Watcher', () => {
             const containers = [
                 {
                     Id: '123',
-                    Labels: { 'wud.watch': 'true' },
+                    Labels: { 'dd.watch': 'true' },
                     Names: ['/test'],
                 },
             ];
@@ -1415,10 +1415,10 @@ describe('Docker Watcher', () => {
 
         test('should filter containers based on watch label', async () => {
             const containers = [
-                { Id: '1', Labels: { 'wud.watch': 'true' }, Names: ['/test1'] },
+                { Id: '1', Labels: { 'dd.watch': 'true' }, Names: ['/test1'] },
                 {
                     Id: '2',
-                    Labels: { 'wud.watch': 'false' },
+                    Labels: { 'dd.watch': 'false' },
                     Names: ['/test2'],
                 },
                 { Id: '3', Labels: {}, Names: ['/test3'] },
@@ -1452,8 +1452,8 @@ describe('Docker Watcher', () => {
                 inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
-                            'wud.watch': 'true',
-                            'wud.tag.include': '^\\d+\\.\\d+\\.\\d+$',
+                            'dd.watch': 'true',
+                            'dd.tag.include': '^\\d+\\.\\d+\\.\\d+$',
                         },
                     },
                 }),
@@ -1483,8 +1483,8 @@ describe('Docker Watcher', () => {
                     Names: ['/monitoring_alloy.1.yyyyy'],
                     Labels: {
                         'com.docker.swarm.service.id': 'service456',
-                        'wud.watch': 'true',
-                        'wud.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
+                        'dd.watch': 'true',
+                        'dd.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
                     },
                 },
             ];
@@ -1493,8 +1493,8 @@ describe('Docker Watcher', () => {
                 inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
-                            'wud.watch': 'false',
-                            'wud.tag.include': '^\\d+\\.\\d+\\.\\d+$',
+                            'dd.watch': 'false',
+                            'dd.tag.include': '^\\d+\\.\\d+\\.\\d+$',
                         },
                     },
                 }),
@@ -1538,7 +1538,7 @@ describe('Docker Watcher', () => {
                 inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
-                            'wud.watch': 'true',
+                            'dd.watch': 'true',
                         },
                     },
                 }),
@@ -1556,8 +1556,8 @@ describe('Docker Watcher', () => {
             expect(mockDockerApi.getService).toHaveBeenCalledWith('service789');
         });
 
-        test('should pick up wud labels from deploy-only labels (Spec.Labels) when container has no wud labels', async () => {
-            // Simulates: docker-compose deploy: labels: wud.tag.include (NOT root labels:)
+        test('should pick up dd labels from deploy-only labels (Spec.Labels) when container has no dd labels', async () => {
+            // Simulates: docker-compose deploy: labels: dd.tag.include (NOT root labels:)
             // In Swarm, deploy labels go to Spec.Labels but NOT to container.Labels
             const containers = [
                 {
@@ -1568,7 +1568,7 @@ describe('Docker Watcher', () => {
                         'com.docker.swarm.service.id': 'svc-deploy-labels',
                         'com.docker.swarm.task.id': 'task1',
                         'com.docker.swarm.task.name': 'authelia_authelia.1.xxxxx',
-                        // NO wud.* labels — they only exist in Spec.Labels
+                        // NO dd.* labels — they only exist in Spec.Labels
                     },
                 },
             ];
@@ -1577,8 +1577,8 @@ describe('Docker Watcher', () => {
                 inspect: vi.fn().mockResolvedValue({
                     Spec: {
                         Labels: {
-                            'wud.watch': 'true',
-                            'wud.tag.include': '^\\d+\\.\\d+\\.\\d+$',
+                            'dd.watch': 'true',
+                            'dd.tag.include': '^\\d+\\.\\d+\\.\\d+$',
                         },
                         TaskTemplate: {
                             ContainerSpec: {
@@ -1613,7 +1613,7 @@ describe('Docker Watcher', () => {
                     Names: ['/app.1.xxxxx'],
                     Labels: {
                         'com.docker.swarm.service.id': 'svc-fail',
-                        'wud.watch': 'true',
+                        'dd.watch': 'true',
                     },
                 },
             ];
@@ -1633,7 +1633,7 @@ describe('Docker Watcher', () => {
             // Container should still be watched using its own labels
             expect(result).toHaveLength(1);
             // tag.include should be undefined since service inspect failed and
-            // the container itself has no wud.tag.include
+            // the container itself has no dd.tag.include
             expect(
                 docker.addImageDetailsToContainer.mock.calls[0][1],
             ).toBeUndefined();
@@ -1658,8 +1658,8 @@ describe('Docker Watcher', () => {
                     Labels: {
                         'com.docker.swarm.service.id': 'svc-alloy',
                         // Root labels: ARE on the container
-                        'wud.watch': 'true',
-                        'wud.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
+                        'dd.watch': 'true',
+                        'dd.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
                     },
                 },
             ];
@@ -1670,8 +1670,8 @@ describe('Docker Watcher', () => {
                         ? {
                             Spec: {
                                 Labels: {
-                                    'wud.watch': 'true',
-                                    'wud.tag.include': '^\\d+\\.\\d+\\.\\d+$',
+                                    'dd.watch': 'true',
+                                    'dd.tag.include': '^\\d+\\.\\d+\\.\\d+$',
                                 },
                             },
                         }
@@ -1680,8 +1680,8 @@ describe('Docker Watcher', () => {
                                 TaskTemplate: {
                                     ContainerSpec: {
                                         Labels: {
-                                            'wud.watch': 'true',
-                                            'wud.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
+                                            'dd.watch': 'true',
+                                            'dd.tag.include': '^v\\d+\\.\\d+\\.\\d+$',
                                         },
                                     },
                                 },
@@ -1742,30 +1742,30 @@ describe('Docker Watcher', () => {
         });
     });
 
-    describe('Dual-prefix ud.*/wud.* label support', () => {
-        test('should prefer ud.watch over wud.watch label', async () => {
+    describe('Dual-prefix dd.*/wud.* label support', () => {
+        test('should prefer dd.watch over wud.watch label', async () => {
             const containers = [
                 {
-                    Id: 'ud-label-1',
-                    Labels: { 'ud.watch': 'true', 'wud.watch': 'false' },
-                    Names: ['/ud-test'],
+                    Id: 'dd-label-1',
+                    Labels: { 'dd.watch': 'true', 'wud.watch': 'false' },
+                    Names: ['/dd-test'],
                 },
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
             docker.addImageDetailsToContainer = vi
                 .fn()
-                .mockResolvedValue({ id: 'ud-label-1' });
+                .mockResolvedValue({ id: 'dd-label-1' });
 
             await docker.register('watcher', 'docker', 'test', {
                 watchbydefault: false,
             });
             const result = await docker.getContainers();
 
-            // ud.watch=true should override wud.watch=false
+            // dd.watch=true should override wud.watch=false
             expect(result).toHaveLength(1);
         });
 
-        test('should fall back to wud.watch when ud.watch is not set', async () => {
+        test('should fall back to wud.watch when dd.watch is not set', async () => {
             const containers = [
                 {
                     Id: 'wud-fallback-1',
@@ -1786,29 +1786,29 @@ describe('Docker Watcher', () => {
             expect(result).toHaveLength(1);
         });
 
-        test('should prefer ud.tag.include over wud.tag.include label', async () => {
+        test('should prefer dd.tag.include over wud.tag.include label', async () => {
             const containers = [
                 {
-                    Id: 'ud-tag-1',
+                    Id: 'dd-tag-1',
                     Labels: {
-                        'ud.watch': 'true',
-                        'ud.tag.include': '^v\\d+',
+                        'dd.watch': 'true',
+                        'dd.tag.include': '^v\\d+',
                         'wud.tag.include': '^\\d+',
                     },
-                    Names: ['/ud-tag-test'],
+                    Names: ['/dd-tag-test'],
                 },
             ];
             mockDockerApi.listContainers.mockResolvedValue(containers);
             docker.addImageDetailsToContainer = vi
                 .fn()
-                .mockResolvedValue({ id: 'ud-tag-1' });
+                .mockResolvedValue({ id: 'dd-tag-1' });
 
             await docker.register('watcher', 'docker', 'test', {
                 watchbydefault: false,
             });
             await docker.getContainers();
 
-            // ud.tag.include should be preferred
+            // dd.tag.include should be preferred
             expect(
                 docker.addImageDetailsToContainer.mock.calls[0][1],
             ).toBe('^v\\d+');
@@ -2218,12 +2218,12 @@ describe('Docker Watcher', () => {
             expect(result).toBeDefined();
         });
 
-        test('should default display name to updocker for updocker image', async () => {
+        test('should default display name to drydock for drydock image', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const container = {
                 Id: '123',
-                Image: 'ghcr.io/codeswhat/updocker:latest',
-                Names: ['/wud'],
+                Image: 'ghcr.io/codeswhat/drydock:latest',
+                Names: ['/dd'],
                 State: 'running',
                 Labels: {},
             };
@@ -2233,12 +2233,12 @@ describe('Docker Watcher', () => {
                 Os: 'linux',
                 Variant: 'v8',
                 Created: '2023-01-01',
-                RepoDigests: ['ghcr.io/codeswhat/updocker@sha256:abc123'],
+                RepoDigests: ['ghcr.io/codeswhat/drydock@sha256:abc123'],
             };
             mockImage.inspect.mockResolvedValue(imageDetails);
             mockParse.mockReturnValue({
                 domain: 'ghcr.io',
-                path: 'codeswhat/updocker',
+                path: 'codeswhat/drydock',
                 tag: 'latest',
             });
             mockTag.parse.mockReturnValue(null);
@@ -2258,15 +2258,15 @@ describe('Docker Watcher', () => {
 
             const result = await docker.addImageDetailsToContainer(container);
 
-            expect(result.displayName).toBe('updocker');
+            expect(result.displayName).toBe('drydock');
         });
 
         test('should keep custom display name when provided', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const container = {
                 Id: '123',
-                Image: 'ghcr.io/codeswhat/updocker:latest',
-                Names: ['/wud'],
+                Image: 'ghcr.io/codeswhat/drydock:latest',
+                Names: ['/dd'],
                 State: 'running',
                 Labels: {},
             };
@@ -2276,12 +2276,12 @@ describe('Docker Watcher', () => {
                 Os: 'linux',
                 Variant: 'v8',
                 Created: '2023-01-01',
-                RepoDigests: ['ghcr.io/codeswhat/updocker@sha256:abc123'],
+                RepoDigests: ['ghcr.io/codeswhat/drydock@sha256:abc123'],
             };
             mockImage.inspect.mockResolvedValue(imageDetails);
             mockParse.mockReturnValue({
                 domain: 'ghcr.io',
-                path: 'codeswhat/updocker',
+                path: 'codeswhat/drydock',
                 tag: 'latest',
             });
             mockTag.parse.mockReturnValue(null);
@@ -2305,10 +2305,10 @@ describe('Docker Watcher', () => {
                 undefined,
                 undefined,
                 undefined,
-                'WUD CE Custom',
+                'DD CE Custom',
             );
 
-            expect(result.displayName).toBe('WUD CE Custom');
+            expect(result.displayName).toBe('DD CE Custom');
         });
 
         test('should apply imgset defaults when labels are missing', async () => {
@@ -2566,7 +2566,7 @@ describe('Docker Watcher', () => {
             expect(result.image.digest.watch).toBe(true);
         });
 
-        test('should let wud.watch.digest label override imgset watchDigest', async () => {
+        test('should let dd.watch.digest label override imgset watchDigest', async () => {
             await docker.register('watcher', 'docker', 'test', {
                 imgset: {
                     customregistry: {
@@ -2583,7 +2583,7 @@ describe('Docker Watcher', () => {
                 Names: ['/homeassistant'],
                 State: 'running',
                 Labels: {
-                    'wud.watch.digest': 'false',
+                    'dd.watch.digest': 'false',
                 },
             };
             const imageDetails = {
@@ -2895,7 +2895,7 @@ describe('Docker Watcher', () => {
                 Names: ['/traefik'],
                 State: 'running',
                 Labels: {
-                    'wud.registry.lookup.image': 'library/traefik',
+                    'dd.registry.lookup.image': 'library/traefik',
                 },
             };
             const imageDetails = {
@@ -2977,7 +2977,7 @@ describe('Docker Watcher', () => {
                 Names: ['/traefik'],
                 State: 'running',
                 Labels: {
-                    'wud.registry.lookup.url': 'https://registry-1.docker.io',
+                    'dd.registry.lookup.url': 'https://registry-1.docker.io',
                 },
             };
             const imageDetails = {
@@ -3189,7 +3189,7 @@ describe('Docker Watcher', () => {
             expect(result).toBeDefined();
         });
 
-        test('should use inspect path semver when wud.inspect.tag.path is set', async () => {
+        test('should use inspect path semver when dd.inspect.tag.path is set', async () => {
             await docker.register('watcher', 'docker', 'test', {});
             const container = {
                 Id: '123',
@@ -3197,7 +3197,7 @@ describe('Docker Watcher', () => {
                 Names: ['/service'],
                 State: 'running',
                 Labels: {
-                    'wud.inspect.tag.path':
+                    'dd.inspect.tag.path':
                         'Config/Labels/org.opencontainers.image.version',
                 },
             };
@@ -3249,7 +3249,7 @@ describe('Docker Watcher', () => {
                 Names: ['/service'],
                 State: 'running',
                 Labels: {
-                    'wud.inspect.tag.path':
+                    'dd.inspect.tag.path':
                         'Config/Labels/org.opencontainers.image.version',
                 },
             };
@@ -3503,7 +3503,7 @@ describe('isDigestToWatch Logic', () => {
     // Case 1: Explicit Label present
     test('should watch digest if label is true (semver)', async () => {
         const container = await setupTest(
-            { 'wud.watch.digest': 'true' },
+            { 'dd.watch.digest': 'true' },
             'my.registry',
             '1.0.0',
             true,
@@ -3514,7 +3514,7 @@ describe('isDigestToWatch Logic', () => {
 
     test('should watch digest if label is true (non-semver)', async () => {
         const container = await setupTest(
-            { 'wud.watch.digest': 'true' },
+            { 'dd.watch.digest': 'true' },
             'my.registry',
             'latest',
             false,
@@ -3525,7 +3525,7 @@ describe('isDigestToWatch Logic', () => {
 
     test('should NOT watch digest if label is false (semver)', async () => {
         const container = await setupTest(
-            { 'wud.watch.digest': 'false' },
+            { 'dd.watch.digest': 'false' },
             'my.registry',
             '1.0.0',
             true,
@@ -3536,7 +3536,7 @@ describe('isDigestToWatch Logic', () => {
 
     test('should NOT watch digest if label is false (non-semver)', async () => {
         const container = await setupTest(
-            { 'wud.watch.digest': 'false' },
+            { 'dd.watch.digest': 'false' },
             'my.registry',
             'latest',
             false,

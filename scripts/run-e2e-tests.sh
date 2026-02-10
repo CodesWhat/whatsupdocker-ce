@@ -12,7 +12,7 @@ echo "🧪 Running complete e2e test suite..."
 # Setup test containers
 "$SCRIPT_DIR/setup-test-containers.sh"
 
-# Start WUD
+# Start drydock
 "$SCRIPT_DIR/start-wud.sh"
 
 # Run e2e tests

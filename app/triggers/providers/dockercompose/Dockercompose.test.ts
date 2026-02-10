@@ -29,7 +29,7 @@ describe('Dockercompose Trigger', () => {
         trigger.configuration = {
             dryrun: true,
             backup: false,
-            composeFileLabel: 'wud.compose.file',
+            composeFileLabel: 'dd.compose.file',
         };
 
         mockDockerApi = {
@@ -56,8 +56,8 @@ describe('Dockercompose Trigger', () => {
     test('mapCurrentVersionToUpdateVersion should ignore services without image', () => {
         const compose = {
             services: {
-                wud: {
-                    environment: ['WUD_TRIGGER_DOCKERCOMPOSE_BASE_AUTO=false'],
+                dd: {
+                    environment: ['DD_TRIGGER_DOCKERCOMPOSE_BASE_AUTO=false'],
                 },
                 portainer: {
                     image: 'portainer/portainer-ce:2.27.4',
@@ -142,8 +142,8 @@ describe('Dockercompose Trigger', () => {
 
         vi.spyOn(trigger, 'getComposeFileAsObject').mockResolvedValue({
             services: {
-                wud: {
-                    environment: ['WUD_TRIGGER_DOCKERCOMPOSE_BASE_AUTO=false'],
+                dd: {
+                    environment: ['DD_TRIGGER_DOCKERCOMPOSE_BASE_AUTO=false'],
                 },
                 portainer: {
                     image: 'portainer/portainer-ce:2.27.4',

@@ -7,7 +7,7 @@ import { getServerIcon } from "@/services/server";
 import { getWatcherIcon } from "@/services/watcher";
 import { getAuthenticationIcon } from "@/services/authentication";
 import { getAgentIcon } from "@/services/agent";
-import logo from "@/assets/updocker.png";
+import logo from "@/assets/drydock.png";
 
 export default defineComponent({
   setup() {

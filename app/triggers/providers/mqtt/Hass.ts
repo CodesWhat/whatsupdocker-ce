@@ -9,9 +9,9 @@ import {
 } from '../../../event/index.js';
 import * as containerStore from '../../../store/container.js';
 
-const HASS_DEVICE_ID = 'updocker';
-const HASS_DEVICE_NAME = 'updocker';
-const HASS_MANUFACTURER = 'updocker';
+const HASS_DEVICE_ID = 'drydock';
+const HASS_DEVICE_NAME = 'drydock';
+const HASS_MANUFACTURER = 'drydock';
 const HASS_ENTITY_VALUE_TEMPLATE = '{{ value_json.image_tag_value }}';
 const HASS_LATEST_VERSION_TEMPLATE =
     '{% if value_json.update_kind_kind == "digest" %}{{ value_json.result_digest[:15] }}{% else %}{{ value_json.result_tag }}{% endif %}';
@@ -26,7 +26,7 @@ function getHassEntityId(topic) {
 }
 
 /**
- * Get HA wud device info.
+ * Get HA drydock device info.
  * @returns {*}
  */
 function getHaDevice() {
@@ -357,7 +357,7 @@ class Hass {
                 device: getHaDevice(),
                 icon: icon || sanitizeIcon('mdi:docker'),
                 entity_picture:
-                    'https://raw.githubusercontent.com/CodesWhat/updocker/main/docs/assets/updocker.png',
+                    'https://raw.githubusercontent.com/CodesWhat/drydock/main/docs/assets/drydock.png',
                 state_topic: stateTopic,
                 ...options,
             }),

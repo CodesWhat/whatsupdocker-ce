@@ -32,7 +32,7 @@ This update improves how triggers can be coordinated when they share the same tr
 #### 1. Trigger execution ordering
 You can now control trigger execution order with:
 
-`WUD_TRIGGER_{trigger_type}_{trigger_name}_ORDER`
+`DD_TRIGGER_{trigger_type}_{trigger_name}_ORDER`
 
 - Lower values run first
 - Default is `100`
@@ -40,20 +40,20 @@ You can now control trigger execution order with:
 
 Example:
 ```bash
-WUD_TRIGGER_DOCKER_UPDATE_ORDER=10
-WUD_TRIGGER_DISCORD_UPDATE_ORDER=20
+DD_TRIGGER_DOCKER_UPDATE_ORDER=10
+DD_TRIGGER_DISCORD_UPDATE_ORDER=20
 ```
 
 This ensures the Docker update trigger runs before the Discord notification trigger for the same update event.
 
 #### 2. Trigger name aliases in container labels
-Container labels `wud.trigger.include` and `wud.trigger.exclude` now accept either:
+Container labels `dd.trigger.include` and `dd.trigger.exclude` now accept either:
 - full trigger id (`docker.update`)
 - trigger name alias (`update`)
 
 Example:
 ```bash
-wud.trigger.exclude=update
+dd.trigger.exclude=update
 ```
 
 This applies to all triggers named `update` (for example `docker.update`, `discord.update`).
@@ -65,19 +65,19 @@ Triggers sharing the same trigger name can share `THRESHOLD` automatically:
 
 Example:
 ```bash
-WUD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
+DD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
 ```
 
 With no explicit Discord threshold, `discord.update` inherits `minor`.
 
 ### Recommended setup for "update then notify"
 ```bash
-WUD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
-WUD_TRIGGER_DOCKER_UPDATE_ORDER=10
-WUD_TRIGGER_DOCKER_UPDATE_PRUNE=true
+DD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
+DD_TRIGGER_DOCKER_UPDATE_ORDER=10
+DD_TRIGGER_DOCKER_UPDATE_PRUNE=true
 
-WUD_TRIGGER_DISCORD_UPDATE_ORDER=20
-WUD_TRIGGER_DISCORD_UPDATE_URL=<discord_webhook_url>
-WUD_TRIGGER_DISCORD_UPDATE_SIMPLETITLE=Updated ${container.name}
-WUD_TRIGGER_DISCORD_UPDATE_SIMPLEBODY=Container ${container.name} has been updated from ${container.updateKind.localValue} to ${container.updateKind.remoteValue}
+DD_TRIGGER_DISCORD_UPDATE_ORDER=20
+DD_TRIGGER_DISCORD_UPDATE_URL=<discord_webhook_url>
+DD_TRIGGER_DISCORD_UPDATE_SIMPLETITLE=Updated ${container.name}
+DD_TRIGGER_DISCORD_UPDATE_SIMPLEBODY=Container ${container.name} has been updated from ${container.updateKind.localValue} to ${container.updateKind.remoteValue}
 ```

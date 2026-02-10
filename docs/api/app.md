@@ -5,10 +5,10 @@ This API allows to get app informations.
 This operation lets you get app informations.
 
 ```bash
-curl http://wud:3000/api/app
+curl http://drydock:3000/api/app
 
 {
-  "name":"wud",
+  "name":"drydock",
   "version":"5.0.0"
 }
 ```

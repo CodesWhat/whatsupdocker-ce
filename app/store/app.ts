@@ -12,7 +12,7 @@ let app;
 
 function saveAppInfosAndMigrate() {
     const appInfosCurrent = {
-        name: 'updocker',
+        name: 'drydock',
         version: getVersion(),
     };
     const appInfosSaved = app.findOne({});

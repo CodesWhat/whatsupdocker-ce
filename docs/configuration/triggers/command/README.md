@@ -7,9 +7,9 @@ The `command` trigger lets you run arbitrary commands upon container update noti
 
 | Env var                                      |    Required    | Description                 | Supported values                            | Default value when missing |
 |----------------------------------------------|:--------------:|-----------------------------|---------------------------------------------|----------------------------| 
-| `WUD_TRIGGER_COMMAND_{trigger_name}_CMD`     | :red_circle:   | The command to run          |                                             |                            |
-| `WUD_TRIGGER_COMMAND_{trigger_name}_SHELL`   | :red_circle:   | The shell to use            | Any valid installed shell path              | `/bin/sh`                  |
-| `WUD_TRIGGER_COMMAND_{trigger_name}_TIMEOUT` | :red_circle:   | The command timeout (in ms) | Any positive integer (`0` means no timeout) | `60000`                    |
+| `DD_TRIGGER_COMMAND_{trigger_name}_CMD`     | :red_circle:   | The command to run          |                                             |                            |
+| `DD_TRIGGER_COMMAND_{trigger_name}_SHELL`   | :red_circle:   | The shell to use            | Any valid installed shell path              | `/bin/sh`                  |
+| `DD_TRIGGER_COMMAND_{trigger_name}_TIMEOUT` | :red_circle:   | The command timeout (in ms) | Any positive integer (`0` means no timeout) | `60000`                    |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -79,44 +79,44 @@ watcher='local'
 #### Running an arbitrary command
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Arbitrary Command)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_COMMAND_LOCAL_CMD=echo $${display_name} can be updated to $${update_kind_remote_value}
+      - DD_TRIGGER_COMMAND_LOCAL_CMD=echo $${display_name} can be updated to $${update_kind_remote_value}
 ```
-#### **Docker**
+#### **Docker (Arbitrary Command)**
 ```bash
 docker run \
-  -e WUD_TRIGGER_COMMAND_LOCAL_CMD=echo ${display_name} can be updated to ${update_kind_remote_value} \
+  -e DD_TRIGGER_COMMAND_LOCAL_CMD=echo ${display_name} can be updated to ${update_kind_remote_value} \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 #### Running a custom bash script
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Bash Script)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_COMMAND_LOCAL_CMD=bash -c /wud/trigger.sh
+      - DD_TRIGGER_COMMAND_LOCAL_CMD=bash -c /drydock/trigger.sh
     volumes:
-      - ${PWD}/wud/trigger.sh:/wud/trigger.sh
+      - ${PWD}/drydock/trigger.sh:/drydock/trigger.sh
 ```
-#### **Docker**
+#### **Docker (Bash Script)**
 ```bash
 docker run \
-  -e WUD_TRIGGER_COMMAND_LOCAL_CMD=WUD_TRIGGER_COMMAND_LOCAL_CMD=bash -c /wud/trigger.sh \
-  -v ${PWD}/wud/trigger.sh:/wud/trigger.sh
+  -e DD_TRIGGER_COMMAND_LOCAL_CMD=DD_TRIGGER_COMMAND_LOCAL_CMD=bash -c /drydock/trigger.sh \
+  -v ${PWD}/drydock/trigger.sh:/drydock/trigger.sh
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->

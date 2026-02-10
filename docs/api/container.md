@@ -5,7 +5,7 @@ This API allows to query the state of the watched containers.
 This operation lets you get all the watched cainers.
 
 ```bash
-curl http://wud:3000/api/containers
+curl http://drydock:3000/api/containers
 
 [
    {
@@ -43,7 +43,7 @@ curl http://wud:3000/api/containers
 This operation triggers a manual watch on all containers.
 
 ```bash
-curl -X POST http://wud:3000/api/containers/watch
+curl -X POST http://drydock:3000/api/containers/watch
 
 [{
   "id":"31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816",
@@ -80,7 +80,7 @@ curl -X POST http://wud:3000/api/containers/watch
 This operation lets you get a container by id.
 
 ```bash
-curl http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816
+curl http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816
 
 {
   "id":"31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816",
@@ -117,7 +117,7 @@ curl http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303b
 This operation lets you get the list of the containers associated to the container.
 
 ```bash
-curl http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/triggers
+curl http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/triggers
 
 [
   {
@@ -142,7 +142,7 @@ curl http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303b
 This operation triggers a manual watch on a container.
 
 ```bash
-curl -X POST http://wud:3000/api/containers/ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72/watch
+curl -X POST http://drydock:3000/api/containers/ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72/watch
 
 {
   "id":"31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816",
@@ -179,12 +179,12 @@ curl -X POST http://wud:3000/api/containers/ca0edc3fb0b4647963629bdfccbb3ccfa352
 This operation lets you manually run a trigger on the container.
 
 ```bash
-curl -X POST http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/triggers/ntfy/one
+curl -X POST http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/triggers/ntfy/one
 ```
 
 ## Update container update policy (skip/snooze)
 
-This operation lets you control per-container update suppression policy (stored in WUD DB):
+This operation lets you control per-container update suppression policy (stored in drydock DB):
 
 - `skip-current`: skip the currently detected remote tag or digest
 - `clear-skips`: remove `skipTags` and `skipDigests`
@@ -193,13 +193,13 @@ This operation lets you control per-container update suppression policy (stored 
 - `clear`: remove all update policy
 
 ```bash
-curl -X PATCH http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/update-policy \
+curl -X PATCH http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/update-policy \
   -H 'Content-Type: application/json' \
   -d '{"action":"skip-current"}'
 ```
 
 ```bash
-curl -X PATCH http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/update-policy \
+curl -X PATCH http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/update-policy \
   -H 'Content-Type: application/json' \
   -d '{"action":"snooze","days":7}'
 ```
@@ -208,5 +208,5 @@ curl -X PATCH http://wud:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b
 This operation lets you delete a container by id.
 
 ```bash
-curl -X DELETE http://wud:3000/api/containers/ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72
+curl -X DELETE http://drydock:3000/api/containers/ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72
 ```

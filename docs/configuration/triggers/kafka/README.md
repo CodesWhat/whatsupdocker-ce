@@ -7,12 +7,12 @@ The `kafka` trigger lets you publish container update notifications to a Kafka t
 
 | Env var                                                    | Required       | Description                                                      | Supported values                         | Default value when missing |
 | ---------------------------------------------------------- |:--------------:| ---------------------------------------------------------------- | ---------------------------------------- | -------------------------- | 
-| `WUD_TRIGGER_KAFKA_{trigger_name}_BROKERS`                 | :red_circle:   | Comma separated list of Kafka brokers                            |                                          |                            |
-| `WUD_TRIGGER_KAFKA_{trigger_name}_SSL`                     | :white_circle: | Is SSL enabled on the TLS connection                             | `true`, `false`                          | `false`                    |
-| `WUD_TRIGGER_KAFKA_{trigger_name}_TOPIC`                   | :white_circle: | The name of the topic to publish                                 |                                          | `wud-container`            |
-| `WUD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_TYPE`     | :white_circle: | The type for authentication                                      | `PLAIN`, `SCRAM-SHA-256`, `SCRAM-SHA-12` | `PLAIN`                    |
-| `WUD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_USER`     | :white_circle: | The name of the user (required if authentication is enabled)     |                                          |                            |
-| `WUD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_PASSWORD` | :white_circle: | The password of the user (required if authentication is enabled) |                                          |                            |
+| `DD_TRIGGER_KAFKA_{trigger_name}_BROKERS`                 | :red_circle:   | Comma separated list of Kafka brokers                            |                                          |                            |
+| `DD_TRIGGER_KAFKA_{trigger_name}_SSL`                     | :white_circle: | Is SSL enabled on the TLS connection                             | `true`, `false`                          | `false`                    |
+| `DD_TRIGGER_KAFKA_{trigger_name}_TOPIC`                   | :white_circle: | The name of the topic to publish                                 |                                          | `drydock-container`            |
+| `DD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_TYPE`     | :white_circle: | The type for authentication                                      | `PLAIN`, `SCRAM-SHA-256`, `SCRAM-SHA-12` | `PLAIN`                    |
+| `DD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_USER`     | :white_circle: | The name of the user (required if authentication is enabled)     |                                          |                            |
+| `DD_TRIGGER_KAFKA_{trigger_name}_AUTHENTICATION_PASSWORD` | :white_circle: | The password of the user (required if authentication is enabled) |                                          |                            |
 
 !> The topic must already exist on the broker (the trigger won't automatically create it)
 
@@ -26,29 +26,29 @@ The `kafka` trigger lets you publish container update notifications to a Kafka t
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-        - WUD_TRIGGER_KAFKA_KARAKFA_BROKERS=ark-01.srvs.cloudkafka.com:9094,ark-02.srvs.cloudkafka.com:9094,ark-03.srvs.cloudkafka.com:9094
-        - WUD_TRIGGER_KAFKA_KARAKFA_SSL="true
-        - WUD_TRIGGER_KAFKA_KARAKFA_TOPIC=my-user-id-wud-image
-        - WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_USER=my-user-id
-        - WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_PASSWORD=my-secret
-        - WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_TYPE=SCRAM-SHA-256
+        - DD_TRIGGER_KAFKA_KARAKFA_BROKERS=ark-01.srvs.cloudkafka.com:9094,ark-02.srvs.cloudkafka.com:9094,ark-03.srvs.cloudkafka.com:9094
+        - DD_TRIGGER_KAFKA_KARAKFA_SSL="true
+        - DD_TRIGGER_KAFKA_KARAKFA_TOPIC=my-user-id-drydock-image
+        - DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_USER=my-user-id
+        - DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_PASSWORD=my-secret
+        - DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_TYPE=SCRAM-SHA-256
 ```
 
 #### **Docker**
 ```bash
 docker run \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_BROKERS="ark-01.srvs.cloudkafka.com:9094,ark-02.srvs.cloudkafka.com:9094,ark-03.srvs.cloudkafka.com:9094" \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_SSL="true" \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_TOPIC="my-user-id-wud-image" \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_USER="my-user-id" \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_PASSWORD="my-secret" \
-    -e WUD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_TYPE="SCRAM-SHA-256" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_BROKERS="ark-01.srvs.cloudkafka.com:9094,ark-02.srvs.cloudkafka.com:9094,ark-03.srvs.cloudkafka.com:9094" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_SSL="true" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_TOPIC="my-user-id-drydock-image" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_USER="my-user-id" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_PASSWORD="my-secret" \
+    -e DD_TRIGGER_KAFKA_KARAKFA_AUTHENTICATION_TYPE="SCRAM-SHA-256" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

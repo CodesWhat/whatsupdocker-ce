@@ -8,7 +8,7 @@ This API allows to query the state of the watchers.
 This operation lets you get all the configured watchers.
 
 ```bash
-curl http://wud:3000/api/watchers
+curl http://drydock:3000/api/watchers
 
 [
    {
@@ -29,7 +29,7 @@ curl http://wud:3000/api/watchers
 This operation lets you get a specific Watcher.
 
 ```bash
-curl http://wud:3000/api/watchers/docker/local
+curl http://drydock:3000/api/watchers/docker/local
 
 [
    {

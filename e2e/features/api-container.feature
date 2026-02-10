@@ -1,13 +1,13 @@
-Feature: WUD Container API Exposure
+Feature: Drydock Container API Exposure
 
-  Scenario: WUD must return correct container count
+  Scenario: Drydock must return correct container count
     When I GET /api/containers
     Then response code should be 200
     And response body should be valid json
     And response body path $ should be of type array with length 10
 
   # Test one representative container per registry type + update pattern
-  Scenario Outline: WUD must handle different registry types and update patterns
+  Scenario Outline: Drydock must handle different registry types and update patterns
     When I GET /api/containers
     Then response code should be 200
     And response body should be valid json
@@ -34,7 +34,7 @@ Feature: WUD Container API Exposure
       | 9     | quay.public    | quay_prometheus          | https://quay.io/v2                                      | prometheus/prometheus               | v2.52.0            | v3.9.1             | true            | Quay semver major update    |
 
   # Test detailed container inspection (semver)
-  Scenario: WUD must provide detailed container information for semver containers
+  Scenario: Drydock must provide detailed container information for semver containers
     Given I GET /api/containers
     And I store the value of body path $[2].id as containerId in scenario scope
     When I GET /api/containers/`containerId`
@@ -48,7 +48,7 @@ Feature: WUD Container API Exposure
     And response body path $.updateAvailable should be true
 
   # Test detailed container inspection (digest)
-  Scenario: WUD must provide detailed container information for digest-based containers
+  Scenario: Drydock must provide detailed container information for digest-based containers
     Given I GET /api/containers
     And I store the value of body path $[6].id as containerId in scenario scope
     When I GET /api/containers/`containerId`
@@ -62,7 +62,7 @@ Feature: WUD Container API Exposure
     And response body path $.updateAvailable should be true
 
   # Test link functionality
-  Scenario: WUD must generate correct links for containers with link templates
+  Scenario: Drydock must generate correct links for containers with link templates
     Given I GET /api/containers
     And I store the value of body path $[3].id as containerId in scenario scope
     When I GET /api/containers/`containerId`
@@ -72,7 +72,7 @@ Feature: WUD Container API Exposure
     And response body path $.result.link should be https://github.com/home-assistant/core/releases/tag/2026.1.2
 
   # Test watch trigger functionality
-  Scenario: WUD must allow triggering container watch
+  Scenario: Drydock must allow triggering container watch
     Given I GET /api/containers
     And I store the value of body path $[2].id as containerId in scenario scope
     When I POST to /api/containers/`containerId`/watch

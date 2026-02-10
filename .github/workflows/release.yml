@@ -51,7 +51,7 @@ jobs:
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
           images: |
-            ${{ secrets.DOCKER_USERNAME }}/updocker
+            ${{ secrets.DOCKER_USERNAME }}/drydock
             ghcr.io/${{ github.repository }}
           tags: |
             # branch name (main)
@@ -73,5 +73,5 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: WUD_VERSION=${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          build-args: DD_VERSION=${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           no-cache: true

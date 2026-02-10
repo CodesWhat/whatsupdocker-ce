@@ -7,9 +7,9 @@ The `quay` registry lets you configure [QUAY](https://quay.io/) integration.
 
 | Env var                                       | Required       | Description    | Supported values | Default value when missing |
 | --------------------------------------------- |:--------------:| -------------- | ---------------- | -------------------------- | 
-| `WUD_REGISTRY_QUAY_{REGISTRY_NAME}_NAMESPACE` | :white_circle: | Quay namespace |                  |                            |
-| `WUD_REGISTRY_QUAY_{REGISTRY_NAME}_ACCOUNT`   | :white_circle: | Quay account   |                  |                            |
-| `WUD_REGISTRY_QUAY_{REGISTRY_NAME}_TOKEN`     | :white_circle: | Quay token     |                  |                            |
+| `DD_REGISTRY_QUAY_{REGISTRY_NAME}_NAMESPACE` | :white_circle: | Quay namespace |                  |                            |
+| `DD_REGISTRY_QUAY_{REGISTRY_NAME}_ACCOUNT`   | :white_circle: | Quay account   |                  |                            |
+| `DD_REGISTRY_QUAY_{REGISTRY_NAME}_TOKEN`     | :white_circle: | Quay token     |                  |                            |
 
 ### Examples
 
@@ -19,22 +19,22 @@ The `quay` registry lets you configure [QUAY](https://quay.io/) integration.
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_QUAY_PRIVATE_NAMESPACE=mynamespace
-      - WUD_REGISTRY_QUAY_PRIVATE_ACCOUNT=myaccount
-      - WUD_REGISTRY_QUAY_PRIVATE_TOKEN=BA8JI3Y2BWQDH849RYT3YD5J0J6CYEORYTQMMJK364B4P88VPTJIAI704L0BBP8D6CYE4P88V 
+      - DD_REGISTRY_QUAY_PRIVATE_NAMESPACE=mynamespace
+      - DD_REGISTRY_QUAY_PRIVATE_ACCOUNT=myaccount
+      - DD_REGISTRY_QUAY_PRIVATE_TOKEN=BA8JI3Y2BWQDH849RYT3YD5J0J6CYEORYTQMMJK364B4P88VPTJIAI704L0BBP8D6CYE4P88V 
 ```
 #### **Docker**
 ```bash
 docker run \
-  -e WUD_REGISTRY_QUAY_PRIVATE_NAMESPACE="mynamespace" \
-  -e WUD_REGISTRY_QUAY_PRIVATE_ACCOUNT="myaccount" \
-  -e WUD_REGISTRY_QUAY_PRIVATE_TOKEN="BA8JI3Y2BWQDH849RYT3YD5J0J6CYEORYTQMMJK364B4P88VPTJIAI704L0BBP8D6CYE4P88V" \
+  -e DD_REGISTRY_QUAY_PRIVATE_NAMESPACE="mynamespace" \
+  -e DD_REGISTRY_QUAY_PRIVATE_ACCOUNT="myaccount" \
+  -e DD_REGISTRY_QUAY_PRIVATE_TOKEN="BA8JI3Y2BWQDH849RYT3YD5J0J6CYEORYTQMMJK364B4P88VPTJIAI704L0BBP8D6CYE4P88V" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

@@ -1,31 +1,32 @@
 <div align="center">
 
-<img src="docs/assets/updocker.png" alt="upDocker" width="220">
+<img src="docs/assets/drydock.png" alt="drydock" width="220">
 
-<h1>upDocker &nbsp;<img src="docs/assets/codeswhat-logo-original.svg" alt="CodesWhat" height="32"></h1>
+<h1>drydock &nbsp;<img src="docs/assets/codeswhat-logo-original.svg" alt="CodesWhat" height="32"></h1>
 
-**What's upDocker? Open source container update monitoring with an open community.**
+**Open source container update monitoring with an open community.**
 
 Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — rebuilt in TypeScript, modernized tooling, new features.
 
 </div>
 
 <p align="center">
-  <a href="https://github.com/CodesWhat/updocker/releases"><img src="https://img.shields.io/badge/version-9.0.0--ce-blue" alt="Version"></a>
-  <a href="https://github.com/orgs/CodesWhat/packages/container/package/updocker"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
+  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-9.0.0--ce-blue" alt="Version"></a>
+  <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-C9A227" alt="License MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CodesWhat/updocker/stargazers"><img src="https://img.shields.io/github/stars/CodesWhat/updocker?style=flat" alt="Stars"></a>
-  <a href="https://github.com/CodesWhat/updocker/forks"><img src="https://img.shields.io/github/forks/CodesWhat/updocker?style=flat" alt="Forks"></a>
-  <a href="https://github.com/CodesWhat/updocker/issues"><img src="https://img.shields.io/github/issues/CodesWhat/updocker?style=flat" alt="Issues"></a>
-  <a href="https://github.com/CodesWhat/updocker/commits/main"><img src="https://img.shields.io/github/last-commit/CodesWhat/updocker?style=flat" alt="Last commit"></a>
+  <a href="https://github.com/CodesWhat/drydock/stargazers"><img src="https://img.shields.io/github/stars/CodesWhat/drydock?style=flat" alt="Stars"></a>
+  <a href="https://github.com/CodesWhat/drydock/forks"><img src="https://img.shields.io/github/forks/CodesWhat/drydock?style=flat" alt="Forks"></a>
+  <a href="https://github.com/CodesWhat/drydock/issues"><img src="https://img.shields.io/github/issues/CodesWhat/drydock?style=flat" alt="Issues"></a>
+  <a href="https://github.com/CodesWhat/drydock/commits/main"><img src="https://img.shields.io/github/last-commit/CodesWhat/drydock?style=flat" alt="Last commit"></a>
 </p>
 
 <p align="center">
-  <a href="https://securityscorecards.dev/viewer/?uri=github.com/CodesWhat/updocker"><img src="https://api.securityscorecards.dev/projects/github.com/CodesWhat/updocker/badge" alt="OpenSSF Scorecard"></a>
-  <a href="https://codecov.io/gh/CodesWhat/whatsupdocker-ce"><img src="https://codecov.io/gh/CodesWhat/whatsupdocker-ce/graph/badge.svg?token=b90d4863-46c5-40d2-bf00-f6e4a79c8656" alt="Codecov"></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/CodesWhat/drydock"><img src="https://api.securityscorecards.dev/projects/github.com/CodesWhat/drydock/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://codecov.io/gh/CodesWhat/drydock"><img src="https://codecov.io/gh/CodesWhat/drydock/graph/badge.svg?token=b90d4863-46c5-40d2-bf00-f6e4a79c8656" alt="Codecov"></a>
+  <a href="https://qlty.sh/gh/CodesWhat/projects/drydock"><img src="https://qlty.sh/gh/CodesWhat/projects/drydock/maintainability.svg" alt="Maintainability"></a>
 </p>
 
 ---
@@ -48,10 +49,10 @@ Community-maintained fork of [`getwud/wud`](https://github.com/getwud/wud) — r
 
 ```bash
 docker run -d \
-  --name updocker \
+  --name drydock \
   -p 3000:3000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/codeswhat/updocker:latest
+  ghcr.io/codeswhat/drydock:latest
 ```
 
 <details>
@@ -59,9 +60,9 @@ docker run -d \
 
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker:latest
-    container_name: updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock:latest
+    container_name: drydock
     ports:
       - "3000:3000"
     volumes:
@@ -89,7 +90,7 @@ open http://localhost:3000
 
 ```bash
 echo '<GITHUB_PAT>' | docker login ghcr.io -u <github-username> --password-stdin
-docker pull ghcr.io/codeswhat/updocker:latest
+docker pull ghcr.io/codeswhat/drydock:latest
 ```
 
 </details>
@@ -147,13 +148,13 @@ Browse application logs directly in the web UI
 
 ## Where CE Diverges from Upstream
 
-upDocker is a full rewrite of the WUD codebase. The core monitoring logic is the same, but the architecture, tooling, and feature set have diverged significantly.
+drydock is a full rewrite of the WUD codebase. The core monitoring logic is the same, but the architecture, tooling, and feature set have diverged significantly.
 
 > For the full itemized changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ### Architecture
 
-| | Upstream WUD | upDocker |
+| | Upstream WUD | drydock |
 |---|---|---|
 | **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
 | **Test runner** | Jest | Vitest 4 |
@@ -161,27 +162,27 @@ upDocker is a full rewrite of the WUD codebase. The core monitoring logic is the
 | **Express** | 4.x | 5.x |
 | **Build system** | Babel | `tsc` (no transpiler) |
 
-### upDocker-Only Features
+### drydock-Only Features
 
-These exist in upDocker but **not** in upstream WUD:
+These exist in drydock but **not** in upstream WUD:
 
 | Feature | Description |
 |---------|-------------|
 | **Agent mode** | Distributed monitoring with remote agents over SSE |
 | **OIDC token lifecycle** | Bearer/Basic auth for remote watcher HTTPS connections |
 | **Container update policy** | Skip/snooze specific versions per container via API and UI |
-| **Metrics auth toggle** | `WUD_SERVER_METRICS_AUTH=false` to expose `/metrics` without auth |
+| **Metrics auth toggle** | `DD_SERVER_METRICS_AUTH=false` to expose `/metrics` without auth |
 | **NTFY provider-level threshold** | Set threshold at the ntfy provider level, not just per-trigger |
 | **Docker pull progress logging** | Rate-limited pull progress during compose updates |
 | **Registry lookup image override** | `lookupImage` field to override tag lookup image |
 | **DHI registry** | `dhi.io` registry provider |
-| **Custom URL icons** | URL-based icons via `wud.display.icon` label |
+| **Custom URL icons** | URL-based icons via `dd.display.icon` label |
 | **Version skip UI** | Skip specific versions from the web interface |
 | **In-app log viewer** | Browse logs in the UI |
 | **Semver tag recovery** | Recover mismatched semver tags from include filters |
 | **Per-image config presets** | `imgset` defaults for per-image configuration |
 
-### upDocker Bug Fixes (not in upstream)
+### drydock Bug Fixes (not in upstream)
 
 | Fix | Impact |
 |-----|--------|
@@ -194,14 +195,14 @@ These exist in upDocker but **not** in upstream WUD:
 
 ### Upstream Backports
 
-Changes from upstream `main` (post-fork) that have been ported to upDocker:
+Changes from upstream `main` (post-fork) that have been ported to drydock:
 
 | Change | Status |
 |--------|--------|
 | Codeberg default registry | Ported (new TS provider) |
 | YAML `maxAliasCount` increase | Ported |
 | Async `getAuthPull` for ECR | Ported across all registries |
-| `WUD_PROMETHEUS_ENABLED` config | Ported |
+| `DD_PROMETHEUS_ENABLED` config | Ported |
 | Authelia OIDC doc field names | Ported |
 | Docker event stream buffering | Already fixed independently |
 
@@ -231,13 +232,13 @@ Changes from upstream `main` (post-fork) that have been ported to upDocker:
 
 | Registry | Provider | Env vars |
 |----------|----------|----------|
-| Docker Hub | `hub` | `WUD_REGISTRY_HUB_{name}_LOGIN`, `_TOKEN` |
-| Amazon ECR | `ecr` | `WUD_REGISTRY_ECR_{name}_ACCESSKEYID`, `_SECRETACCESSKEY`, `_REGION` |
-| Azure ACR | `acr` | `WUD_REGISTRY_ACR_{name}_CLIENTID`, `_CLIENTSECRET` |
-| GitLab | `gitlab` | `WUD_REGISTRY_GITLAB_{name}_TOKEN` |
-| GitHub (GHCR) | `ghcr` | `WUD_REGISTRY_GHCR_{name}_TOKEN` |
-| Gitea / Forgejo | `gitea` | `WUD_REGISTRY_GITEA_{name}_LOGIN`, `_PASSWORD` |
-| Custom (any v2) | `custom` | `WUD_REGISTRY_CUSTOM_{name}_URL` + optional auth |
+| Docker Hub | `hub` | `DD_REGISTRY_HUB_{name}_LOGIN`, `_TOKEN` |
+| Amazon ECR | `ecr` | `DD_REGISTRY_ECR_{name}_ACCESSKEYID`, `_SECRETACCESSKEY`, `_REGION` |
+| Azure ACR | `acr` | `DD_REGISTRY_ACR_{name}_CLIENTID`, `_CLIENTSECRET` |
+| GitLab | `gitlab` | `DD_REGISTRY_GITLAB_{name}_TOKEN` |
+| GitHub (GHCR) | `ghcr` | `DD_REGISTRY_GHCR_{name}_TOKEN` |
+| Gitea / Forgejo | `gitea` | `DD_REGISTRY_GITEA_{name}_LOGIN`, `_PASSWORD` |
+| Custom (any v2) | `custom` | `DD_REGISTRY_CUSTOM_{name}_URL` + optional auth |
 
 See [Registry docs](docs/configuration/registries/README.md) for full configuration.
 
@@ -250,7 +251,7 @@ See [Registry docs](docs/configuration/registries/README.md) for full configurat
 <details>
 <summary><strong>Notification triggers</strong> (17 providers)</summary>
 
-All env vars accept both `UD_` and `WUD_` prefixes; Docker labels accept both `ud.` and `wud.`. When both are set, `UD_`/`ud.` takes precedence.
+All env vars use the `DD_` prefix; Docker labels use the `dd.` prefix.
 
 | Trigger | Description | Docs |
 |---------|-------------|------|
@@ -298,10 +299,10 @@ If you're running `getwud/wud`, switch only the image reference:
 
 ```diff
 - image: getwud/wud:8.1.1
-+ image: ghcr.io/codeswhat/updocker:latest
++ image: ghcr.io/codeswhat/drydock:latest
 ```
 
-Your Docker socket mount, env vars, and labels all stay the same. upDocker is a drop-in replacement. Both `WUD_`/`wud.` and the new `UD_`/`ud.` prefixes are accepted — migrate at your own pace.
+Your Docker socket mount stays the same. drydock uses the `DD_` env var prefix and `dd.` label prefix.
 
 ---
 
@@ -314,7 +315,7 @@ Your Docker socket mount, env vars, and labels all stay the same. upDocker is a 
 | Quick Start | [`docs/quickstart/README.md`](docs/quickstart/README.md) |
 | Changelog | [`CHANGELOG.md`](CHANGELOG.md) |
 | Upstream Docs | [getwud.github.io/wud](https://getwud.github.io/wud/) |
-| Issues | [GitHub Issues](https://github.com/CodesWhat/updocker/issues) |
+| Issues | [GitHub Issues](https://github.com/CodesWhat/drydock/issues) |
 
 ---
 
@@ -334,6 +335,6 @@ Your Docker socket mount, env vars, and labels all stay the same. upDocker is a 
 
 **[MIT License](LICENSE)** | Forked from [getwud/wud](https://github.com/getwud/wud)
 
-<a href="#updocker">Back to top</a>
+<a href="#drydock">Back to top</a>
 
 </div>

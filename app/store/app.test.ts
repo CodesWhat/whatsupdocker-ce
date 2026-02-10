@@ -45,7 +45,7 @@ test('createCollections should call migrate when versions are different', async 
     const db = {
         getCollection: () => ({
             findOne: () => ({
-                name: 'updocker',
+                name: 'drydock',
                 version: '1.0.0',
             }),
             insert: () => {},
@@ -61,7 +61,7 @@ test('createCollections should not call migrate when versions are identical', as
     const db = {
         getCollection: () => ({
             findOne: () => ({
-                name: 'updocker',
+                name: 'drydock',
                 version: '2.0.0',
             }),
             insert: () => {},
@@ -77,7 +77,7 @@ test('getAppInfos should return collection content', async () => {
     const db = {
         getCollection: () => ({
             findOne: () => ({
-                name: 'updocker',
+                name: 'drydock',
                 version: '1.0.0',
             }),
             insert: () => {},
@@ -87,7 +87,7 @@ test('getAppInfos should return collection content', async () => {
     };
     app.createCollections(db);
     expect(app.getAppInfos(db)).toStrictEqual({
-        name: 'updocker',
+        name: 'drydock',
         version: '1.0.0',
     });
 });

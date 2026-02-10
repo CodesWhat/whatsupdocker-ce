@@ -39,9 +39,9 @@ beforeEach(() => {
     oidc.openidClient = openidClientMock;
     oidc.client = new Configuration(
         { issuer: 'https://idp.example.com' },
-        'wud-client',
-        'wud-secret',
-        ClientSecretPost('wud-secret'),
+        'dd-client',
+        'dd-secret',
+        ClientSecretPost('dd-secret'),
     );
     oidc.name = '';
     oidc.log = {
@@ -134,7 +134,7 @@ test('redirect should persist oidc checks in session before responding', async (
     const save = vi.fn((cb) => cb());
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         session: {
             save,
         },
@@ -192,13 +192,13 @@ test('redirect should preserve pending checks from concurrent requests on the sa
 
     const req1: any = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         sessionID: 'shared-session-id',
         session: createSession(),
     };
     const req2: any = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         sessionID: 'shared-session-id',
         session: createSession(),
     };
@@ -223,7 +223,7 @@ test('redirect should preserve pending checks from concurrent requests on the sa
 test('callback should fail with explicit message when callback state is missing', async () => {
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         originalUrl: '/auth/oidc/default/cb?code=abc',
         session: {
             oidc: {
@@ -258,7 +258,7 @@ test('callback should return explicit error when oidc checks are missing', async
 
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         session: {},
         login: vi.fn(),
     };
@@ -297,11 +297,11 @@ test('callback should authenticate using matching state when multiple auth redir
     };
 
     await oidc.redirect(
-        { protocol: 'https', hostname: 'wud.example.com', session },
+        { protocol: 'https', hostname: 'dd.example.com', session },
         resRedirect,
     );
     await oidc.redirect(
-        { protocol: 'https', hostname: 'wud.example.com', session },
+        { protocol: 'https', hostname: 'dd.example.com', session },
         resRedirect,
     );
 
@@ -315,7 +315,7 @@ test('callback should authenticate using matching state when multiple auth redir
     const secondState = stateByCodeVerifier['code-verifier-2'];
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         originalUrl: `/auth/oidc/default/cb?code=abc&state=${firstState}`,
         session,
         login: vi.fn((user, done) => done()),
@@ -338,7 +338,7 @@ test('callback should authenticate using matching state when multiple auth redir
     );
     expect(req.session.oidc.default.pending[firstState]).toBeUndefined();
     expect(req.session.oidc.default.pending[secondState]).toBeDefined();
-    expect(res.redirect).toHaveBeenCalledWith('https://wud.example.com');
+    expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
 });
 
 test('callback should support legacy single-check session shape', async () => {
@@ -351,7 +351,7 @@ test('callback should support legacy single-check session shape', async () => {
 
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         originalUrl: '/auth/oidc/default/cb?code=abc&state=legacy-state',
         session: {
             oidc: {
@@ -380,13 +380,13 @@ test('callback should support legacy single-check session shape', async () => {
         },
     );
     expect(req.session.oidc.default).toBeUndefined();
-    expect(res.redirect).toHaveBeenCalledWith('https://wud.example.com');
+    expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
 });
 
 test('callback should return explicit error when callback state does not match session checks', async () => {
     const req = {
         protocol: 'https',
-        hostname: 'wud.example.com',
+        hostname: 'dd.example.com',
         originalUrl: '/auth/oidc/default/cb?code=abc&state=unknown-state',
         session: {
             oidc: {

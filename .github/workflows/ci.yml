@@ -108,4 +108,4 @@ jobs:
         working-directory: ui
 
       - name: Docker build (smoke test)
-        run: docker build --no-cache -t updocker --build-arg WUD_VERSION=ci .
+        run: docker build --no-cache -t drydock --build-arg DD_VERSION=ci .

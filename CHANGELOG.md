@@ -1,6 +1,6 @@
-# Changelog — upDocker
+# Changelog — drydock
 
-This changelog covers all changes in **upDocker** since forking from [getwud/wud](https://github.com/getwud/wud) upstream.
+This changelog covers all changes in **drydock** since forking from [getwud/wud](https://github.com/getwud/wud) upstream.
 
 **Fork point:** upstream post-8.1.1 (2025-11-27)
 **Upstream baseline:** WUD 8.1.1 + 65 merged PRs on `main` (Vue 3 migration, Alpine base image, Rocket.Chat trigger, threshold system, semver improvements, request→axios migration, and more)
@@ -23,12 +23,12 @@ This changelog covers all changes in **upDocker** since forking from [getwud/wud
 ### Features
 
 - **Agent mode** — Distributed monitoring with remote agent architecture. Agent components, SSE-based communication, dedicated API routes.
-- **OIDC token lifecycle** — Remote watcher HTTPS auth with `Basic` + `Bearer` token support. TLS/mTLS compatibility for `WUD_WATCHER_{name}_HOST`.
+- **OIDC token lifecycle** — Remote watcher HTTPS auth with `Basic` + `Bearer` token support. TLS/mTLS compatibility for `DD_WATCHER_{name}_HOST`.
 - **OIDC device-flow (Phase 2)** — RFC 8628 Device Authorization Grant for headless remote watcher auth. Auto-detection, polling with backoff, and refresh token rotation.
 - **Per-image config presets** — `imgset` defaults for per-image configuration. Added `watchDigest` and `inspectTagPath` imgset properties.
-- **Hybrid triggers** — Trigger group defaults (`WUD_TRIGGER_{name}_THRESHOLD`) shared across providers. Name-only include/exclude for multi-provider trigger management.
+- **Hybrid triggers** — Trigger group defaults (`DD_TRIGGER_{name}_THRESHOLD`) shared across providers. Name-only include/exclude for multi-provider trigger management.
 - **Container update policy** — Skip/snooze specific update versions. Per-container policy stored in DB, exposed via API and UI.
-- **Metrics auth toggle** — `WUD_SERVER_METRICS_AUTH` env var to disable auth on `/metrics` endpoint.
+- **Metrics auth toggle** — `DD_SERVER_METRICS_AUTH` env var to disable auth on `/metrics` endpoint.
 - **Trigger thresholds** — Digest and no-digest thresholds for triggers.
 - **NTFY provider-level threshold** — Provider-level threshold support for ntfy trigger.
 - **Docker pull progress logging** — Rate-limited pull progress output during docker-compose updates.
@@ -36,7 +36,7 @@ This changelog covers all changes in **upDocker** since forking from [getwud/wud
 - **Docker inspect tag path** — Support custom tag path in Docker inspect output.
 - **Anonymous LSCR and TrueForge registries** — Allow anonymous access to LSCR (LinuxServer) and Quay-backed TrueForge.
 - **DHI registry** — New `dhi.io` registry provider with matcher, auth flow, and docs.
-- **Custom URL icons** — Support URL-based icons via `wud.display.icon` label.
+- **Custom URL icons** — Support URL-based icons via `dd.display.icon` label.
 - **Version skip** — Skip specific versions in the UI.
 - **Log viewer** — In-app log viewer.
 - **Semver tag recovery** — Recover include-filter mismatched semver tags from watchers. Extended to advise best semver tag when current tag is non-semver (e.g., `latest`).
@@ -46,7 +46,7 @@ This changelog covers all changes in **upDocker** since forking from [getwud/wud
 
 - **eval() code injection** — Replaced `eval()` in trigger template rendering with safe expression evaluator supporting property paths, method allowlist, ternaries, and string concatenation.
 - **Digest-only update prune crash** — Docker trigger prune logic now correctly excludes current image during digest-only updates and handles post-prune errors gracefully.
-- **Swarm deploy-label debug logging** — Added warn-level logging when Swarm service inspect fails, and debug logging showing which label sources contain `wud.*` labels.
+- **Swarm deploy-label debug logging** — Added warn-level logging when Swarm service inspect fails, and debug logging showing which label sources contain `dd.*` labels.
 - **OIDC session state races** — Serialized redirect session checks, multiple pending callback states per session.
 - **semverDiff undefined** — Normalized `semverDiff` for non-tag (digest-only/created-date-only) updates.
 - **Docker event stream crash** — Buffered and parsed split Docker event stream payloads.
@@ -99,7 +99,7 @@ The following changes from `upstream/main` (post-fork) have been ported to CE:
 | Add Codeberg to default registries | Ported (new TS provider) |
 | Increase `maxAliasCount` in YAML parsing | Ported |
 | Fix authentication for private ECR registry (async `getAuthPull`) | Ported across all registries |
-| Prometheus: add `WUD_PROMETHEUS_ENABLED` config | Ported |
+| Prometheus: add `DD_PROMETHEUS_ENABLED` config | Ported |
 | Fix Authelia OIDC docs (field names) | Ported |
 | Buffer Docker event stream before JSON parse | Already fixed independently |
 | SMTP trigger: allow display name in from address ([#908](https://github.com/getwud/wud/pull/908)) | Ported |

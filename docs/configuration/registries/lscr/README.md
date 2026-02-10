@@ -7,8 +7,8 @@ The `lscr` registry lets you configure [LSCR](https://fleet.linuxserver.io/) int
 
 | Env var                                      |   Required    | Description     | Supported values                         | Default value when missing |
 |----------------------------------------------|:-------------:|-----------------|------------------------------------------|----------------------------|
-| `WUD_REGISTRY_LSCR_{REGISTRY_NAME}_USERNAME` | :red_circle:  | Github username |                                          |                            |
-| `WUD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN`    | :red_circle:  | Github token    | Github password or Github Personal Token |                            |
+| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_USERNAME` | :red_circle:  | Github username |                                          |                            |
+| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN`    | :red_circle:  | Github token    | Github password or Github Personal Token |                            |
 
 ### Examples
 
@@ -16,20 +16,20 @@ The `lscr` registry lets you configure [LSCR](https://fleet.linuxserver.io/) int
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_LSCR_PRIVATE_USERNAME=johndoe
-      - WUD_REGISTRY_LSCR_PRIVATE_TOKEN=xxxxx 
+      - DD_REGISTRY_LSCR_PRIVATE_USERNAME=johndoe
+      - DD_REGISTRY_LSCR_PRIVATE_TOKEN=xxxxx 
 ```
 #### **Docker**
 ```bash
 docker run \
-  -e WUD_REGISTRY_LSCR_PRIVATE_USERNAME="johndoe" \
-  -e WUD_REGISTRY_LSCR_PRIVATE_TOKEN="xxxxx" \
+  -e DD_REGISTRY_LSCR_PRIVATE_USERNAME="johndoe" \
+  -e DD_REGISTRY_LSCR_PRIVATE_TOKEN="xxxxx" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
@@ -38,8 +38,8 @@ docker run \
 [Click here](https://github.com/settings/tokens)
 
 #### Click on `Generate new token`
-Choose an expiration time & appropriate scopes (`read:packages` is only needed for wud) and generate.
+Choose an expiration time & appropriate scopes (`read:packages` is only needed for drydock) and generate.
 ![image](lscr_01.png)
 
-#### Copy the token & use it as the WUD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN value
+#### Copy the token & use it as the DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN value
 ![image](lscr_02.png)

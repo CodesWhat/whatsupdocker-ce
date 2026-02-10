@@ -8,8 +8,8 @@ If you want the state to persist after the container removal, you need to mount 
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     volumes:
       - /path-on-my-host:/store
@@ -19,6 +19,6 @@ services:
 docker run \
   -v /path-on-my-host:/store
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->

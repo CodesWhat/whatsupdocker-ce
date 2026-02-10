@@ -9,7 +9,7 @@ export function init() {
         register.removeSingleMetric(watchContainerGauge.name);
     }
     watchContainerGauge = new Gauge({
-        name: 'wud_watcher_total',
+        name: 'dd_watcher_total',
         help: 'The number of watched containers',
         labelNames: ['type', 'name'],
     });

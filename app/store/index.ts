@@ -12,7 +12,7 @@ import * as container from './container.js';
 // Store Configuration Schema
 const configurationSchema = joi.object().keys({
     path: joi.string().default('/store'),
-    file: joi.string().default('wud.json'),
+    file: joi.string().default('dd.json'),
 });
 
 // Validate Configuration
@@ -66,7 +66,15 @@ export async function init(options = {}) {
         return Promise.resolve();
     }
 
-    log.info(`Load store from (${configuration.path}/${configuration.file})`);
+    // Migrate from wud.json if dd.json doesn't exist yet
+    const storePath = `${configuration.path}/${configuration.file}`;
+    const legacyPath = `${configuration.path}/wud.json`;
+    if (!fs.existsSync(storePath) && fs.existsSync(legacyPath)) {
+        log.info(`Migrating store from ${legacyPath} to ${storePath}`);
+        fs.renameSync(legacyPath, storePath);
+    }
+
+    log.info(`Load store from (${storePath})`);
     if (!fs.existsSync(configuration.path)) {
         log.info(`Create folder ${configuration.path}`);
         fs.mkdirSync(configuration.path);

@@ -1,13 +1,13 @@
 {
-  "name": "updocker-doc",
+  "name": "drydock-doc",
   "version": "2026.2.0",
-  "description": "upDocker - the docs",
+  "description": "drydock - the docs",
   "main": "index.js",
   "scripts": {
     "doc": "docsify serve"
   },
   "author": "fmartinou",
-  "repository": "CodesWhat/updocker",
+  "repository": "CodesWhat/drydock",
   "license": "MIT",
   "devDependencies": {
     "docsify-cli": "4.4.4"

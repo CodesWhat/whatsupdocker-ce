@@ -11,7 +11,7 @@ import * as agentManager from './agent/index.js';
 async function main() {
     const isAgent = process.argv.includes('--agent');
     const mode = isAgent ? 'Agent' : 'Controller';
-    log.info(`WUD is starting in ${mode} mode (version = ${getVersion()})`);
+    log.info(`drydock is starting in ${mode} mode (version = ${getVersion()})`);
 
     // Init store
     await store.init({ memory: isAgent });

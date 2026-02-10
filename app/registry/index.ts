@@ -118,19 +118,19 @@ function resolveComponentModuleSpecifier(componentFileBase: string) {
 function getDocumentationLink(kind: ComponentKind) {
     const docLinks: Record<ComponentKind, string> = {
         trigger:
-            'https://github.com/CodesWhat/updocker/tree/main/docs/configuration/triggers',
+            'https://github.com/CodesWhat/drydock/tree/main/docs/configuration/triggers',
         watcher:
-            'https://github.com/CodesWhat/updocker/tree/main/docs/configuration/watchers',
+            'https://github.com/CodesWhat/drydock/tree/main/docs/configuration/watchers',
         registry:
-            'https://github.com/CodesWhat/updocker/tree/main/docs/configuration/registries',
+            'https://github.com/CodesWhat/drydock/tree/main/docs/configuration/registries',
         authentication:
-            'https://github.com/CodesWhat/updocker/tree/main/docs/configuration/authentications',
+            'https://github.com/CodesWhat/drydock/tree/main/docs/configuration/authentications',
         agent:
-            'https://github.com/CodesWhat/updocker/tree/main/docs/configuration/agents',
+            'https://github.com/CodesWhat/drydock/tree/main/docs/configuration/agents',
     };
     return (
         docLinks[kind] ||
-        'https://github.com/CodesWhat/updocker/tree/main/docs/configuration'
+        'https://github.com/CodesWhat/drydock/tree/main/docs/configuration'
     );
 }
 
@@ -152,7 +152,7 @@ function getHelpfulErrorMessage(
 
     if (error.includes('Cannot find module')) {
         const kindDisplay = kind.charAt(0).toUpperCase() + kind.slice(1);
-        const envVarPattern = `WUD_${kindDisplay.toUpperCase()}_${provider.toUpperCase()}_*`;
+        const envVarPattern = `DD_${kindDisplay.toUpperCase()}_${provider.toUpperCase()}_*`;
 
         message = `Unknown ${kind} provider: '${provider}'.`;
         message += `\n  (Check your environment variables - this comes from: ${envVarPattern})`;
@@ -405,9 +405,9 @@ function applySharedTriggerConfigurationByName(
  * a trigger name shared across multiple providers.
  *
  * For example, given the env vars:
- *   WUD_TRIGGER_DOCKER_UPDATE_PRUNE=true
- *   WUD_TRIGGER_DISCORD_UPDATE_URL=http://...
- *   WUD_TRIGGER_UPDATE_THRESHOLD=minor
+ *   DD_TRIGGER_DOCKER_UPDATE_PRUNE=true
+ *   DD_TRIGGER_DISCORD_UPDATE_URL=http://...
+ *   DD_TRIGGER_UPDATE_THRESHOLD=minor
  *
  * The parsed configuration looks like:
  *   { docker: { update: { prune: "true" } },
@@ -667,7 +667,7 @@ async function registerAgents() {
             const agent = new Agent();
             const registered = await agent.register(
                 'agent',
-                'wud',
+                'dd',
                 name,
                 config,
             );

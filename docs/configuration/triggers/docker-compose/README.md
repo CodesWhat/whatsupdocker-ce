@@ -18,16 +18,16 @@ The trigger will:
 
 | Env var                                           | Required       | Description                                                    | Supported values | Default value when missing |
 | ------------------------------------------------- |:--------------:| -------------------------------------------------------------- | ---------------- | -------------------------- | 
-| `WUD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_FILE`   | :red_circle:   | The docker-compose.yml file location                           |                  |                            |
-| `WUD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_BACKUP` | :white_circle: | Backup the docker-compose.yml file as `.back` before updating? | `true`, `false`  | `false`                    |
-| `WUD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_PRUNE`  | :white_circle: | If the old image must be pruned after upgrade                  | `true`, `false`  | `false`                    |
-| `WUD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time            | `true`, `false`  | `false`                    |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_FILE`   | :red_circle:   | The docker-compose.yml file location                           |                  |                            |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_BACKUP` | :white_circle: | Backup the docker-compose.yml file as `.back` before updating? | `true`, `false`  | `false`                    |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_PRUNE`  | :white_circle: | If the old image must be pruned after upgrade                  | `true`, `false`  | `false`                    |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time            | `true`, `false`  | `false`                    |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration). but only supports the `batch` mode.
 
 !> This trigger will only work with locally watched containers.
 
-!> Do not forget to mount the docker-compose.yml file in the wud container.
+!> Do not forget to mount the docker-compose.yml file in the drydock container.
 
 ### Examples
 
@@ -35,25 +35,25 @@ The trigger will:
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     volumes:
-    - /etc/my-services/docker-compose.yml:/wud/docker-compose.yml
+    - /etc/my-services/docker-compose.yml:/drydock/docker-compose.yml
     environment:
-      - WUD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/wud/docker-compose.yml
+      - DD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/drydock/docker-compose.yml
 ```
 #### **Docker**
 ```bash
 docker run \
-  -v /etc/my-services/docker-compose.yml:/wud/docker-compose.yml
-  -e "WUD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/wud/docker-compose.yml" \
+  -v /etc/my-services/docker-compose.yml:/drydock/docker-compose.yml
+  -e "DD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/drydock/docker-compose.yml" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 #### **Label**
 ```yaml
 labels:
-  wud.compose.file: "/my/path/docker-compose.yaml
+  dd.compose.file: "/my/path/docker-compose.yaml
 ```
 <!-- tabs:end -->

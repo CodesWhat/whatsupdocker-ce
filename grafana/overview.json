@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "WUD_PROMETHEUS",
-      "label": "WUD Prometheus",
+      "name": "DD_PROMETHEUS",
+      "label": "drydock Prometheus",
       "description": "",
       "type": "datasource",
       "pluginId": "prometheus",
@@ -61,7 +61,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${WUD_PROMETHEUS}"
+        "uid": "${DD_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -114,11 +114,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${WUD_PROMETHEUS}"
+            "uid": "${DD_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "count(wud_containers{watcher=~\"${docker_host:pipe}\"})",
+          "expr": "count(dd_containers{watcher=~\"${docker_host:pipe}\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -133,7 +133,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${WUD_PROMETHEUS}"
+        "uid": "${DD_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -202,7 +202,7 @@
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "count(wud_containers{update_available=\"true\", update_kind_semver_diff=\"major\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
+          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"major\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": true,
@@ -212,7 +212,7 @@
           "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${WUD_PROMETHEUS}"
+            "uid": "${DD_PROMETHEUS}"
           }
         }
       ],
@@ -222,7 +222,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${WUD_PROMETHEUS}"
+        "uid": "${DD_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -292,7 +292,7 @@
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "count(wud_containers{update_available=\"true\", update_kind_semver_diff=\"minor\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
+          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"minor\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": true,
@@ -302,7 +302,7 @@
           "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${WUD_PROMETHEUS}"
+            "uid": "${DD_PROMETHEUS}"
           }
         }
       ],
@@ -312,7 +312,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${WUD_PROMETHEUS}"
+        "uid": "${DD_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -382,7 +382,7 @@
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "count(wud_containers{update_available=\"true\", update_kind_semver_diff=\"patch\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
+          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"patch\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": true,
@@ -392,7 +392,7 @@
           "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${WUD_PROMETHEUS}"
+            "uid": "${DD_PROMETHEUS}"
           }
         }
       ],
@@ -402,7 +402,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${WUD_PROMETHEUS}"
+        "uid": "${DD_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -575,7 +575,7 @@
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "group by(display_name, update_kind_remote_value, update_kind_semver_diff, watcher, image_tag_value, link) (wud_containers{watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
+          "expr": "group by(display_name, update_kind_remote_value, update_kind_semver_diff, watcher, image_tag_value, link) (dd_containers{watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
           "format": "table",
           "fullMetaSearch": false,
           "hide": false,
@@ -588,7 +588,7 @@
           "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${WUD_PROMETHEUS}"
+            "uid": "${DD_PROMETHEUS}"
           }
         }
       ],
@@ -651,7 +651,7 @@
         "allValue": ".*",
         "allowCustomValue": false,
         "current": {},
-        "definition": "label_values(wud_containers,watcher)",
+        "definition": "label_values(dd_containers,watcher)",
         "description": "",
         "includeAll": true,
         "label": "Docker Host",
@@ -660,7 +660,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(wud_containers,watcher)",
+          "query": "label_values(dd_containers,watcher)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -671,7 +671,7 @@
         "allValue": ".*",
         "allowCustomValue": false,
         "current": {},
-        "definition": "label_values(wud_containers,image_name)",
+        "definition": "label_values(dd_containers,image_name)",
         "includeAll": true,
         "label": "Image",
         "multi": true,
@@ -679,7 +679,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(wud_containers,image_name)",
+          "query": "label_values(dd_containers,image_name)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -694,7 +694,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "upDocker",
+  "title": "drydock",
   "uid": "ce9usvatkar5sa",
   "version": 31,
   "weekStart": ""

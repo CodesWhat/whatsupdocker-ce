@@ -6,15 +6,15 @@ The `smtp` trigger lets you send emails with smtp.
 
 | Env var                                           | Required       | Description                                | Supported values              | Default value when missing |
 | ------------------------------------------------- |:--------------:|:------------------------------------------ | ----------------------------- | -------------------------- |
-| `WUD_TRIGGER_SMTP_{trigger_name}_HOST`            | :red_circle:   | Smtp server host                           | Valid hostname or IP address  |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_PORT`            | :red_circle:   | Smtp server port                           | Valid smtp port               |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_FROM`            | :red_circle:   | Email from address                         | Valid email address           |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_TO`              | :red_circle:   | Email to address                           | Valid email address           |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_USER`            | :white_circle: | Smtp user                                  |                               |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_PASS`            | :white_circle: | Smtp password                              |                               |                            |
-| `WUD_TRIGGER_SMTP_{trigger_name}_TLS_ENABLED`     | :white_circle: | Use TLS                                    | `true`, `false`               | `false`                    |
-| `WUD_TRIGGER_SMTP_{trigger_name}_TLS_VERIFY`      | :white_circle: | Verify server TLS certificate              | `true`, `false`               | `true`                     |
-| `WUD_TRIGGER_SMTP_{trigger_name}_ALLOWCUSTOMTLD`  | :white_circle: | Allow custom tlds for the email addresses  | `true`, `false`               | `false`                    |
+| `DD_TRIGGER_SMTP_{trigger_name}_HOST`            | :red_circle:   | Smtp server host                           | Valid hostname or IP address  |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_PORT`            | :red_circle:   | Smtp server port                           | Valid smtp port               |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_FROM`            | :red_circle:   | Email from address                         | Valid email address           |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_TO`              | :red_circle:   | Email to address                           | Valid email address           |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_USER`            | :white_circle: | Smtp user                                  |                               |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_PASS`            | :white_circle: | Smtp password                              |                               |                            |
+| `DD_TRIGGER_SMTP_{trigger_name}_TLS_ENABLED`     | :white_circle: | Use TLS                                    | `true`, `false`               | `false`                    |
+| `DD_TRIGGER_SMTP_{trigger_name}_TLS_VERIFY`      | :white_circle: | Verify server TLS certificate              | `true`, `false`               | `true`                     |
+| `DD_TRIGGER_SMTP_{trigger_name}_ALLOWCUSTOMTLD`  | :white_circle: | Allow custom tlds for the email addresses  | `true`, `false`               | `false`                    |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -27,32 +27,32 @@ The `smtp` trigger lets you send emails with smtp.
 
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-        - WUD_TRIGGER_SMTP_GMAIL_HOST=smtp.gmail.com
-        - WUD_TRIGGER_SMTP_GMAIL_PORT=465
-        - WUD_TRIGGER_SMTP_GMAIL_USER=john.doe@gmail.com
-        - WUD_TRIGGER_SMTP_GMAIL_PASS=mysecretpass
-        - WUD_TRIGGER_SMTP_GMAIL_FROM=john.doe@gmail.com
-        - WUD_TRIGGER_SMTP_GMAIL_TO=jane.doe@gmail.com
-        - WUD_TRIGGER_SMTP_GMAIL_TLS_ENABLED=true 
+        - DD_TRIGGER_SMTP_GMAIL_HOST=smtp.gmail.com
+        - DD_TRIGGER_SMTP_GMAIL_PORT=465
+        - DD_TRIGGER_SMTP_GMAIL_USER=john.doe@gmail.com
+        - DD_TRIGGER_SMTP_GMAIL_PASS=mysecretpass
+        - DD_TRIGGER_SMTP_GMAIL_FROM=john.doe@gmail.com
+        - DD_TRIGGER_SMTP_GMAIL_TO=jane.doe@gmail.com
+        - DD_TRIGGER_SMTP_GMAIL_TLS_ENABLED=true 
 ```
 
 #### **Docker**
 
 ```bash
 docker run \
-    -e WUD_TRIGGER_SMTP_GMAIL_HOST="smtp.gmail.com" \
-    -e WUD_TRIGGER_SMTP_GMAIL_PORT="465" \
-    -e WUD_TRIGGER_SMTP_GMAIL_USER="john.doe@gmail.com" \
-    -e WUD_TRIGGER_SMTP_GMAIL_PASS="mysecretpass" \
-    -e WUD_TRIGGER_SMTP_GMAIL_FROM="john.doe@gmail.com" \
-    -e WUD_TRIGGER_SMTP_GMAIL_TO="jane.doe@gmail.com" \
-    -e WUD_TRIGGER_SMTP_GMAIL_TLS_ENABLED="true" \
+    -e DD_TRIGGER_SMTP_GMAIL_HOST="smtp.gmail.com" \
+    -e DD_TRIGGER_SMTP_GMAIL_PORT="465" \
+    -e DD_TRIGGER_SMTP_GMAIL_USER="john.doe@gmail.com" \
+    -e DD_TRIGGER_SMTP_GMAIL_PASS="mysecretpass" \
+    -e DD_TRIGGER_SMTP_GMAIL_FROM="john.doe@gmail.com" \
+    -e DD_TRIGGER_SMTP_GMAIL_TO="jane.doe@gmail.com" \
+    -e DD_TRIGGER_SMTP_GMAIL_TLS_ENABLED="true" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

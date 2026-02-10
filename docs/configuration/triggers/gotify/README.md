@@ -7,9 +7,9 @@ The `gotify` trigger lets you send container update notifications via [Gotify](h
 
 | Env var                                      |    Required    | Description                 | Supported values                            | Default value when missing |
 |----------------------------------------------|:--------------:|-----------------------------|---------------------------------------------|----------------------------| 
-| `WUD_TRIGGER_GOTIFY_{trigger_name}_PRIORITY` | :white_circle: | The Gotify message priority | Integer greater or equal than `0`           |                            |
-| `WUD_TRIGGER_GOTIFY_{trigger_name}_TOKEN`    | :red_circle:   | The Gotify app token url    | A valid gotify app token                    |                            |
-| `WUD_TRIGGER_GOTIFY_{trigger_name}_URL`      | :red_circle:   | The Gotify server url       | The `http` or `https` gotify server address |                            |
+| `DD_TRIGGER_GOTIFY_{trigger_name}_PRIORITY` | :white_circle: | The Gotify message priority | Integer greater or equal than `0`           |                            |
+| `DD_TRIGGER_GOTIFY_{trigger_name}_TOKEN`    | :red_circle:   | The Gotify app token url    | A valid gotify app token                    |                            |
+| `DD_TRIGGER_GOTIFY_{trigger_name}_URL`      | :red_circle:   | The Gotify server url       | The `http` or `https` gotify server address |                            |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -27,19 +27,19 @@ The `gotify` trigger lets you send container update notifications via [Gotify](h
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_GOTIFY_LOCAL_URL=http://gotify.localhost
-      - WUD_TRIGGER_GOTIFY_LOCAL_TOKEN=AWp8A.TbBO3xpn4
+      - DD_TRIGGER_GOTIFY_LOCAL_URL=http://gotify.localhost
+      - DD_TRIGGER_GOTIFY_LOCAL_TOKEN=AWp8A.TbBO3xpn4
 ```
 #### **Docker**
 ```bash
 docker run \
-  -e WUD_TRIGGER_GOTIFY_LOCAL_URL="http://gotify.localhost" \
-  -e WUD_TRIGGER_GOTIFY_LOCAL_TOKEN="AWp8A.TbBO3xpn4" \
+  -e DD_TRIGGER_GOTIFY_LOCAL_URL="http://gotify.localhost" \
+  -e DD_TRIGGER_GOTIFY_LOCAL_TOKEN="AWp8A.TbBO3xpn4" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->

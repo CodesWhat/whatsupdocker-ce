@@ -7,7 +7,7 @@ This API allows to query the state of the triggers.
 This operation lets you get all the configured triggers.
 
 ```bash
-curl http://wud:3000/api/triggers
+curl http://drydock:3000/api/triggers
 
 [
    {
@@ -19,7 +19,7 @@ curl http://wud:3000/api/triggers
          "port":465,
          "user":"xxx@gmail.com",
          "pass":"secret",
-         "from":"admin@wud.com",
+         "from":"admin@dd.com",
          "to":"xxx@gmail.com"
       }
    }
@@ -30,7 +30,7 @@ curl http://wud:3000/api/triggers
 This operation lets you get a specific Trigger.
 
 ```bash
-curl http://wud:3000/api/triggers/smtp/gmail
+curl http://drydock:3000/api/triggers/smtp/gmail
 
 {
   "id":"smtp.gmail",
@@ -41,7 +41,7 @@ curl http://wud:3000/api/triggers/smtp/gmail
      "port":465,
      "user":"xxx@gmail.com",
      "pass":"secret",
-     "from":"admin@wud.com",
+     "from":"admin@dd.com",
      "to":"xxx@gmail.com"
   }
 }
@@ -52,5 +52,5 @@ This operation lets you run a specific Trigger with simulated data.
 
 ```bash
 export CONTAINER='{"id":"123456789","name":"container_test","watcher":"watcher_test","updateKind":{"kind":"tag","semverDiff":"patch","localValue":"1.2.3","remoteValue":"1.2.4","result":{"link":"https://my-container/release-notes/"}}}'
-curl -X POST -H "Content-Type: application/json" -d $CONTAINER http://wud:3000/api/triggers/smtp/gmail
+curl -X POST -H "Content-Type: application/json" -d $CONTAINER http://drydock:3000/api/triggers/smtp/gmail
 ```

@@ -7,15 +7,15 @@ The `pushover` trigger lets you send realtime notifications to your devices (And
 
 | Env var                                        | Required       | Description                                                          | Supported values                                                                                   | Default value when missing  |
 |------------------------------------------------|:--------------:|----------------------------------------------------------------------| -------------------------------------------------------------------------------------------------- |-----------------------------| 
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_DEVICE`   | :white_circle: | Optional device(s) to notify                                         | Coma separated list of devices (e.g. dev1,dev2) ([see here](https://pushover.net/api#identifiers)) |                             |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_EXPIRE`   | :white_circle: | Optional notification expire in seconds (only when priority=2)       | [see here](https://pushover.net/api#priority)                                                      |                             |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_HTML`     | :white_circle: | Allow HTML formatting in message body (supported in Pushover 2.3+)   | [see here](https://pushover.net/api#html)                                                          | `0`                         |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_PRIORITY` | :white_circle: | The notification priority                                            | [see here](https://pushover.net/api#priority)                                                      | `0`                         |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_RETRY`    | :white_circle: | Optional notification retry in seconds (only when priority=2)        | [see here](https://pushover.net/api#priority)                                                      |                             |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_SOUND`    | :white_circle: | The notification sound                                               | [see here](https://pushover.net/api#sounds)                                                        | `pushover`                  |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_TOKEN`    | :red_circle:   | The API token                                                        |                                                                                                    |                             |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_TTL`      | :white_circle: | Optional message time to live (in seconds)                           | [see here](https://pushover.net/api#ttl)                                                           |                             |
-| `WUD_TRIGGER_PUSHOVER_{trigger_name}_USER`     | :red_circle:   | The User key                                                         |                                                                                                    |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_DEVICE`   | :white_circle: | Optional device(s) to notify                                         | Coma separated list of devices (e.g. dev1,dev2) ([see here](https://pushover.net/api#identifiers)) |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_EXPIRE`   | :white_circle: | Optional notification expire in seconds (only when priority=2)       | [see here](https://pushover.net/api#priority)                                                      |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_HTML`     | :white_circle: | Allow HTML formatting in message body (supported in Pushover 2.3+)   | [see here](https://pushover.net/api#html)                                                          | `0`                         |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_PRIORITY` | :white_circle: | The notification priority                                            | [see here](https://pushover.net/api#priority)                                                      | `0`                         |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_RETRY`    | :white_circle: | Optional notification retry in seconds (only when priority=2)        | [see here](https://pushover.net/api#priority)                                                      |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_SOUND`    | :white_circle: | The notification sound                                               | [see here](https://pushover.net/api#sounds)                                                        | `pushover`                  |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_TOKEN`    | :red_circle:   | The API token                                                        |                                                                                                    |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_TTL`      | :white_circle: | Optional message time to live (in seconds)                           | [see here](https://pushover.net/api#ttl)                                                           |                             |
+| `DD_TRIGGER_PUSHOVER_{trigger_name}_USER`     | :red_circle:   | The User key                                                         |                                                                                                    |                             |
 
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
@@ -25,57 +25,57 @@ The `pushover` trigger lets you send realtime notifications to your devices (And
 #### Configuration
 ##### Minimal
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Minimal)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_PUSHOVER_1_TOKEN=*****************************
-      - WUD_TRIGGER_PUSHOVER_1_USER=******************************
+      - DD_TRIGGER_PUSHOVER_1_TOKEN=*****************************
+      - DD_TRIGGER_PUSHOVER_1_USER=******************************
 ```
 
-#### **Docker**
+#### **Docker (Minimal)**
 ```bash
 docker run \
-  -e WUD_TRIGGER_PUSHOVER_1_TOKEN="*****************************" \
-  -e WUD_TRIGGER_PUSHOVER_1_USER="******************************" \
+  -e DD_TRIGGER_PUSHOVER_1_TOKEN="*****************************" \
+  -e DD_TRIGGER_PUSHOVER_1_USER="******************************" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 ##### Full
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Full)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-        - WUD_TRIGGER_PUSHOVER_1_TOKEN=*****************************
-        - WUD_TRIGGER_PUSHOVER_1_USER=******************************
-        - WUD_TRIGGER_PUSHOVER_1_DEVICE=myIphone,mySamsung
-        - WUD_TRIGGER_PUSHOVER_1_SOUND=cosmic
-        - WUD_TRIGGER_PUSHOVER_1_PRIORITY=2
-        - WUD_TRIGGER_PUSHOVER_1_EXPIRE=600
-        - WUD_TRIGGER_PUSHOVER_1_RETRY=60
+        - DD_TRIGGER_PUSHOVER_1_TOKEN=*****************************
+        - DD_TRIGGER_PUSHOVER_1_USER=******************************
+        - DD_TRIGGER_PUSHOVER_1_DEVICE=myIphone,mySamsung
+        - DD_TRIGGER_PUSHOVER_1_SOUND=cosmic
+        - DD_TRIGGER_PUSHOVER_1_PRIORITY=2
+        - DD_TRIGGER_PUSHOVER_1_EXPIRE=600
+        - DD_TRIGGER_PUSHOVER_1_RETRY=60
 ```
 
-#### **Docker**
+#### **Docker (Full)**
 ```bash
 docker run \
-    -e WUD_TRIGGER_PUSHOVER_1_TOKEN="*****************************" \
-    -e WUD_TRIGGER_PUSHOVER_1_USER="******************************" \
-    -e WUD_TRIGGER_PUSHOVER_1_DEVICE="myIphone,mySamsung" \
-    -e WUD_TRIGGER_PUSHOVER_1_SOUND="cosmic" \
-    -e WUD_TRIGGER_PUSHOVER_1_PRIORITY="2" \
-    -e WUD_TRIGGER_PUSHOVER_1_EXPIRE="600" \
-    -e WUD_TRIGGER_PUSHOVER_1_RETRY="60" \
+    -e DD_TRIGGER_PUSHOVER_1_TOKEN="*****************************" \
+    -e DD_TRIGGER_PUSHOVER_1_USER="******************************" \
+    -e DD_TRIGGER_PUSHOVER_1_DEVICE="myIphone,mySamsung" \
+    -e DD_TRIGGER_PUSHOVER_1_SOUND="cosmic" \
+    -e DD_TRIGGER_PUSHOVER_1_PRIORITY="2" \
+    -e DD_TRIGGER_PUSHOVER_1_EXPIRE="600" \
+    -e DD_TRIGGER_PUSHOVER_1_RETRY="60" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

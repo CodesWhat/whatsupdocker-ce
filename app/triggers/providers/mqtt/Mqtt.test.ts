@@ -12,7 +12,7 @@ mqtt.log = log;
 
 const configurationValid = {
     url: 'mqtt://host:1883',
-    topic: 'wud/container',
+    topic: 'dd/container',
     clientid: 'wud',
     hass: {
         discovery: false,
@@ -44,14 +44,14 @@ const containerData = [
         containerName: 'homeassistant',
         data: {
             name: 'homeassistant',
-            topic: 'wud/container/local/homeassistant',
+            topic: 'dd/container/local/homeassistant',
         },
     },
     {
         containerName: 'home.assistant',
         data: {
             name: 'home.assistant',
-            topic: 'wud/container/local/home-assistant',
+            topic: 'dd/container/local/home-assistant',
         },
     },
 ];
@@ -90,7 +90,7 @@ test('maskConfiguration should mask sensitive data', async () => {
     mqtt.configuration = {
         password: 'password',
         url: 'mqtt://host:1883',
-        topic: 'wud/container',
+        topic: 'dd/container',
         hass: {
             discovery: false,
             enabled: false,
@@ -104,7 +104,7 @@ test('maskConfiguration should mask sensitive data', async () => {
             prefix: 'homeassistant',
         },
         password: 'p******d',
-        topic: 'wud/container',
+        topic: 'dd/container',
         url: 'mqtt://host:1883',
     });
 });
@@ -135,7 +135,7 @@ test.each(containerData)(
     'trigger should format json message payload as expected',
     async ({ containerName, data }) => {
         mqtt.configuration = {
-            topic: 'wud/container',
+            topic: 'dd/container',
         };
         const container = {
             id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',

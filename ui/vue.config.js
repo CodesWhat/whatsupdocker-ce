@@ -13,28 +13,28 @@ module.exports = defineConfig({
       "^/auth": {
         target: "http://localhost:3000",
         changeOrigin: true
-      },
+      }
     }
   },
 
   pwa: {
-    name: "upDocker",
+    name: "drydock",
     themeColor: "#00355E",
     msTileColor: "#00355E",
     mobileWebAppCapable: "no",
     iconPaths: {
-      faviconSVG: null,
-      favicon96: null,
-      favicon32: null,
-      favicon16: null,
-      appleTouchIcon: null,
-      maskIcon: null,
-      msTileImage: null,
+      faviconSVG: undefined,
+      favicon96: undefined,
+      favicon32: undefined,
+      favicon16: undefined,
+      appleTouchIcon: undefined,
+      maskIcon: undefined,
+      msTileImage: undefined
     },
     manifestOptions: {
-      short_name: "upDocker",
-      background_color: "#00355E",
-    },
+      short_name: "drydock",
+      background_color: "#00355E"
+    }
   },
 
   chainWebpack: config => {
@@ -60,6 +60,7 @@ module.exports = defineConfig({
           transpileOnly: true
         }
       })
+    return config
   },
 
   configureWebpack: {
@@ -67,8 +68,8 @@ module.exports = defineConfig({
       new webpack.DefinePlugin({
         __VUE_OPTIONS_API__: "true",
         __VUE_PROD_DEVTOOLS__: "false",
-        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
-      }),
-    ],
-  },
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false"
+      })
+    ]
+  }
 });

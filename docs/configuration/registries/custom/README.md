@@ -7,83 +7,83 @@ The `custom` registry lets you configure a self-hosted [Docker Registry](https:/
 
 | Env var                        | Required       | Description                                                     | Supported values                                     | Default value when missing |
 | ------------------------------ |:--------------:| --------------------------------------------------------------- | ---------------------------------------------------- | -------------------------- | 
-| `WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_URL`      | :red_circle:   | Registry URL (e.g. http://localhost:5000)                       |                                                      |                            |
-| `WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN`    | :white_circle: | Login (when htpasswd auth is enabled on the registry)           | WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_PASSWORD must be defined         |                            |
-| `WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_PASSWORD` | :white_circle: | Password (when htpasswd auth is enabled on the registry)        | WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN must be defined            |                            |
-| `WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_AUTH`     | :white_circle: | Htpasswd string (when htpasswd auth is enabled on the registry) | WUD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN/TOKEN  must not be defined |                            |
+| `DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_URL`      | :red_circle:   | Registry URL (e.g. http://localhost:5000)                       |                                                      |                            |
+| `DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN`    | :white_circle: | Login (when htpasswd auth is enabled on the registry)           | DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_PASSWORD must be defined         |                            |
+| `DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_PASSWORD` | :white_circle: | Password (when htpasswd auth is enabled on the registry)        | DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN must be defined            |                            |
+| `DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_AUTH`     | :white_circle: | Htpasswd string (when htpasswd auth is enabled on the registry) | DD_REGISTRY_CUSTOM_{REGISTRY_NAME}_LOGIN/TOKEN  must not be defined |                            |
 ### Examples
 
 #### Configure for anonymous access
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Anonymous)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000
+      - DD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000
 ```
-#### **Docker**
+#### **Docker (Anonymous)**
 ```bash
 docker run \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 #### Configure [for Basic Auth](https://docs.docker.com/registry/configuration/#htpasswd)
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Basic Auth)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000
-      - WUD_REGISTRY_CUSTOM_PRIVATE_LOGIN=john
-      - WUD_REGISTRY_CUSTOM_PRIVATE_PASSWORD=doe
+      - DD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000
+      - DD_REGISTRY_CUSTOM_PRIVATE_LOGIN=john
+      - DD_REGISTRY_CUSTOM_PRIVATE_PASSWORD=doe
 ```
-#### **Docker**
+#### **Docker (Basic Auth)**
 ```bash
 docker run \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE_LOGIN=john" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE_PASSWORD=doe" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE_URL=http://localhost:5000" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE_LOGIN=john" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE_PASSWORD=doe" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 
 #### Configure multiple custom registries
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Multiple Registries)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_CUSTOM_PRIVATE1_URL=http://localhost:5000
-      - WUD_REGISTRY_CUSTOM_PRIVATE1_LOGIN=john
-      - WUD_REGISTRY_CUSTOM_PRIVATE1_PASSWORD=doe
-      - WUD_REGISTRY_CUSTOM_PRIVATE2_URL=http://localhost:5001
-      - WUD_REGISTRY_CUSTOM_PRIVATE2_LOGIN=jane
-      - WUD_REGISTRY_CUSTOM_PRIVATE2_PASSWORD=doe      
+      - DD_REGISTRY_CUSTOM_PRIVATE1_URL=http://localhost:5000
+      - DD_REGISTRY_CUSTOM_PRIVATE1_LOGIN=john
+      - DD_REGISTRY_CUSTOM_PRIVATE1_PASSWORD=doe
+      - DD_REGISTRY_CUSTOM_PRIVATE2_URL=http://localhost:5001
+      - DD_REGISTRY_CUSTOM_PRIVATE2_LOGIN=jane
+      - DD_REGISTRY_CUSTOM_PRIVATE2_PASSWORD=doe
 ```
-#### **Docker**
+#### **Docker (Multiple Registries)**
 ```bash
 docker run \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE1_URL=http://localhost:5000" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE1_LOGIN=john" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE1_PASSWORD=doe" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE2_URL=http://localhost:5001" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE2_LOGIN=jane" \
-  -e "WUD_REGISTRY_CUSTOM_PRIVATE2_PASSWORD=doe" \  
+  -e "DD_REGISTRY_CUSTOM_PRIVATE1_URL=http://localhost:5000" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE1_LOGIN=john" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE1_PASSWORD=doe" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE2_URL=http://localhost:5001" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE2_LOGIN=jane" \
+  -e "DD_REGISTRY_CUSTOM_PRIVATE2_PASSWORD=doe" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->

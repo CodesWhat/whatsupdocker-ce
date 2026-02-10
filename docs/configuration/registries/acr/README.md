@@ -7,8 +7,8 @@ The `acr`registry lets you configure [ACR](https://azure.microsoft.com/services/
 
 | Env var                         | Required     | Description                 | Supported values                                                                                                                  | Default value when missing |
 | ------------------------------- |:------------:| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | 
-| `WUD_REGISTRY_ACR_{REGISTRY_NAME}_CLIENTID`     | :red_circle: | Service Principal Client ID | See [Service Principal Auth](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal) |                            |
-| `WUD_REGISTRY_ACR_{REGISTRY_NAME}_CLIENTSECRET` | :red_circle: | Service Principal Secret    | See [Service Principal Auth](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal) |                            |
+| `DD_REGISTRY_ACR_{REGISTRY_NAME}_CLIENTID`     | :red_circle: | Service Principal Client ID | See [Service Principal Auth](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal) |                            |
+| `DD_REGISTRY_ACR_{REGISTRY_NAME}_CLIENTSECRET` | :red_circle: | Service Principal Secret    | See [Service Principal Auth](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal) |                            |
 
 ### Examples
 
@@ -16,20 +16,20 @@ The `acr`registry lets you configure [ACR](https://azure.microsoft.com/services/
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_ACR_PRIVATE_CLIENTID=7c0195aa-112d-4ac3-be24-6664a13f3d2b
-      - WUD_REGISTRY_ACR_PRIVATE_CLIENTSECRET=SBgHNi3zA5K.f9.f9ft~_hpqbS~.pk.t_i
+      - DD_REGISTRY_ACR_PRIVATE_CLIENTID=7c0195aa-112d-4ac3-be24-6664a13f3d2b
+      - DD_REGISTRY_ACR_PRIVATE_CLIENTSECRET=SBgHNi3zA5K.f9.f9ft~_hpqbS~.pk.t_i
 ```
 #### **Docker**
 ```bash
 docker run \
-  -e WUD_REGISTRY_ACR_PRIVATE_CLIENTID=7c0195aa-112d-4ac3-be24-6664a13f3d2b \
-  -e WUD_REGISTRY_ACR_PRIVATE_CLIENTSECRET=SBgHNi3zA5K.f9.f9ft~_hpqbS~.pk.t_i \
+  -e DD_REGISTRY_ACR_PRIVATE_CLIENTID=7c0195aa-112d-4ac3-be24-6664a13f3d2b \
+  -e DD_REGISTRY_ACR_PRIVATE_CLIENTSECRET=SBgHNi3zA5K.f9.f9ft~_hpqbS~.pk.t_i \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

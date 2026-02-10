@@ -7,10 +7,10 @@ The `discord` trigger lets you send realtime notifications using [Discord](https
 
 | Env var                                          | Required       | Description                              | Supported values      | Default value when missing  |
 |--------------------------------------------------|:--------------:|------------------------------------------|-----------------------|-----------------------------|
-| `WUD_TRIGGER_DISCORD_{trigger_name}_URL`         | :red_circle:   | The Discord webhook URL                  | HTTPS URL             |                             |
-| `WUD_TRIGGER_DISCORD_{trigger_name}_BOTUSERNAME` | :white_circle: | The bot username                         |                       | WUD                         |
-| `WUD_TRIGGER_DISCORD_{trigger_name}_CARDCOLOR`   | :white_circle: | Color of the message card                | Color in decimal base | 65280                       |
-| `WUD_TRIGGER_DISCORD_{trigger_name}_CARDLABEL`   | :white_circle: | Optional label to display in the message | String                |                             |
+| `DD_TRIGGER_DISCORD_{trigger_name}_URL`         | :red_circle:   | The Discord webhook URL                  | HTTPS URL             |                             |
+| `DD_TRIGGER_DISCORD_{trigger_name}_BOTUSERNAME` | :white_circle: | The bot username                         |                       | drydock                     |
+| `DD_TRIGGER_DISCORD_{trigger_name}_CARDCOLOR`   | :white_circle: | Color of the message card                | Color in decimal base | 65280                       |
+| `DD_TRIGGER_DISCORD_{trigger_name}_CARDLABEL`   | :white_circle: | Optional label to display in the message | String                |                             |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -21,21 +21,21 @@ The `discord` trigger lets you send realtime notifications using [Discord](https
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_DISCORD_1_URL=https://discord.com/api/webhooks/123/456
-      - WUD_TRIGGER_DISCORD_1_BOTUSERNAME=WUD
+      - DD_TRIGGER_DISCORD_1_URL=https://discord.com/api/webhooks/123/456
+      - DD_TRIGGER_DISCORD_1_BOTUSERNAME=drydock
 ```
 
 #### **Docker**
 ```bash
 docker run \
-  -e WUD_TRIGGER_DISCORD_1_URL="https://discord.com/api/webhooks/123/456" \
-  -e WUD_TRIGGER_DISCORD_1_BOTUSERNAME="WUD" \
+  -e DD_TRIGGER_DISCORD_1_URL="https://discord.com/api/webhooks/123/456" \
+  -e DD_TRIGGER_DISCORD_1_BOTUSERNAME="drydock" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

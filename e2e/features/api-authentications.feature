@@ -1,6 +1,6 @@
-Feature: WUD Authentications API Exposure
+Feature: Drydock Authentications API Exposure
 
-  Scenario: WUD must allow to get all Authentications state
+  Scenario: Drydock must allow to get all Authentications state
     When I GET /api/authentications
     Then response code should be 200
     And response body should be valid json
@@ -11,7 +11,7 @@ Feature: WUD Authentications API Exposure
     And response body path $[0].configuration.user should be john
     And response body path $[0].configuration.hash should be .\*.*.
 
-  Scenario: WUD must allow to get specific Authentication state
+  Scenario: Drydock must allow to get specific Authentication state
     When I GET /api/authentications/basic/john
     Then response code should be 200
     And response body should be valid json

@@ -5,13 +5,13 @@ WORKDIR /home/node/app
 LABEL maintainer="fmartinou"
 EXPOSE 3000
 
-ARG WUD_VERSION=unknown
+ARG DD_VERSION=unknown
 
 ENV WORKDIR=/home/node/app
-ENV WUD_LOG_FORMAT=text
-ENV WUD_VERSION=$WUD_VERSION
+ENV DD_LOG_FORMAT=text
+ENV DD_VERSION=$DD_VERSION
 
-HEALTHCHECK --interval=30s --timeout=5s CMD ["sh", "-c", "if [ -z \"$WUD_SERVER_ENABLED\" ] || [ \"$WUD_SERVER_ENABLED\" = 'true' ]; then curl --fail http://localhost:${WUD_SERVER_PORT:-3000}/health || exit 1; else exit 0; fi"]
+HEALTHCHECK --interval=30s --timeout=5s CMD ["sh", "-c", "if [ -z \"$DD_SERVER_ENABLED\" ] || [ \"$DD_SERVER_ENABLED\" = 'true' ]; then curl --fail http://localhost:${DD_SERVER_PORT:-3000}/health || exit 1; else exit 0; fi"]
 
 RUN apk add --no-cache \
     bash \

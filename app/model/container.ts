@@ -203,7 +203,7 @@ function getRawTagUpdate(container: Container): ContainerUpdateKind {
         return updateKind;
     }
 
-    let semverDiffWud: ContainerUpdateKind['semverDiff'] = 'unknown';
+    let semverDiffResult: ContainerUpdateKind['semverDiff'] = 'unknown';
     const isSemver = container.image.tag.semver;
     if (isSemver) {
         const semverDiff = diffSemver(
@@ -213,21 +213,21 @@ function getRawTagUpdate(container: Container): ContainerUpdateKind {
         switch (semverDiff) {
             case 'major':
             case 'premajor':
-                semverDiffWud = 'major';
+                semverDiffResult = 'major';
                 break;
             case 'minor':
             case 'preminor':
-                semverDiffWud = 'minor';
+                semverDiffResult = 'minor';
                 break;
             case 'patch':
             case 'prepatch':
-                semverDiffWud = 'patch';
+                semverDiffResult = 'patch';
                 break;
             case 'prerelease':
-                semverDiffWud = 'prerelease';
+                semverDiffResult = 'prerelease';
                 break;
             default:
-                semverDiffWud = 'unknown';
+                semverDiffResult = 'unknown';
         }
     }
 
@@ -235,7 +235,7 @@ function getRawTagUpdate(container: Container): ContainerUpdateKind {
         kind: 'tag',
         localValue: container.image.tag.value,
         remoteValue: container.result.tag,
-        semverDiff: semverDiffWud,
+        semverDiff: semverDiffResult,
     };
 }
 

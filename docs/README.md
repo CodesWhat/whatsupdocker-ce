@@ -1,11 +1,11 @@
 # Introduction
 
-![GitHub stars](https://img.shields.io/github/stars/CodesWhat/updocker)
-![Last commit](https://img.shields.io/github/last-commit/CodesWhat/updocker)
-![License](https://img.shields.io/github/license/CodesWhat/updocker)
-![GHCR package](https://img.shields.io/badge/GHCR-codeswhat%2Fupdocker-2ea44f)
+![GitHub stars](https://img.shields.io/github/stars/CodesWhat/drydock)
+![Last commit](https://img.shields.io/github/last-commit/CodesWhat/drydock)
+![License](https://img.shields.io/github/license/CodesWhat/drydock)
+![GHCR package](https://img.shields.io/badge/GHCR-codeswhat%2Fdrydock-2ea44f)
 
-## upDocker <small>(aka ***What's upDocker?***)</small>
+## drydock
 
 Keep your containers up-to-date!
 
@@ -54,7 +54,7 @@ A Web UI allows to get container insights and to manually run the triggers.
 
 ## Integration
 
-`upDocker` is meant to play nicely with your favorite tools.
+`drydock` is meant to play nicely with your favorite tools.
 
 - [**Home-Assistant**](https://www.home-assistant.io/)
 - [**Prometheus**](https://prometheus.io/)
@@ -66,8 +66,8 @@ A Web UI allows to get container insights and to manually run the triggers.
 > [**Follow the quick start guide!**](quickstart/)
 
 ## Contact & Support
-- Create a [GitHub issue](https://github.com/CodesWhat/updocker/issues) for bug reports, feature requests, or questions
-- Add a [:star: on GitHub](https://github.com/CodesWhat/updocker) to support the project!
+- Create a [GitHub issue](https://github.com/CodesWhat/drydock/issues) for bug reports, feature requests, or questions
+- Add a [:star: on GitHub](https://github.com/CodesWhat/drydock) to support the project!
 
 ## License
-This project is licensed under the [MIT license](https://github.com/CodesWhat/updocker/blob/main/LICENSE).
+This project is licensed under the [MIT license](https://github.com/CodesWhat/drydock/blob/main/LICENSE).

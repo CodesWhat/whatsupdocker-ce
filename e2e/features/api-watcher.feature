@@ -1,6 +1,6 @@
-Feature: WUD Watcher API Exposure
+Feature: Drydock Watcher API Exposure
 
-  Scenario: WUD must allow to get all Watchers state
+  Scenario: Drydock must allow to get all Watchers state
     When I GET /api/watchers
     Then response code should be 200
     And response body should be valid json
@@ -12,7 +12,7 @@ Feature: WUD Watcher API Exposure
     And response body path $[0].configuration.cron should be 0 * * * *
     And response body path $[0].configuration.watchbydefault should be false
 
-  Scenario: WUD must allow to get specific Watcher state
+  Scenario: Drydock must allow to get specific Watcher state
     When I GET /api/watchers/docker/local
     Then response code should be 200
     And response body should be valid json

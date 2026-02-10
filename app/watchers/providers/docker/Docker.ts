@@ -16,31 +16,31 @@ import {
 } from '../../../tag/index.js';
 import * as event from '../../../event/index.js';
 import {
-    udWatch,
+    ddWatch,
     wudWatch,
-    udTagInclude,
+    ddTagInclude,
     wudTagInclude,
-    udTagExclude,
+    ddTagExclude,
     wudTagExclude,
-    udTagTransform,
+    ddTagTransform,
     wudTagTransform,
-    udInspectTagPath,
+    ddInspectTagPath,
     wudInspectTagPath,
-    udRegistryLookupImage,
+    ddRegistryLookupImage,
     wudRegistryLookupImage,
-    udRegistryLookupUrl,
+    ddRegistryLookupUrl,
     wudRegistryLookupUrl,
-    udWatchDigest,
+    ddWatchDigest,
     wudWatchDigest,
-    udLinkTemplate,
+    ddLinkTemplate,
     wudLinkTemplate,
-    udDisplayName,
+    ddDisplayName,
     wudDisplayName,
-    udDisplayIcon,
+    ddDisplayIcon,
     wudDisplayIcon,
-    udTriggerInclude,
+    ddTriggerInclude,
     wudTriggerInclude,
-    udTriggerExclude,
+    ddTriggerExclude,
     wudTriggerExclude,
 } from './label.js';
 import * as storeContainer from '../../../store/container.js';
@@ -82,10 +82,10 @@ export interface DockerWatcherConfiguration extends ComponentConfiguration {
 }
 
 /**
- * Get a label value, preferring the ud.* key over the wud.* fallback.
+ * Get a label value, preferring the dd.* key over the wud.* fallback.
  */
-function getLabel(labels: Record<string, string>, udKey: string, wudKey: string) {
-    return labels[udKey] ?? labels[wudKey];
+function getLabel(labels: Record<string, string>, ddKey: string, wudKey?: string) {
+    return labels[ddKey] ?? (wudKey ? labels[wudKey] : undefined);
 }
 
 // The delay before starting the watcher when the app is started
@@ -473,10 +473,10 @@ function getContainerDisplayName(
 
     const normalizedImagePath = (parsedImagePath || '').toLowerCase();
     if (
-        normalizedImagePath === 'updocker' ||
-        normalizedImagePath.endsWith('/updocker')
+        normalizedImagePath === 'drydock' ||
+        normalizedImagePath.endsWith('/drydock')
     ) {
-        return 'updocker';
+        return 'drydock';
     }
 
     return containerName;
@@ -734,28 +734,28 @@ function getSemverTagFromInspectPath(
 
 /**
  * Return true if container must be watched.
- * @param wudWatchLabelValue the value of the wud.watch label
+ * @param watchLabelValue the value of the dd.watch label
  * @param watchByDefault true if containers must be watched by default
  * @returns {boolean}
  */
 function isContainerToWatch(
-    wudWatchLabelValue: string,
+    watchLabelValue: string,
     watchByDefault: boolean,
 ) {
-    return wudWatchLabelValue !== undefined && wudWatchLabelValue !== ''
-        ? wudWatchLabelValue.toLowerCase() === 'true'
+    return watchLabelValue !== undefined && watchLabelValue !== ''
+        ? watchLabelValue.toLowerCase() === 'true'
         : watchByDefault;
 }
 
 /**
  * Return true if container digest must be watched.
- * @param {string} wudWatchDigestLabelValue - the value of wud.watch.digest label
+ * @param {string} watchDigestLabelValue - the value of dd.watch.digest label
  * @param {object} parsedImage - object containing at least `domain` property
  * @param {boolean} isSemver - true if the current image tag is a semver tag
  * @returns {boolean}
  */
 function isDigestToWatch(
-    wudWatchDigestLabelValue: string,
+    watchDigestLabelValue: string,
     parsedImage: any,
     isSemver: boolean,
 ) {
@@ -767,10 +767,10 @@ function isDigestToWatch(
         domain.endsWith('.docker.io');
 
     if (
-        wudWatchDigestLabelValue !== undefined &&
-        wudWatchDigestLabelValue !== ''
+        watchDigestLabelValue !== undefined &&
+        watchDigestLabelValue !== ''
     ) {
-        const shouldWatch = wudWatchDigestLabelValue.toLowerCase() === 'true';
+        const shouldWatch = watchDigestLabelValue.toLowerCase() === 'true';
         if (shouldWatch && isDockerHub) {
             log.warn(
                 `Watching digest for image ${parsedImage.path} with domain ${domain} may result in throttled requests`,
@@ -958,7 +958,7 @@ class Docker extends Watcher {
         this.initWatcher();
         if (this.configuration.watchdigest !== undefined) {
             this.log.warn(
-                "WUD_WATCHER_{watcher_name}_WATCHDIGEST environment variable is deprecated and won't be supported in upcoming versions",
+                "DD_WATCHER_{watcher_name}_WATCHDIGEST environment variable is deprecated and won't be supported in upcoming versions",
             );
         }
         this.log.info(`Cron scheduled (${this.configuration.cron})`);
@@ -1716,7 +1716,7 @@ class Docker extends Watcher {
             JSON.stringify(labelsCurrent) !== JSON.stringify(labelsToApply);
 
         const customDisplayNameFromLabel =
-            getLabel(labelsToApply, udDisplayName, wudDisplayName);
+            getLabel(labelsToApply, ddDisplayName, wudDisplayName);
         const hasCustomDisplayName =
             customDisplayNameFromLabel &&
             customDisplayNameFromLabel.trim() !== '';
@@ -1940,23 +1940,23 @@ class Docker extends Watcher {
         const filteredContainers = containersWithResolvedLabels.filter(
             (container: any) =>
                 isContainerToWatch(
-                    getLabel(container.Labels, udWatch, wudWatch),
+                    getLabel(container.Labels, ddWatch, wudWatch),
                     this.configuration.watchbydefault,
                 ),
         );
         const containerPromises = filteredContainers.map((container: any) =>
             this.addImageDetailsToContainer(
                 container,
-                getLabel(container.Labels, udTagInclude, wudTagInclude),
-                getLabel(container.Labels, udTagExclude, wudTagExclude),
-                getLabel(container.Labels, udTagTransform, wudTagTransform),
-                getLabel(container.Labels, udLinkTemplate, wudLinkTemplate),
-                getLabel(container.Labels, udDisplayName, wudDisplayName),
-                getLabel(container.Labels, udDisplayIcon, wudDisplayIcon),
-                getLabel(container.Labels, udTriggerInclude, wudTriggerInclude),
-                getLabel(container.Labels, udTriggerExclude, wudTriggerExclude),
-                getLabel(container.Labels, udRegistryLookupImage, wudRegistryLookupImage),
-                getLabel(container.Labels, udRegistryLookupUrl, wudRegistryLookupUrl),
+                getLabel(container.Labels, ddTagInclude, wudTagInclude),
+                getLabel(container.Labels, ddTagExclude, wudTagExclude),
+                getLabel(container.Labels, ddTagTransform, wudTagTransform),
+                getLabel(container.Labels, ddLinkTemplate, wudLinkTemplate),
+                getLabel(container.Labels, ddDisplayName, wudDisplayName),
+                getLabel(container.Labels, ddDisplayIcon, wudDisplayIcon),
+                getLabel(container.Labels, ddTriggerInclude, wudTriggerInclude),
+                getLabel(container.Labels, ddTriggerExclude, wudTriggerExclude),
+                getLabel(container.Labels, ddRegistryLookupImage, wudRegistryLookupImage),
+                getLabel(container.Labels, ddRegistryLookupUrl, wudRegistryLookupUrl),
             ).catch((e) => {
                 this.log.warn(
                     `Failed to fetch image detail for container ${container.Id}: ${e.message}`,
@@ -2023,7 +2023,7 @@ class Docker extends Watcher {
                 );
             } else {
                 this.log.debug(
-                    `Swarm service ${serviceId} (container ${containerId}): deploy labels=${Object.keys(serviceLabels).filter(k => k.startsWith('wud.')).join(',') || 'none'}, task labels=${Object.keys(taskContainerLabels).filter(k => k.startsWith('wud.')).join(',') || 'none'}`,
+                    `Swarm service ${serviceId} (container ${containerId}): deploy labels=${Object.keys(serviceLabels).filter(k => k.startsWith('dd.') || k.startsWith('wud.')).join(',') || 'none'}, task labels=${Object.keys(taskContainerLabels).filter(k => k.startsWith('dd.') || k.startsWith('wud.')).join(',') || 'none'}`,
                 );
             }
 
@@ -2205,25 +2205,25 @@ class Docker extends Watcher {
     ) {
         const containerId = container.Id;
         const containerLabels = container.Labels || {};
-        const includeTagsFromLabel = includeTags || getLabel(containerLabels, udTagInclude, wudTagInclude);
-        const excludeTagsFromLabel = excludeTags || getLabel(containerLabels, udTagExclude, wudTagExclude);
+        const includeTagsFromLabel = includeTags || getLabel(containerLabels, ddTagInclude, wudTagInclude);
+        const excludeTagsFromLabel = excludeTags || getLabel(containerLabels, ddTagExclude, wudTagExclude);
         const transformTagsFromLabel =
-            transformTags || getLabel(containerLabels, udTagTransform, wudTagTransform);
+            transformTags || getLabel(containerLabels, ddTagTransform, wudTagTransform);
         const linkTemplateFromLabel =
-            linkTemplate || getLabel(containerLabels, udLinkTemplate, wudLinkTemplate);
+            linkTemplate || getLabel(containerLabels, ddLinkTemplate, wudLinkTemplate);
         const displayNameFromLabel =
-            displayName || getLabel(containerLabels, udDisplayName, wudDisplayName);
+            displayName || getLabel(containerLabels, ddDisplayName, wudDisplayName);
         const displayIconFromLabel =
-            displayIcon || getLabel(containerLabels, udDisplayIcon, wudDisplayIcon);
+            displayIcon || getLabel(containerLabels, ddDisplayIcon, wudDisplayIcon);
         const triggerIncludeFromLabel =
-            triggerInclude || getLabel(containerLabels, udTriggerInclude, wudTriggerInclude);
+            triggerInclude || getLabel(containerLabels, ddTriggerInclude, wudTriggerInclude);
         const triggerExcludeFromLabel =
-            triggerExclude || getLabel(containerLabels, udTriggerExclude, wudTriggerExclude);
+            triggerExclude || getLabel(containerLabels, ddTriggerExclude, wudTriggerExclude);
         const lookupImageFromLabel =
             registryLookupImage ||
-            getLabel(containerLabels, udRegistryLookupImage, wudRegistryLookupImage) ||
+            getLabel(containerLabels, ddRegistryLookupImage, wudRegistryLookupImage) ||
             registryLookupUrl ||
-            getLabel(containerLabels, udRegistryLookupUrl, wudRegistryLookupUrl);
+            getLabel(containerLabels, ddRegistryLookupUrl, wudRegistryLookupUrl);
 
         // Is container already in store? just return it :)
         const containerInStore = storeContainer.getContainer(containerId);
@@ -2279,7 +2279,7 @@ class Docker extends Watcher {
             );
         }
         const inspectTagPath = getContainerConfigValue(
-            getLabel(containerLabels, udInspectTagPath, wudInspectTagPath),
+            getLabel(containerLabels, ddInspectTagPath, wudInspectTagPath),
             matchingImgset?.inspectTagPath,
         );
         let tagName = parsedImage.tag || 'latest';
@@ -2343,7 +2343,7 @@ class Docker extends Watcher {
         );
         const isSemver = parsedTag !== null && parsedTag !== undefined;
         const watchDigestLabelValue = getContainerConfigValue(
-            getLabel(containerLabels, udWatchDigest, wudWatchDigest),
+            getLabel(containerLabels, ddWatchDigest, wudWatchDigest),
             matchingImgset?.watchDigest,
         );
         const watchDigest = isDigestToWatch(
@@ -2354,7 +2354,7 @@ class Docker extends Watcher {
         if (!isSemver && !watchDigest) {
             this.ensureLogger();
             this.log.warn(
-                "Image is not a semver and digest watching is disabled so wud won't report any update. Please review the configuration to enable digest watching for this container or exclude this container from being watched",
+                "Image is not a semver and digest watching is disabled so drydock won't report any update. Please review the configuration to enable digest watching for this container or exclude this container from being watched",
             );
         }
         return normalizeContainer({

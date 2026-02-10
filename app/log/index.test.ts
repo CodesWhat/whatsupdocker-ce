@@ -16,7 +16,7 @@ describe('Logger', () => {
     });
 
     test('should have correct logger name', async () => {
-        expect(log.fields.name).toBe('whats-up-docker');
+        expect(log.fields.name).toBe('drydock');
     });
 
     test('should have correct log level', async () => {

@@ -7,55 +7,55 @@ The `gitlab` registry lets you configure [GITLAB](https://docs.gitlab.com/ee/use
 
 | Env var                                       |   Required   | Description                    | Supported values                         | Default value when missing  |
 |-----------------------------------------------|:------------:|--------------------------------| ---------------------------------------- |-----------------------------| 
-| `WUD_REGISTRY_GITLAB_{REGISTRY_NAME}_AUTHURL` | :red_circle: | Gitlab Authentication base url |                                          | https://gitlab.com          |
-| `WUD_REGISTRY_GITLAB_{REGISTRY_NAME}_TOKEN`   | :red_circle: | Gitlab Personal Access Token   |                                          |                             |
-| `WUD_REGISTRY_GITLAB_{REGISTRY_NAME}_URL`     | :red_circle: | Gitlab Registry base url       |                                          | https://registry.gitlab.com |
+| `DD_REGISTRY_GITLAB_{REGISTRY_NAME}_AUTHURL` | :red_circle: | Gitlab Authentication base url |                                          | https://gitlab.com          |
+| `DD_REGISTRY_GITLAB_{REGISTRY_NAME}_TOKEN`   | :red_circle: | Gitlab Personal Access Token   |                                          |                             |
+| `DD_REGISTRY_GITLAB_{REGISTRY_NAME}_URL`     | :red_circle: | Gitlab Registry base url       |                                          | https://registry.gitlab.com |
 
 ### Examples
 
 #### Configure to access images from gitlab.com
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (gitlab.com)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_GITLAB_PUBLIC_TOKEN=xxxxx 
+      - DD_REGISTRY_GITLAB_PUBLIC_TOKEN=xxxxx
 ```
-#### **Docker**
+#### **Docker (gitlab.com)**
 ```bash
 docker run \
-  -e WUD_REGISTRY_GITLAB_PUBLIC_TOKEN="xxxxx" \
+  -e DD_REGISTRY_GITLAB_PUBLIC_TOKEN="xxxxx" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 #### Configure to access images from self hosted gitlab instance
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Self-Hosted)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_REGISTRY_GITLAB_PRIVATE_URL=https://registry.mygitlab.acme.com
-      - WUD_REGISTRY_GITLAB_PRIVATE_AUTHURL=https://mygitlab.acme.com
-      - WUD_REGISTRY_GITLAB_PRIVATE_TOKEN=xxxxx 
+      - DD_REGISTRY_GITLAB_PRIVATE_URL=https://registry.mygitlab.acme.com
+      - DD_REGISTRY_GITLAB_PRIVATE_AUTHURL=https://mygitlab.acme.com
+      - DD_REGISTRY_GITLAB_PRIVATE_TOKEN=xxxxx
 ```
-#### **Docker**
+#### **Docker (Self-Hosted)**
 ```bash
 docker run \
-  -e WUD_REGISTRY_GITLAB_PRIVATE_URL="https://registry.mygitlab.acme.com"
-  -e WUD_REGISTRY_GITLAB_PRIVATE_AUTHURL="https://mygitlab.acme.com"
-  -e WUD_REGISTRY_GITLAB_PRIVATE_TOKEN="xxxxx" \
+  -e DD_REGISTRY_GITLAB_PRIVATE_URL="https://registry.mygitlab.acme.com"
+  -e DD_REGISTRY_GITLAB_PRIVATE_AUTHURL="https://mygitlab.acme.com"
+  -e DD_REGISTRY_GITLAB_PRIVATE_TOKEN="xxxxx" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
@@ -64,8 +64,8 @@ docker run \
 [Click here](https://gitlab.com/-/profile/personal_access_tokens)
 
 #### Enter the details of the token to be created
-Choose an expiration time & appropriate scopes (`read_registry` is only needed for wud) and generate.
+Choose an expiration time & appropriate scopes (`read_registry` is only needed for drydock) and generate.
 ![image](gitlab_01.png)
 
-#### Copy the token & use it as the WUD_REGISTRY_GITLAB_TOKEN value
+#### Copy the token & use it as the DD_REGISTRY_GITLAB_TOKEN value
 ![image](gitlab_02.png)

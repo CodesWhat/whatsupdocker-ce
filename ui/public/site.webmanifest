@@ -1,6 +1,6 @@
 {
-  "name": "upDocker",
-  "short_name": "upDocker",
+  "name": "drydock",
+  "short_name": "drydock",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

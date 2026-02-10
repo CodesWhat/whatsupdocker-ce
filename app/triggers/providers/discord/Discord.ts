@@ -19,7 +19,7 @@ class Discord extends Trigger {
                     scheme: ['https'],
                 })
                 .required(),
-            botusername: this.joi.string().default('WUD'),
+            botusername: this.joi.string().default('drydock'),
             cardcolor: this.joi.number().default(65280),
             cardlabel: this.joi.string().default(''),
         });

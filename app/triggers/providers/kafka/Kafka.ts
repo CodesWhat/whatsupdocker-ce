@@ -13,8 +13,8 @@ class Kafka extends Trigger {
     getConfigurationSchema() {
         return this.joi.object().keys({
             brokers: this.joi.string().required(),
-            topic: this.joi.string().default('updocker-container'),
-            clientId: this.joi.string().default('updocker'),
+            topic: this.joi.string().default('drydock-container'),
+            clientId: this.joi.string().default('drydock'),
             ssl: this.joi.boolean().default(false),
             authentication: this.joi.object({
                 type: this.joi

@@ -1,41 +1,41 @@
 # Timezone
 
-WUD is running in UTC by default. \
+drydock is running in UTC by default. \
 If you prefer using a local timezone, you have 2 solutions: 
 
 ### Solution 1: use the local time of your host machine.
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (Host Localtime)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     volumes:
       - /etc/localtime:/etc/localtime:ro
 ```
-#### **Docker**
+#### **Docker (Host Localtime)**
 ```bash
-docker run -v /etc/localtime:/etc/localtime:ro ... ghcr.io/codeswhat/updocker
+docker run -v /etc/localtime:/etc/localtime:ro ... ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 
 ### Solution 2: use the standard `TZ` environment variable.
 
 <!-- tabs:start -->
-#### **Docker Compose**
+#### **Docker Compose (TZ Variable)**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
       - TZ=Europe/Paris
 ```
-#### **Docker**
+#### **Docker (TZ Variable)**
 ```bash
-docker run -e "TZ=Europe/Paris" ... ghcr.io/codeswhat/updocker
+docker run -e "TZ=Europe/Paris" ... ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

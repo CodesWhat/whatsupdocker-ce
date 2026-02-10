@@ -8,10 +8,10 @@ The `telegram` trigger lets you send realtime notifications using [Telegram](htt
 
 | Env var                                        | Required       | Description   | Supported values                                                                                   | Default value when missing  |
 |------------------------------------------------|:--------------:|---------------| -------------------------------------------------------------------------------------------------- |-----------------------------|
-| `WUD_TRIGGER_TELEGRAM_{trigger_name}_BOTTOKEN` | :red_circle:   | The Bot token |                                                                                                    |                             |
-| `WUD_TRIGGER_TELEGRAM_{trigger_name}_CHATID`   | :red_circle:   | The Chat ID   |                                                                                                    |                             |
-| `WUD_TRIGGER_TELEGRAM_{trigger_name}_DISABLETITLE`   |  :white_circle:  | Disable title to have full control over the message formatting   |    `true`, `false`| `false`  |
-| `WUD_TRIGGER_TELEGRAM_{trigger_name}_MESSAGEFORMAT`   | :white_circle: | Send the message as markdown or as html (useful for custom message formatting) | `Markdown`, `HTML`  | `Markdown` |
+| `DD_TRIGGER_TELEGRAM_{trigger_name}_BOTTOKEN` | :red_circle:   | The Bot token |                                                                                                    |                             |
+| `DD_TRIGGER_TELEGRAM_{trigger_name}_CHATID`   | :red_circle:   | The Chat ID   |                                                                                                    |                             |
+| `DD_TRIGGER_TELEGRAM_{trigger_name}_DISABLETITLE`   |  :white_circle:  | Disable title to have full control over the message formatting   |    `true`, `false`| `false`  |
+| `DD_TRIGGER_TELEGRAM_{trigger_name}_MESSAGEFORMAT`   | :white_circle: | Send the message as markdown or as html (useful for custom message formatting) | `Markdown`, `HTML`  | `Markdown` |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -23,22 +23,22 @@ The `telegram` trigger lets you send realtime notifications using [Telegram](htt
 
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_TELEGRAM_1_BOTTOKEN=0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q
-      - WUD_TRIGGER_TELEGRAM_1_CHATID=9876543210
+      - DD_TRIGGER_TELEGRAM_1_BOTTOKEN=0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q
+      - DD_TRIGGER_TELEGRAM_1_CHATID=9876543210
 ```
 
 #### **Docker**
 
 ```bash
 docker run \
-  -e WUD_TRIGGER_TELEGRAM_1_BOTTOKEN="0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q" \
-  -e WUD_TRIGGER_TELEGRAM_1_CHATID="9876543210" \
+  -e DD_TRIGGER_TELEGRAM_1_BOTTOKEN="0123456789:AApFzFLD0g0NVg8l0bZf55ex3sajC4Aw84Q" \
+  -e DD_TRIGGER_TELEGRAM_1_CHATID="9876543210" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
 

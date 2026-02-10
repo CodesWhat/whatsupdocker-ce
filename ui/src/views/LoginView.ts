@@ -2,7 +2,7 @@ import { inject, defineComponent } from "vue";
 import { getOidcRedirection, getStrategies } from "@/services/auth";
 import LoginBasic from "@/components/LoginBasic.vue";
 import LoginOidc from "@/components/LoginOidc.vue";
-import logo from "@/assets/updocker.png";
+import logo from "@/assets/drydock.png";
 
 export default defineComponent({
   components: {

@@ -21,10 +21,10 @@
 - :fire: Fix prerelase variable in link template
 
 ## 8.0.1
-- :star: Force watcher to watch at startup only if store is empty ([#570](https://github.com/getwud/wud/issues/570))
-- :fire: Fix default healthcheck when http server is disabled ([#562](https://github.com/getwud/wud/issues/556))
-- :fire: Fix missing Prometheus label ([#562](https://github.com/getwud/wud/issues/562))
-- :fire: [DOCKER-COMPOSE] - Fix manual update ([#546](https://github.com/getwud/wud/issues/546))
+- :star: Force watcher to watch at startup only if store is empty ([#570](https://github.com/getwud/drydock/issues/570))
+- :fire: Fix default healthcheck when http server is disabled ([#562](https://github.com/getwud/drydock/issues/556))
+- :fire: Fix missing Prometheus label ([#562](https://github.com/getwud/drydock/issues/562))
+- :fire: [DOCKER-COMPOSE] - Fix manual update ([#546](https://github.com/getwud/drydock/issues/546))
 
 ## 8.0.0
 - :star: [COMMAND] - Add support for [Command](/configuration/triggers/command/) trigger
@@ -67,7 +67,7 @@ Github project is now located at [https://github.com/getwud/wud](https://github.
 Docker image is now located at [https://hub.docker.com/r/getwud/wud](https://hub.docker.com/r/getwud/wud)
 
 ## 6.6.1
-- :star: [API/UI] - Add a feature to allow/disallow delete operations (`WUD_SERVER_FEATURE_DELETE`)
+- :star: [API/UI] - Add a feature to allow/disallow delete operations (`DD_SERVER_FEATURE_DELETE`)
 - :star: [Apprise] - Add support for [Apprise persistent yaml configuration](https://github.com/caronc/apprise/wiki/config_yaml)
 - :star: [DISCORD] - Add [Discord trigger](configuration/triggers/discord/)
 - :star: [Docker / Docker-compose trigger] - Allow to prune old versions (except current one and candidate one)
@@ -78,7 +78,7 @@ Docker image is now located at [https://hub.docker.com/r/getwud/wud](https://hub
 - :star: [HTTP trigger] - Add support for Http proxy
 - :star: [Mqtt trigger / Home-assistant] - Replace binary sensors by [update sensors](https://www.home-assistant.io/integrations/update/)
 - :star: [MQTT] - Add home-assistant global sensors (number of containers, number of containers to update...)
-- :star: [MQTT] - Prefix client id with `wud_` instead of the generic `mqttjs_` prefix 
+- :star: [MQTT] - Prefix client id with `drydock_` instead of the generic `mqttjs_` prefix 
 - :star: [TELEGRAM] - Add [Telegram trigger](configuration/triggers/telegram/)
 - :star: [UI] - Add dark mode
 - :star: [UI] - Add filter dropdown for update kinds (major, minor...)
@@ -110,7 +110,7 @@ Do not forget to adjust your existing HA configuration accordingly (automations,
 - :star: Add [Fontawesome icons](https://fontawesome.com/) and [Simple icons](https://simpleicons.org/) support
 - :star: Add [Gitlab Registry](/configuration/registries/gitlab/) support
 - :star: Add [HTTPS support](configuration/server/?id=server)
-- :star: Add ability to customize the display of the container ([see `wud.display.name` and `wud.display.icon`](configuration/watchers/?id=label))
+- :star: Add ability to customize the display of the container ([see `dd.display.name` and `dd.display.icon`](configuration/watchers/?id=label))
 - :star: Add ability to specify a link pointing to the container version (changelog...) ([see here](configuration/watchers/?id=associate-a-link-to-the-container-version))
 - :star: Add ability to watch all container digests (at `watcher` level)
 - :star: Add Authentication system ([see here](configuration/authentications/))

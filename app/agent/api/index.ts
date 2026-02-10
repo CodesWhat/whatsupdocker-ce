@@ -17,7 +17,7 @@ let cachedSecret: string | undefined;
  * Authenticate Middleware.
  */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
-    const requestSecret = req.headers['x-wud-agent-secret'];
+    const requestSecret = req.headers['x-dd-agent-secret'];
     if (!cachedSecret || requestSecret !== cachedSecret) {
         log.warn(`Unauthorized access attempt from ${req.ip}`);
         return res.status(401).send();
@@ -30,8 +30,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
  */
 export async function init() {
     cachedSecret = undefined;
-    const agentSecret = process.env.UD_AGENT_SECRET ?? process.env.WUD_AGENT_SECRET;
-    const agentSecretFile = process.env.UD_AGENT_SECRET_FILE ?? process.env.WUD_AGENT_SECRET_FILE;
+    const agentSecret = process.env.DD_AGENT_SECRET ?? process.env.WUD_AGENT_SECRET;
+    const agentSecretFile = process.env.DD_AGENT_SECRET_FILE ?? process.env.WUD_AGENT_SECRET_FILE;
 
     if (agentSecret) {
         cachedSecret = agentSecret;
@@ -46,10 +46,10 @@ export async function init() {
 
     if (!cachedSecret) {
         log.error(
-            'Agent mode requires UD_AGENT_SECRET (or WUD_AGENT_SECRET) / UD_AGENT_SECRET_FILE (or WUD_AGENT_SECRET_FILE) to be defined.',
+            'Agent mode requires DD_AGENT_SECRET (or WUD_AGENT_SECRET) / DD_AGENT_SECRET_FILE (or WUD_AGENT_SECRET_FILE) to be defined.',
         );
         throw new Error(
-            'Agent mode requires UD_AGENT_SECRET or UD_AGENT_SECRET_FILE (WUD_ prefix also accepted)',
+            'Agent mode requires DD_AGENT_SECRET or DD_AGENT_SECRET_FILE (WUD_ prefix also accepted)',
         );
     }
 

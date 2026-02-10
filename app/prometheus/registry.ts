@@ -9,7 +9,7 @@ export function init() {
         register.removeSingleMetric(summaryGetTags.name);
     }
     summaryGetTags = new Summary({
-        name: 'wud_registry_response',
+        name: 'dd_registry_response',
         help: 'The Registry response time (in second)',
         labelNames: ['type', 'name'],
     });

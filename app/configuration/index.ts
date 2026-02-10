@@ -32,61 +32,61 @@ export function get(prop, env = process.env) {
 
 /**
  * Lookup external secrets defined in files.
- * @param wudEnvVars
+ * @param ddEnvVars
  */
-export function replaceSecrets(wudEnvVars) {
-    const secretFileEnvVars = Object.keys(wudEnvVars).filter((wudEnvVar) =>
-        wudEnvVar.toUpperCase().endsWith(VAR_FILE_SUFFIX),
+export function replaceSecrets(ddEnvVars) {
+    const secretFileEnvVars = Object.keys(ddEnvVars).filter((ddEnvVar) =>
+        ddEnvVar.toUpperCase().endsWith(VAR_FILE_SUFFIX),
     );
     secretFileEnvVars.forEach((secretFileEnvVar) => {
         const secretKey = secretFileEnvVar.replace(VAR_FILE_SUFFIX, '');
-        const secretFilePath = wudEnvVars[secretFileEnvVar];
+        const secretFilePath = ddEnvVars[secretFileEnvVar];
         const secretFileValue = fs.readFileSync(secretFilePath, 'utf-8');
-        delete wudEnvVars[secretFileEnvVar];
-        wudEnvVars[secretKey] = secretFileValue;
+        delete ddEnvVars[secretFileEnvVar];
+        ddEnvVars[secretKey] = secretFileValue;
     });
 }
 
-// 1. Get a copy of all wud related env vars (supports both UD_ and WUD_ prefixes)
-export const wudEnvVars = {};
+// 1. Get a copy of all dd-related env vars (DD_ primary, WUD_ legacy fallback)
+export const ddEnvVars = {};
 
-// First, collect legacy WUD_ vars
+// First, collect legacy WUD_ vars and remap to DD_ keys
 Object.keys(process.env)
     .filter((envVar) => envVar.toUpperCase().startsWith('WUD_'))
     .forEach((envVar) => {
-        wudEnvVars[envVar] = process.env[envVar];
+        const ddKey = `DD_${envVar.substring(4)}`; // WUD_FOO → DD_FOO
+        ddEnvVars[ddKey] = process.env[envVar];
     });
 
-// Then, collect UD_ vars and remap to WUD_ keys (overrides WUD_ if both set)
+// Then, collect DD_ vars (overrides WUD_ if both set)
 Object.keys(process.env)
-    .filter((envVar) => envVar.toUpperCase().startsWith('UD_'))
+    .filter((envVar) => envVar.toUpperCase().startsWith('DD_'))
     .forEach((envVar) => {
-        const wudKey = `W${envVar}`; // UD_FOO → WUD_FOO
-        wudEnvVars[wudKey] = process.env[envVar];
+        ddEnvVars[envVar] = process.env[envVar];
     });
 
 // 2. Replace all secret files referenced by their secret values
-replaceSecrets(wudEnvVars);
+replaceSecrets(ddEnvVars);
 
 export function getVersion() {
-    return wudEnvVars.WUD_VERSION || 'unknown';
+    return ddEnvVars.DD_VERSION || 'unknown';
 }
 
 export function getLogLevel() {
-    return wudEnvVars.WUD_LOG_LEVEL || 'info';
+    return ddEnvVars.DD_LOG_LEVEL || 'info';
 }
 /**
  * Get watcher configuration.
  */
 export function getWatcherConfigurations() {
-    return get('wud.watcher', wudEnvVars);
+    return get('dd.watcher', ddEnvVars);
 }
 
 /**
  * Get trigger configurations.
  */
 export function getTriggerConfigurations() {
-    return get('wud.trigger', wudEnvVars);
+    return get('dd.trigger', ddEnvVars);
 }
 
 /**
@@ -94,7 +94,7 @@ export function getTriggerConfigurations() {
  * @returns {*}
  */
 export function getRegistryConfigurations() {
-    return get('wud.registry', wudEnvVars);
+    return get('dd.registry', ddEnvVars);
 }
 
 /**
@@ -102,7 +102,7 @@ export function getRegistryConfigurations() {
  * @returns {*}
  */
 export function getAuthenticationConfigurations() {
-    return get('wud.auth', wudEnvVars);
+    return get('dd.auth', ddEnvVars);
 }
 
 /**
@@ -110,21 +110,21 @@ export function getAuthenticationConfigurations() {
  * @returns {*}
  */
 export function getAgentConfigurations() {
-    return get('wud.agent', wudEnvVars);
+    return get('dd.agent', ddEnvVars);
 }
 
 /**
  * Get Input configurations.
  */
 export function getStoreConfiguration() {
-    return get('wud.store', wudEnvVars);
+    return get('dd.store', ddEnvVars);
 }
 
 /**
  * Get Server configurations.
  */
 export function getServerConfiguration() {
-    const configurationFromEnv = get('wud.server', wudEnvVars);
+    const configurationFromEnv = get('dd.server', ddEnvVars);
     const configurationSchema = joi.object().keys({
         enabled: joi.boolean().default(true),
         port: joi.number().default(3000).integer().min(0).max(65535),
@@ -178,7 +178,7 @@ export function getServerConfiguration() {
  * Get Prometheus configurations.
  */
 export function getPrometheusConfiguration() {
-    const configurationFromEnv = get('wud.prometheus', wudEnvVars);
+    const configurationFromEnv = get('dd.prometheus', ddEnvVars);
     const configurationSchema = joi.object().keys({
         enabled: joi.boolean().default(true),
     });
@@ -193,7 +193,7 @@ export function getPrometheusConfiguration() {
 }
 
 export function getPublicUrl(req) {
-    const publicUrl = wudEnvVars.WUD_PUBLIC_URL;
+    const publicUrl = ddEnvVars.DD_PUBLIC_URL;
     if (publicUrl) {
         return publicUrl;
     }

@@ -3,20 +3,20 @@ services:
   nginx:
     image: nginx:1.25.0
     labels:
-      - wud.watch=true
+      - dd.watch=true
 
   traefik1:
     image: traefik:3.0.0
     labels:
-      - wud.watch=true
-      - wud.tag.include=^\d+\.\d+.\d+$$
-      - wud.trigger.include=ntfy.one
-      - wud.display.icon=sh-plex
+      - dd.watch=true
+      - dd.tag.include=^\d+\.\d+.\d+$$
+      - dd.trigger.include=ntfy.one
+      - dd.display.icon=sh-plex
 
   traefik2:
     image: traefik:3.0.0
     labels:
-      - wud.watch=true
-      - wud.tag.include=^\d+\.\d+.\d+$$
-      - wud.trigger.exclude=ntfy.two
-      - wud.display.icon=hl-plex
+      - dd.watch=true
+      - dd.tag.include=^\d+\.\d+.\d+$$
+      - dd.trigger.exclude=ntfy.two
+      - dd.display.icon=hl-plex

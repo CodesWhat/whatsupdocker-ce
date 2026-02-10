@@ -5,13 +5,13 @@ import events from 'events';
 const eventEmitter = new events.EventEmitter();
 
 // Container related events
-const WUD_CONTAINER_ADDED = 'wud:container-added';
-const WUD_CONTAINER_UPDATED = 'wud:container-updated';
-const WUD_CONTAINER_REMOVED = 'wud:container-removed';
+const DD_CONTAINER_ADDED = 'dd:container-added';
+const DD_CONTAINER_UPDATED = 'dd:container-updated';
+const DD_CONTAINER_REMOVED = 'dd:container-removed';
 
 // Watcher related events
-const WUD_WATCHER_START = 'wud:watcher-start';
-const WUD_WATCHER_STOP = 'wud:watcher-stop';
+const DD_WATCHER_START = 'dd:watcher-start';
+const DD_WATCHER_STOP = 'dd:watcher-stop';
 
 const DEFAULT_HANDLER_ORDER = 100;
 
@@ -125,7 +125,7 @@ export function registerContainerReport(
  * @param containerAdded
  */
 export function emitContainerAdded(containerAdded) {
-    eventEmitter.emit(WUD_CONTAINER_ADDED, containerAdded);
+    eventEmitter.emit(DD_CONTAINER_ADDED, containerAdded);
 }
 
 /**
@@ -133,7 +133,7 @@ export function emitContainerAdded(containerAdded) {
  * @param handler
  */
 export function registerContainerAdded(handler) {
-    eventEmitter.on(WUD_CONTAINER_ADDED, handler);
+    eventEmitter.on(DD_CONTAINER_ADDED, handler);
 }
 
 /**
@@ -141,7 +141,7 @@ export function registerContainerAdded(handler) {
  * @param containerUpdated
  */
 export function emitContainerUpdated(containerUpdated) {
-    eventEmitter.emit(WUD_CONTAINER_UPDATED, containerUpdated);
+    eventEmitter.emit(DD_CONTAINER_UPDATED, containerUpdated);
 }
 
 /**
@@ -149,7 +149,7 @@ export function emitContainerUpdated(containerUpdated) {
  * @param handler
  */
 export function registerContainerUpdated(handler) {
-    eventEmitter.on(WUD_CONTAINER_UPDATED, handler);
+    eventEmitter.on(DD_CONTAINER_UPDATED, handler);
 }
 
 /**
@@ -157,7 +157,7 @@ export function registerContainerUpdated(handler) {
  * @param containerRemoved
  */
 export function emitContainerRemoved(containerRemoved) {
-    eventEmitter.emit(WUD_CONTAINER_REMOVED, containerRemoved);
+    eventEmitter.emit(DD_CONTAINER_REMOVED, containerRemoved);
 }
 
 /**
@@ -165,23 +165,23 @@ export function emitContainerRemoved(containerRemoved) {
  * @param handler
  */
 export function registerContainerRemoved(handler) {
-    eventEmitter.on(WUD_CONTAINER_REMOVED, handler);
+    eventEmitter.on(DD_CONTAINER_REMOVED, handler);
 }
 
 export function emitWatcherStart(watcher) {
-    eventEmitter.emit(WUD_WATCHER_START, watcher);
+    eventEmitter.emit(DD_WATCHER_START, watcher);
 }
 
 export function registerWatcherStart(handler) {
-    eventEmitter.on(WUD_WATCHER_START, handler);
+    eventEmitter.on(DD_WATCHER_START, handler);
 }
 
 export function emitWatcherStop(watcher) {
-    eventEmitter.emit(WUD_WATCHER_STOP, watcher);
+    eventEmitter.emit(DD_WATCHER_STOP, watcher);
 }
 
 export function registerWatcherStop(handler) {
-    eventEmitter.on(WUD_WATCHER_STOP, handler);
+    eventEmitter.on(DD_WATCHER_STOP, handler);
 }
 
 // Testing helper.

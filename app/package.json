@@ -1,7 +1,7 @@
 {
-    "name": "updocker-app",
+    "name": "drydock-app",
     "version": "2026.2.0",
-    "description": "upDocker - the app",
+    "description": "drydock - the app",
     "type": "module",
     "main": "dist/index.js",
     "scripts": {
@@ -14,7 +14,7 @@
         "test": "vitest run --coverage"
     },
     "author": "fmartinou",
-    "repository": "CodesWhat/updocker",
+    "repository": "CodesWhat/drydock",
     "license": "MIT",
     "dependencies": {
         "@aws-sdk/client-ecr": "3.738.0",

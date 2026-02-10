@@ -9,7 +9,7 @@ export function init() {
         register.removeSingleMetric(triggerCounter.name);
     }
     triggerCounter = new Counter({
-        name: 'wud_trigger_count',
+        name: 'dd_trigger_count',
         help: 'Total count of trigger events',
         labelNames: ['type', 'name', 'status'],
     });

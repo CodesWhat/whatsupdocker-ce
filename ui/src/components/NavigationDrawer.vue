@@ -9,7 +9,7 @@
     theme="dark"
   >
     <div class="drawer-brand">
-      <img :src="logo" alt="WUD logo" class="drawer-logo" />
+      <img :src="logo" alt="drydock logo" class="drawer-logo" />
     </div>
     <v-toolbar flat class="ma-0 pa-0" color="primary">
       <v-app-bar-nav-icon class="drawer-toggle" @click.stop="mini = !mini">

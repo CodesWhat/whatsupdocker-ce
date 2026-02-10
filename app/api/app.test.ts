@@ -3,8 +3,7 @@
 vi.mock('../store/app', () => ({
     getAppInfos: vi.fn(() => ({
         version: '1.0.0',
-        name: 'updocker',
-        description: "What's upDocker?",
+        name: 'drydock',
     })),
 }));
 
@@ -52,8 +51,7 @@ describe('App Router', () => {
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
             version: '1.0.0',
-            name: 'updocker',
-            description: "What's upDocker?",
+            name: 'drydock',
         });
     });
 });

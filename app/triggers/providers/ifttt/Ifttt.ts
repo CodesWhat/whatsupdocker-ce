@@ -14,7 +14,7 @@ class Ifttt extends Trigger {
     getConfigurationSchema() {
         return this.joi.object().keys({
             key: this.joi.string().required(),
-            event: this.joi.string().default('wud-image'),
+            event: this.joi.string().default('dd-image'),
         });
     }
 

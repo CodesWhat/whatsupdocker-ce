@@ -1,8 +1,8 @@
 <!-- markdownlint-disable first-line-h1 -->
 
-![logo](assets/updocker.png)
+![logo](assets/drydock.png)
 
-# **[What's upDocker?](#introduction)**
+# **[drydock](#introduction)**
 
 > Keep your containers up-to-date!
 

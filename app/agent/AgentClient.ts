@@ -38,7 +38,7 @@ export class AgentClient {
 
         this.axiosOptions = {
             headers: {
-                'X-Wud-Agent-Secret': this.config.secret,
+                'X-Dd-Agent-Secret': this.config.secret,
             },
         };
 
@@ -256,17 +256,17 @@ export class AgentClient {
     }
 
     async handleEvent(eventName: string, data: any) {
-        if (eventName === 'wud:ack') {
+        if (eventName === 'dd:ack') {
             this.log.info(
                 `Agent ${this.name} connected (version: ${data.version})`,
             );
             this.handshake();
         } else if (
-            eventName === 'wud:container-added' ||
-            eventName === 'wud:container-updated'
+            eventName === 'dd:container-added' ||
+            eventName === 'dd:container-updated'
         ) {
             await this.processContainer(data as Container);
-        } else if (eventName === 'wud:container-removed') {
+        } else if (eventName === 'dd:container-removed') {
             storeContainer.deleteContainer(data.id);
         }
     }

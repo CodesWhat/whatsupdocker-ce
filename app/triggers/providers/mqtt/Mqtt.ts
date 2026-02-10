@@ -9,7 +9,7 @@ import {
 } from '../../../event/index.js';
 import { flatten } from '../../../model/container.js';
 
-const containerDefaultTopic = 'wud/container';
+const containerDefaultTopic = 'dd/container';
 const hassDefaultPrefix = 'homeassistant';
 
 /**
@@ -42,7 +42,7 @@ class Mqtt extends Trigger {
             topic: this.joi.string().default(containerDefaultTopic),
             clientid: this.joi
                 .string()
-                .default(`wud_${Math.random().toString(16).substring(2, 10)}`),
+                .default(`dd_${Math.random().toString(16).substring(2, 10)}`),
             user: this.joi.string(),
             password: this.joi.string(),
             hass: this.joi

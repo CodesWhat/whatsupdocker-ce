@@ -106,7 +106,7 @@ class Dockercompose extends Docker {
             file: this.joi.string().optional(),
             backup: this.joi.boolean().default(false),
             // Add configuration for the label name to look for
-            composeFileLabel: this.joi.string().default('wud.compose.file'),
+            composeFileLabel: this.joi.string().default('dd.compose.file'),
         });
     }
 
@@ -134,10 +134,13 @@ class Dockercompose extends Docker {
      * @returns {string|null}
      */
     getComposeFileForContainer(container) {
-        // Check if container has a compose file label
+        // Check if container has a compose file label (dd.* primary, wud.* fallback)
         const composeFileLabel = this.configuration.composeFileLabel;
-        if (container.labels && container.labels[composeFileLabel]) {
-            const labelValue = container.labels[composeFileLabel];
+        const wudFallbackLabel = composeFileLabel.replace(/^dd\./, 'wud.');
+        const labelValue =
+            container.labels?.[composeFileLabel] ||
+            container.labels?.[wudFallbackLabel];
+        if (labelValue) {
             // Convert relative paths to absolute paths
             return path.isAbsolute(labelValue)
                 ? labelValue

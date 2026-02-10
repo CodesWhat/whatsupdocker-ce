@@ -1,6 +1,6 @@
-Feature: WUD Registry API Exposure
+Feature: Drydock Registry API Exposure
 
-  Scenario: WUD must allow to get all Registries
+  Scenario: Drydock must allow to get all Registries
     When I GET /api/registries
     Then response code should be 200
     And response body should be valid json
@@ -22,7 +22,7 @@ Feature: WUD Registry API Exposure
     And response body path $[2].id should be gcr.private
     And response body path $[2].type should be gcr
     And response body path $[2].name should be private
-    And response body path $[2].configuration.clientemail should be gcr@wud-test.iam.gserviceaccount.com
+    And response body path $[2].configuration.clientemail should be gcr@dd-test.iam.gserviceaccount.com
     And response body path $[2].configuration.privatekey should be .\*.*.
 
     And response body path $[3].id should be ghcr.private
@@ -45,7 +45,7 @@ Feature: WUD Registry API Exposure
     And response body path $[7].type should be quay
     And response body path $[7].name should be public
 
-  Scenario: WUD must allow to get specific Registry state
+  Scenario: Drydock must allow to get specific Registry state
     When I GET /api/registries/acr/private
     Then response code should be 200
     And response body should be valid json

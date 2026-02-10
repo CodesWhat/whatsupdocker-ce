@@ -10,8 +10,8 @@ const kafka = new Kafka();
 
 const configurationValid = {
     brokers: 'broker1:9000, broker2:9000',
-    topic: 'updocker-container',
-    clientId: 'updocker',
+    topic: 'drydock-container',
+    clientId: 'drydock',
     ssl: false,
     threshold: 'all',
     mode: 'simple',
@@ -74,8 +74,8 @@ test('validateConfiguration should throw error when invalid', async () => {
 test('maskConfiguration should mask sensitive data', async () => {
     kafka.configuration = {
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
         authentication: {
             type: 'PLAIN',
@@ -85,8 +85,8 @@ test('maskConfiguration should mask sensitive data', async () => {
     };
     expect(kafka.maskConfiguration()).toEqual({
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
         authentication: {
             type: 'PLAIN',
@@ -99,14 +99,14 @@ test('maskConfiguration should mask sensitive data', async () => {
 test('maskConfiguration should not fail if no auth provided', async () => {
     kafka.configuration = {
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
     };
     expect(kafka.maskConfiguration()).toEqual({
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
     });
 });
@@ -114,14 +114,14 @@ test('maskConfiguration should not fail if no auth provided', async () => {
 test('initTrigger should init kafka client', async () => {
     kafka.configuration = {
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
     };
     await kafka.initTrigger();
     expect(KafkaClient).toHaveBeenCalledWith({
         brokers: ['broker1:9000', 'broker2:9000'],
-        clientId: 'wud',
+        clientId: 'drydock',
         ssl: false,
     });
 });
@@ -129,8 +129,8 @@ test('initTrigger should init kafka client', async () => {
 test('initTrigger should init kafka client with auth when configured', async () => {
     kafka.configuration = {
         brokers: 'broker1:9000, broker2:9000',
-        topic: 'wud-image',
-        clientId: 'wud',
+        topic: 'drydock-container',
+        clientId: 'drydock',
         ssl: false,
         authentication: {
             type: 'PLAIN',
@@ -141,7 +141,7 @@ test('initTrigger should init kafka client with auth when configured', async () 
     await kafka.initTrigger();
     expect(KafkaClient).toHaveBeenCalledWith({
         brokers: ['broker1:9000', 'broker2:9000'],
-        clientId: 'wud',
+        clientId: 'drydock',
         ssl: false,
         sasl: {
             mechanism: 'PLAIN',

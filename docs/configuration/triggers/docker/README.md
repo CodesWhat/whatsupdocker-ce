@@ -16,8 +16,8 @@ The trigger will:
 
 | Env var                                    | Required       | Description                                         | Supported values | Default value when missing |
 | ------------------------------------------ |:--------------:|-----------------------------------------------------| ---------------- | -------------------------- | 
-| `WUD_TRIGGER_DOCKER_{trigger_name}_PRUNE`  | :white_circle: | If old image versions must be pruned                | `true`, `false`  | `false`                    |
-| `WUD_TRIGGER_DOCKER_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time | `true`, `false`  | `false`                    |
+| `DD_TRIGGER_DOCKER_{trigger_name}_PRUNE`  | :white_circle: | If old image versions must be pruned                | `true`, `false`  | `false`                    |
+| `DD_TRIGGER_DOCKER_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time | `true`, `false`  | `false`                    |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
@@ -29,17 +29,17 @@ The trigger will:
 #### **Docker Compose**
 ```yaml
 services:
-  updocker:
-    image: ghcr.io/codeswhat/updocker
+  drydock:
+    image: ghcr.io/codeswhat/drydock
     ...
     environment:
-      - WUD_TRIGGER_DOCKER_EXAMPLE_PRUNE=true
+      - DD_TRIGGER_DOCKER_EXAMPLE_PRUNE=true
 ```
 #### **Docker**
 ```bash
 docker run \
-  -e "WUD_TRIGGER_DOCKER_EXAMPLE_PRUNE=true" \
+  -e "DD_TRIGGER_DOCKER_EXAMPLE_PRUNE=true" \
   ...
-  ghcr.io/codeswhat/updocker
+  ghcr.io/codeswhat/drydock
 ```
 <!-- tabs:end -->
