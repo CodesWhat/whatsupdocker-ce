@@ -8,6 +8,9 @@
 - :star: [TRIGGER] - Add trigger execution order (`ORDER`) to control trigger sequencing
 - :star: [TRIGGER] - Allow include/exclude labels to match trigger names (example: `update`)
 - :star: [TRIGGER] - Share trigger threshold across same-name triggers when unambiguous
+- :star: [UI/API] - Add container grouping by stack with `GET /api/containers/groups` endpoint, `dd.group` / `wud.group` labels, and compose project auto-detection
+- :star: [UI] - Add collapsible `ContainerGroup` component with group header, update badges, and "Update all in group" bulk action
+- :star: [UI] - Add graceful self-update overlay with DVD-style bouncing whale logo, SSE push via `/api/events/ui`, and automatic health polling with page reload
 
 ## 8.1.1
 - :fire: [TELEGRAM] - Fix markdown character escape

@@ -7,8 +7,12 @@ vi.mock('@/services/container', () => ({
   getAllContainers: vi.fn(),
   deleteContainer: vi.fn()
 }));
+const { mockGetAgents } = vi.hoisted(() => ({
+  mockGetAgents: vi.fn(() => Promise.resolve([])),
+}));
 vi.mock('@/services/agent', () => ({
-  getAgents: vi.fn(() => Promise.resolve([])),
+  default: { getAgents: mockGetAgents },
+  getAgents: mockGetAgents,
 }));
 
 const mockContainers = [
@@ -308,5 +312,232 @@ describe('ContainersView', () => {
     expect(groups[1].name).toBe('my-stack');
     expect(groups[2].name).toBe('wud-stack');
     expect(groups[3].name).toBeNull();
+  });
+
+  it('removes container from list by id', () => {
+    wrapper.vm.removeContainerFromListById('1');
+
+    expect(wrapper.vm.containers).toHaveLength(1);
+    expect(wrapper.vm.containers[0].id).toBe('2');
+  });
+
+  it('refreshes a single container in place', () => {
+    const updated = {
+      ...mockContainers[0],
+      displayName: 'Updated Container 1',
+    };
+    wrapper.vm.onContainerRefreshed(updated);
+
+    expect(wrapper.vm.containers[0].displayName).toBe('Updated Container 1');
+    expect(wrapper.vm.containers).toHaveLength(2);
+  });
+
+  it('handles update kind filter change', async () => {
+    await wrapper.vm.onUpdateKindChanged('minor');
+
+    expect(wrapper.vm.updateKindSelected).toBe('minor');
+  });
+
+  it('filters containers by update kind', async () => {
+    const containersWithKinds = [
+      {
+        id: '1',
+        displayName: 'A',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: true,
+        updateKind: { kind: 'tag', semverDiff: 'minor' },
+        labels: {}
+      },
+      {
+        id: '2',
+        displayName: 'B',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: true,
+        updateKind: { kind: 'tag', semverDiff: 'major' },
+        labels: {}
+      },
+    ];
+    wrapper.vm.containers = containersWithKinds;
+    wrapper.vm.updateKindSelected = 'minor';
+    await wrapper.vm.$nextTick();
+
+    const filtered = wrapper.vm.containersFiltered;
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe('1');
+  });
+
+  it('computes updateKinds from containers with tag kind', () => {
+    const containersWithKinds = [
+      {
+        id: '1',
+        displayName: 'A',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: true,
+        updateKind: { kind: 'tag', semverDiff: 'minor' },
+        labels: {}
+      },
+      {
+        id: '2',
+        displayName: 'B',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: true,
+        updateKind: { kind: 'tag', semverDiff: 'major' },
+        labels: {}
+      },
+      {
+        id: '3',
+        displayName: 'C',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-03T00:00:00Z' },
+        updateAvailable: false,
+        updateKind: { kind: 'tag', semverDiff: 'patch' },
+        labels: {}
+      },
+    ];
+    wrapper.vm.containers = containersWithKinds;
+
+    expect(wrapper.vm.updateKinds).toEqual(['major', 'minor']);
+  });
+
+  it('sorts grouped containers by label then oldest first', async () => {
+    const containers = [
+      {
+        id: '1',
+        displayName: 'Z',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: false,
+        labels: { app: 'web' }
+      },
+      {
+        id: '2',
+        displayName: 'A',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: false,
+        labels: { app: 'web' }
+      },
+    ];
+    wrapper.vm.containers = containers;
+    wrapper.vm.groupByLabel = 'app';
+    wrapper.vm.oldestFirst = true;
+    await wrapper.vm.$nextTick();
+
+    const filtered = wrapper.vm.containersFiltered;
+    expect(filtered[0].id).toBe('2'); // Older date first
+    expect(filtered[1].id).toBe('1');
+  });
+
+  it('builds query params from all filter state', async () => {
+    wrapper.vm.registrySelected = 'hub';
+    wrapper.vm.agentSelected = 'node1';
+    wrapper.vm.watcherSelected = 'local';
+    wrapper.vm.updateKindSelected = 'minor';
+    wrapper.vm.updateAvailableSelected = true;
+    wrapper.vm.oldestFirst = true;
+    wrapper.vm.groupByLabel = 'app';
+
+    wrapper.vm.updateQueryParams();
+
+    expect(wrapper.vm.$router.push).toHaveBeenCalledWith({
+      query: {
+        registry: 'hub',
+        agent: 'node1',
+        watcher: 'local',
+        'update-kind': 'minor',
+        'update-available': 'true',
+        'oldest-first': 'true',
+        'group-by-label': 'app',
+      },
+    });
+  });
+
+  describe('beforeRouteEnter', () => {
+    it('loads containers and agents on route enter', async () => {
+      const agents = [{ name: 'agent1' }];
+      vi.mocked(getAllContainers).mockResolvedValue(mockContainers);
+      mockGetAgents.mockResolvedValue(agents);
+
+      const guard = ContainersView.__component?.beforeRouteEnter ?? (ContainersView as any).beforeRouteEnter;
+
+      let nextCallback: Function | undefined;
+      const to = { query: { registry: 'hub', agent: 'node1', watcher: 'local', 'update-kind': 'minor', 'update-available': 'true', 'oldest-first': 'true', 'group-by-label': 'app' } };
+      await guard.call(undefined, to as any, {} as any, (cb: any) => { nextCallback = cb; });
+
+      const vm: any = {
+        containers: [], agentsList: [],
+        registrySelected: '', agentSelected: '', watcherSelected: '',
+        updateKindSelected: '', updateAvailableSelected: false,
+        oldestFirst: false, groupByLabel: ''
+      };
+      nextCallback!(vm);
+
+      expect(vm.containers).toEqual(mockContainers);
+      expect(vm.agentsList).toEqual(agents);
+      expect(vm.registrySelected).toBe('hub');
+      expect(vm.agentSelected).toBe('node1');
+      expect(vm.watcherSelected).toBe('local');
+      expect(vm.updateKindSelected).toBe('minor');
+      expect(vm.updateAvailableSelected).toBe(true);
+      expect(vm.oldestFirst).toBe(true);
+      expect(vm.groupByLabel).toBe('app');
+    });
+
+    it('emits error notification when beforeRouteEnter fails', async () => {
+      vi.mocked(getAllContainers).mockRejectedValue(new Error('Network fail'));
+
+      const guard = ContainersView.__component?.beforeRouteEnter ?? (ContainersView as any).beforeRouteEnter;
+
+      let nextCallback: Function | undefined;
+      await guard.call(undefined, { query: {} } as any, {} as any, (cb: any) => { nextCallback = cb; });
+
+      const emitMock = vi.fn();
+      const vm: any = { $eventBus: { emit: emitMock } };
+      nextCallback!(vm);
+
+      expect(emitMock).toHaveBeenCalledWith('notify', expect.stringContaining('Network fail'), 'error');
+    });
+  });
+
+  it('sorts containers with groupByLabel where one has label and one does not', async () => {
+    const containers = [
+      {
+        id: '1',
+        displayName: 'A',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: false,
+        labels: {}
+      },
+      {
+        id: '2',
+        displayName: 'B',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: false,
+        labels: { app: 'web' }
+      },
+    ];
+    wrapper.vm.containers = containers;
+    wrapper.vm.groupByLabel = 'app';
+    await wrapper.vm.$nextTick();
+
+    const filtered = wrapper.vm.containersFiltered;
+    // Container with label should come first
+    expect(filtered[0].id).toBe('2');
+    expect(filtered[1].id).toBe('1');
   });
 });

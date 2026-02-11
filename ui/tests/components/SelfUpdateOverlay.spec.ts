@@ -198,4 +198,207 @@ describe('SelfUpdateOverlay', () => {
     expect(mockEventBus.off).toHaveBeenCalledWith('self-update', expect.any(Function));
     expect(mockEventBus.off).toHaveBeenCalledWith('connection-lost', expect.any(Function));
   });
+
+  describe('animate bounce logic', () => {
+    let capturedCallbacks: FrameRequestCallback[];
+
+    beforeEach(() => {
+      capturedCallbacks = [];
+      rafMock.mockImplementation((cb: FrameRequestCallback) => {
+        capturedCallbacks.push(cb);
+        return ++rafId;
+      });
+    });
+
+    function runAnimateFrame() {
+      const cb = capturedCallbacks.pop();
+      if (cb) cb(performance.now());
+    }
+
+    it('bounces off right/bottom edges when starting near them', async () => {
+      // Mock Math.random to position logo near right+bottom edges
+      // startBounce: x = random * maxX, y = random * maxY
+      // speed = 1.5 + random, angle = random * 2PI
+      // We want x near maxX, y near maxY, with positive dx/dy
+      const maxX = window.innerWidth - 120;  // 904
+      const maxY = window.innerHeight - 120; // 648
+      const randomValues = [
+        0.999,  // x = 0.999 * maxX ~ maxX
+        0.999,  // y = 0.999 * maxY ~ maxY
+        0.5,    // speed = 2.0
+        0.0,    // angle = 0 -> dx=2, dy=0... we need positive dy too
+        0.5,    // hue = 180
+      ];
+      let callIdx = 0;
+      const origRandom = Math.random;
+      Math.random = () => randomValues[callIdx++] ?? origRandom();
+
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      Math.random = origRandom;
+
+      const xBefore = wrapper.vm.x;
+      const hueBefore = wrapper.vm.hue;
+
+      // Run enough frames so logo reaches and bounces off the right edge
+      // x starts near maxX with positive dx, so first frame should hit
+      runAnimateFrame();
+
+      // x should be clamped and hue shifted
+      expect(wrapper.vm.x).toBeLessThanOrEqual(maxX);
+      expect(wrapper.vm.hue).not.toBe(hueBefore);
+    });
+
+    it('bounces off left edge when moving left', async () => {
+      // angle = PI -> dx = -speed, dy ~ 0
+      const randomValues = [
+        0.001,  // x near 0
+        0.5,    // y in middle
+        0.5,    // speed = 2.0
+        0.5,    // angle = PI -> dx = cos(PI)*2 = -2, dy = sin(PI)*2 ~ 0
+        0.5,    // hue
+      ];
+      let callIdx = 0;
+      const origRandom = Math.random;
+      Math.random = () => randomValues[callIdx++] ?? origRandom();
+
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      Math.random = origRandom;
+
+      const hueBefore = wrapper.vm.hue;
+      runAnimateFrame();
+
+      // x was near 0 and dx was negative, should bounce
+      expect(wrapper.vm.x).toBeGreaterThanOrEqual(0);
+      expect(wrapper.vm.hue).not.toBe(hueBefore);
+    });
+
+    it('bounces off top edge when moving upward', async () => {
+      // angle = 3*PI/2 -> dx ~ 0, dy = -speed
+      const randomValues = [
+        0.5,    // x in middle
+        0.001,  // y near 0
+        0.5,    // speed = 2.0
+        0.75,   // angle = 0.75 * 2PI = 1.5PI -> dx ~ 0, dy = -2
+        0.5,    // hue
+      ];
+      let callIdx = 0;
+      const origRandom = Math.random;
+      Math.random = () => randomValues[callIdx++] ?? origRandom();
+
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      Math.random = origRandom;
+
+      const hueBefore = wrapper.vm.hue;
+      runAnimateFrame();
+
+      // y was near 0 with negative dy, should bounce
+      expect(wrapper.vm.y).toBeGreaterThanOrEqual(0);
+      expect(wrapper.vm.hue).not.toBe(hueBefore);
+    });
+
+    it('bounces off bottom edge when moving downward', async () => {
+      // angle = PI/2 -> dx ~ 0, dy = +speed
+      const maxY = window.innerHeight - 120;
+      const randomValues = [
+        0.5,    // x in middle
+        0.999,  // y near maxY
+        0.5,    // speed = 2.0
+        0.25,   // angle = 0.25 * 2PI = PI/2 -> dx ~ 0, dy = +2
+        0.5,    // hue
+      ];
+      let callIdx = 0;
+      const origRandom = Math.random;
+      Math.random = () => randomValues[callIdx++] ?? origRandom();
+
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      Math.random = origRandom;
+
+      const hueBefore = wrapper.vm.hue;
+      runAnimateFrame();
+
+      expect(wrapper.vm.y).toBeLessThanOrEqual(maxY);
+      expect(wrapper.vm.hue).not.toBe(hueBefore);
+    });
+
+    it('does not animate when active is false', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+
+      // Deactivate
+      wrapper.vm.active = false;
+      await wrapper.vm.$nextTick();
+
+      const xBefore = wrapper.vm.x;
+      runAnimateFrame();
+
+      // Position should not change because animate() returns early
+      expect(wrapper.vm.x).toBe(xBefore);
+    });
+
+    it('does not start duplicate health poll timers', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      eventHandlers['connection-lost']();
+      await wrapper.vm.$nextTick();
+
+      // Call connection-lost again -- should not create a second interval
+      eventHandlers['connection-lost']();
+      await wrapper.vm.$nextTick();
+
+      // Only one poll cycle should fire per 3s
+      (global.fetch as any).mockResolvedValue({ ok: true } as Response);
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates position each frame without edge hit in the middle', async () => {
+      // Place logo in center with small velocity
+      const randomValues = [
+        0.5,    // x in middle
+        0.5,    // y in middle
+        0.0,    // speed = 1.5 (minimum)
+        0.125,  // angle = PI/4 -> dx = ~1.06, dy = ~1.06
+        0.0,    // hue = 0
+      ];
+      let callIdx = 0;
+      const origRandom = Math.random;
+      Math.random = () => randomValues[callIdx++] ?? origRandom();
+
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+      Math.random = origRandom;
+
+      const xBefore = wrapper.vm.x;
+      const yBefore = wrapper.vm.y;
+      const hueBefore = wrapper.vm.hue;
+
+      runAnimateFrame();
+
+      // Position should have moved but hue should not change (no edge hit)
+      expect(wrapper.vm.x).not.toBe(xBefore);
+      expect(wrapper.vm.y).not.toBe(yBefore);
+      expect(wrapper.vm.hue).toBe(hueBefore);
+    });
+  });
+
+  it('handles non-ok health response by continuing to poll', async () => {
+    (global.fetch as any).mockResolvedValue({ ok: false } as Response);
+
+    eventHandlers['self-update']();
+    await wrapper.vm.$nextTick();
+    eventHandlers['connection-lost']();
+    await wrapper.vm.$nextTick();
+
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(wrapper.vm.phase).toBe('disconnected');
+
+    // Still polling, next attempt succeeds
+    (global.fetch as any).mockResolvedValue({ ok: true } as Response);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(wrapper.vm.phase).toBe('ready');
+  });
 });
