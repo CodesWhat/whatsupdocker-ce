@@ -9,6 +9,7 @@ vi.mock('@/services/server', () => ({ getServerIcon: vi.fn(() => 'mdi-connection
 vi.mock('@/services/watcher', () => ({ getWatcherIcon: vi.fn(() => 'mdi-update') }));
 vi.mock('@/services/authentication', () => ({ getAuthenticationIcon: vi.fn(() => 'mdi-lock') }));
 vi.mock('@/services/agent', () => ({ getAgentIcon: vi.fn(() => 'mdi-lan') }));
+vi.mock('@/services/log', () => ({ getLogIcon: vi.fn(() => 'mdi-math-log') }));
 
 // Mock vuetify useTheme
 vi.mock('vuetify', async () => {
@@ -53,7 +54,7 @@ describe('NavigationDrawer', () => {
   it('has configuration items sorted alphabetically', () => {
     const sorted = wrapper.vm.configurationItemsSorted;
     const names = sorted.map(i => i.name);
-    expect(names).toEqual(['agents', 'auth', 'registries', 'server', 'triggers', 'watchers']);
+    expect(names).toEqual(['agents', 'auth', 'logs', 'registries', 'server', 'triggers', 'watchers']);
   });
 
   it('has correct container icon', () => {
@@ -69,6 +70,7 @@ describe('NavigationDrawer', () => {
     expect(routes).toContain('/configuration/watchers');
     expect(routes).toContain('/configuration/server');
     expect(routes).toContain('/configuration/authentications');
+    expect(routes).toContain('/configuration/logs');
   });
 
   it('starts with darkMode false by default', () => {

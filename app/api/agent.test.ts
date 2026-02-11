@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { createMockResponse } from '../test/helpers.js';
+import { createMockResponse, createMockRequest } from '../test/helpers.js';
 
-const { mockRouter } = vi.hoisted(() => ({
+const { mockRouter, mockGetAgent } = vi.hoisted(() => ({
     mockRouter: { get: vi.fn() },
+    mockGetAgent: vi.fn(),
 }));
 
 vi.mock('express', () => ({
@@ -11,6 +12,7 @@ vi.mock('express', () => ({
 
 vi.mock('../agent', () => ({
     getAgents: vi.fn(() => []),
+    getAgent: mockGetAgent,
 }));
 
 import { getAgents } from '../agent/index.js';
@@ -28,6 +30,11 @@ describe('Agent Router', () => {
     test('should register GET / route on init', () => {
         const router = agentRouter.init();
         expect(router.get).toHaveBeenCalledWith('/', expect.any(Function));
+    });
+
+    test('should register GET /:name/log/entries route on init', () => {
+        agentRouter.init();
+        expect(mockRouter.get).toHaveBeenCalledWith('/:name/log/entries', expect.any(Function));
     });
 
     test('should return mapped agent list', () => {
@@ -66,5 +73,109 @@ describe('Agent Router', () => {
         handler({}, res);
 
         expect(res.json).toHaveBeenCalledWith([]);
+    });
+});
+
+describe('Agent Log Entries Route', () => {
+    let handler;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        agentRouter.init();
+        handler = mockRouter.get.mock.calls.find((c) => c[0] === '/:name/log/entries')[1];
+    });
+
+    test('should return 404 when agent not found', async () => {
+        mockGetAgent.mockReturnValue(undefined);
+
+        const req = createMockRequest({ params: { name: 'nonexistent' } });
+        const res = createResponse();
+
+        await handler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Agent not found' });
+    });
+
+    test('should return 503 when agent is not connected', async () => {
+        mockGetAgent.mockReturnValue({ isConnected: false });
+
+        const req = createMockRequest({ params: { name: 'agent-1' } });
+        const res = createResponse();
+
+        await handler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(503);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Agent is not connected' });
+    });
+
+    test('should proxy log entries from connected agent', async () => {
+        const mockEntries = [
+            { timestamp: 1000, level: 'info', component: 'test', msg: 'hello' },
+        ];
+        mockGetAgent.mockReturnValue({
+            isConnected: true,
+            getLogEntries: vi.fn().mockResolvedValue(mockEntries),
+        });
+
+        const req = createMockRequest({
+            params: { name: 'agent-1' },
+            query: { level: 'warn', tail: '50' },
+        });
+        const res = createResponse();
+
+        await handler(req, res);
+
+        const agent = mockGetAgent.mock.results[0].value;
+        expect(agent.getLogEntries).toHaveBeenCalledWith({
+            level: 'warn',
+            component: undefined,
+            tail: 50,
+            since: undefined,
+        });
+        expect(res.json).toHaveBeenCalledWith(mockEntries);
+    });
+
+    test('should pass all query params to agent', async () => {
+        mockGetAgent.mockReturnValue({
+            isConnected: true,
+            getLogEntries: vi.fn().mockResolvedValue([]),
+        });
+
+        const req = createMockRequest({
+            params: { name: 'agent-1' },
+            query: { level: 'error', component: 'docker', tail: '100', since: '5000' },
+        });
+        const res = createResponse();
+
+        await handler(req, res);
+
+        const agent = mockGetAgent.mock.results[0].value;
+        expect(agent.getLogEntries).toHaveBeenCalledWith({
+            level: 'error',
+            component: 'docker',
+            tail: 100,
+            since: 5000,
+        });
+    });
+
+    test('should return 502 when agent getLogEntries fails', async () => {
+        mockGetAgent.mockReturnValue({
+            isConnected: true,
+            getLogEntries: vi.fn().mockRejectedValue(new Error('Connection refused')),
+        });
+
+        const req = createMockRequest({
+            params: { name: 'agent-1' },
+            query: {},
+        });
+        const res = createResponse();
+
+        await handler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(502);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Failed to fetch logs from agent: Connection refused',
+        });
     });
 });

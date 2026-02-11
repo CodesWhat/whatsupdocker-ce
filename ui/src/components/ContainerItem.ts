@@ -3,6 +3,7 @@ import { getRegistryProviderIcon } from '@/services/registry';
 import ContainerDetail from '@/components/ContainerDetail.vue';
 import ContainerError from '@/components/ContainerError.vue';
 import ContainerImage from '@/components/ContainerImage.vue';
+import ContainerLogs from '@/components/ContainerLogs.vue';
 import ContainerTriggers from '@/components/ContainerTriggers.vue';
 import ContainerUpdate from '@/components/ContainerUpdate.vue';
 import IconRenderer from '@/components/IconRenderer.vue';
@@ -23,6 +24,7 @@ export default defineComponent({
     ContainerDetail,
     ContainerError,
     ContainerImage,
+    ContainerLogs,
     ContainerTriggers,
     ContainerUpdate,
     IconRenderer,

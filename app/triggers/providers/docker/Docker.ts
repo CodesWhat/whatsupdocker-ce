@@ -558,6 +558,104 @@ class Docker extends Trigger {
     }
 
     /**
+     * Stop and remove (or wait for auto-removal of) a container.
+     */
+    async stopAndRemoveContainer(
+        currentContainer,
+        currentContainerSpec,
+        container,
+        logContainer,
+    ) {
+        if (currentContainerSpec.State.Running) {
+            await this.stopContainer(
+                currentContainer,
+                container.name,
+                container.id,
+                logContainer,
+            );
+        }
+
+        if (currentContainerSpec.HostConfig?.AutoRemove !== true) {
+            await this.removeContainer(
+                currentContainer,
+                container.name,
+                container.id,
+                logContainer,
+            );
+        } else {
+            await this.waitContainerRemoved(
+                currentContainer,
+                container.name,
+                container.id,
+                logContainer,
+            );
+        }
+    }
+
+    /**
+     * Create a new container from the cloned spec and start it if
+     * the previous container was running.
+     */
+    async recreateContainer(
+        dockerApi,
+        currentContainerSpec,
+        newImage,
+        container,
+        logContainer,
+    ) {
+        const containerToCreateInspect = this.cloneContainer(
+            currentContainerSpec,
+            newImage,
+            logContainer,
+        );
+
+        const newContainer = await this.createContainer(
+            dockerApi,
+            containerToCreateInspect,
+            container.name,
+            logContainer,
+        );
+
+        if (currentContainerSpec.State.Running) {
+            await this.startContainer(
+                newContainer,
+                container.name,
+                logContainer,
+            );
+        }
+    }
+
+    /**
+     * Remove old images after a container update when pruning is enabled.
+     */
+    async cleanupOldImages(dockerApi, registry, container, logContainer) {
+        if (!this.configuration.prune) return;
+
+        if (container.updateKind.kind === 'tag') {
+            const oldImage = registry.getImageFullName(
+                container.image,
+                container.image.tag.value,
+            );
+            await this.removeImage(dockerApi, oldImage, logContainer);
+        } else if (
+            container.updateKind.kind === 'digest' &&
+            container.image.digest.repo
+        ) {
+            try {
+                const oldImage = registry.getImageFullName(
+                    container.image,
+                    container.image.digest.repo,
+                );
+                await this.removeImage(dockerApi, oldImage, logContainer);
+            } catch (e) {
+                logContainer.debug(
+                    `Unable to remove previous digest image (${e.message})`,
+                );
+            }
+        }
+    }
+
+    /**
      * Update the container.
      * @param container the container
      * @returns {Promise<void>}
@@ -592,130 +690,64 @@ class Docker extends Trigger {
             container,
         );
 
-        if (currentContainer) {
-            const currentContainerSpec = await this.inspectContainer(
-                currentContainer,
-                logContainer,
-            );
-            const currentContainerState = currentContainerSpec.State;
-
-            // Try to remove previous pulled images
-            if (this.configuration.prune) {
-                await this.pruneImages(
-                    dockerApi,
-                    registry,
-                    container,
-                    logContainer,
-                );
-            }
-
-            // Pull new image ahead of time
-            await this.pullImage(dockerApi, auth, newImage, logContainer);
-
-            // Dry-run?
-            if (this.configuration.dryrun) {
-                logContainer.info(
-                    'Do not replace the existing container because dry-run mode is enabled',
-                );
-            } else {
-                // Clone current container spec
-                const containerToCreateInspect = this.cloneContainer(
-                    currentContainerSpec,
-                    newImage,
-                    logContainer,
-                );
-
-                // Stop current container
-                if (currentContainerState.Running) {
-                    await this.stopContainer(
-                        currentContainer,
-                        container.name,
-                        container.id,
-                        logContainer,
-                    );
-                }
-
-                if (currentContainerSpec.HostConfig?.AutoRemove !== true) {
-                    // Remove current container
-                    await this.removeContainer(
-                        currentContainer,
-                        container.name,
-                        container.id,
-                        logContainer,
-                    );
-                } else {
-                    // This is a special case when the container is set to be removed automatically when it stops.
-                    // In this case, we need to wait for the container to be removed before creating the new one.
-                    await this.waitContainerRemoved(
-                        currentContainer,
-                        container.name,
-                        container.id,
-                        logContainer,
-                    );
-                }
-
-                // Create new container
-                const newContainer = await this.createContainer(
-                    dockerApi,
-                    containerToCreateInspect,
-                    container.name,
-                    logContainer,
-                );
-
-                // Start container if it was running
-                if (currentContainerState.Running) {
-                    await this.startContainer(
-                        newContainer,
-                        container.name,
-                        logContainer,
-                    );
-                }
-
-                // Remove previous image (only when updateKind is tag)
-                if (this.configuration.prune) {
-                    if (container.updateKind.kind === 'tag') {
-                        const oldImage = registry.getImageFullName(
-                            container.image,
-                            container.image.tag.value,
-                        );
-                        await this.removeImage(
-                            dockerApi,
-                            oldImage,
-                            logContainer,
-                        );
-                    } else if (
-                        container.updateKind.kind === 'digest' &&
-                        container.image.digest.repo
-                    ) {
-                        // For digest updates, remove the old image by its
-                        // repo digest reference so the new pull is kept.
-                        try {
-                            const oldImage = registry.getImageFullName(
-                                container.image,
-                                container.image.digest.repo,
-                            );
-                            await this.removeImage(
-                                dockerApi,
-                                oldImage,
-                                logContainer,
-                            );
-                        } catch (e) {
-                            logContainer.debug(
-                                `Unable to remove previous digest image (${e.message})`,
-                            );
-                        }
-                    }
-                }
-
-                // Notify that this container has been updated so notification
-                // triggers can dismiss previously sent messages.
-                await emitContainerUpdateApplied(fullName(container));
-            }
-        } else {
+        if (!currentContainer) {
             logContainer.warn(
                 'Unable to update the container because it does not exist',
             );
+            return;
         }
+
+        const currentContainerSpec = await this.inspectContainer(
+            currentContainer,
+            logContainer,
+        );
+
+        // Try to remove previous pulled images
+        if (this.configuration.prune) {
+            await this.pruneImages(
+                dockerApi,
+                registry,
+                container,
+                logContainer,
+            );
+        }
+
+        // Pull new image ahead of time
+        await this.pullImage(dockerApi, auth, newImage, logContainer);
+
+        // Dry-run?
+        if (this.configuration.dryrun) {
+            logContainer.info(
+                'Do not replace the existing container because dry-run mode is enabled',
+            );
+            return;
+        }
+
+        await this.stopAndRemoveContainer(
+            currentContainer,
+            currentContainerSpec,
+            container,
+            logContainer,
+        );
+
+        await this.recreateContainer(
+            dockerApi,
+            currentContainerSpec,
+            newImage,
+            container,
+            logContainer,
+        );
+
+        await this.cleanupOldImages(
+            dockerApi,
+            registry,
+            container,
+            logContainer,
+        );
+
+        // Notify that this container has been updated so notification
+        // triggers can dismiss previously sent messages.
+        await emitContainerUpdateApplied(fullName(container));
     }
 
     /**

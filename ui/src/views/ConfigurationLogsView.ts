@@ -1,10 +1,12 @@
 import ConfigurationItem from "@/components/ConfigurationItem.vue";
+import ApplicationLogs from "@/components/ApplicationLogs.vue";
 import { getLog } from "@/services/log";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   components: {
     ConfigurationItem,
+    ApplicationLogs,
   },
   data() {
     return {
@@ -15,8 +17,9 @@ export default defineComponent({
   computed: {
     configurationItem() {
       return {
-        name: "logs",
-        icon: "mdi-bug",
+        type: "logs",
+        name: "configuration",
+        icon: "mdi-console",
         configuration: {
           level: this.log.level,
         },

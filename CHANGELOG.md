@@ -7,6 +7,16 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 
 ---
 
+## 1.1.0
+
+### Features
+
+- **Application log viewer** — New Configuration > Logs page with a terminal-style viewer for drydock's own runtime logs (startup, polling, registry checks, trigger events, errors). Backed by an in-memory ring buffer (last 1,000 entries) exposed via `GET /api/log/entries`. Supports level filtering (debug/info/warn/error), configurable tail count (50/100/500/1,000), color-coded output, and auto-scroll to newest entries. An info tooltip shows the configured server log level.
+- **Agent log source selector** — When agents are configured, a "Source" dropdown appears in the log viewer to switch between the controller's own logs and any connected agent's logs. Disconnected agents are shown but disabled. Agent logs are proxied via `GET /api/agents/:name/log/entries`.
+- **Container log viewer** — New "Logs" tab in the container detail expansion panel to view container stdout/stderr output directly in the UI with tail control and refresh.
+
+---
+
 ## 1.0.2
 
 ### Bug Fixes
@@ -150,7 +160,7 @@ First semver release. Drydock adopts semantic versioning starting with this rele
 - **DHI registry** — New `dhi.io` registry provider with matcher, auth flow, and docs.
 - **Custom URL icons** — Support URL-based icons via `dd.display.icon` label.
 - **Version skip** — Skip specific versions in the UI.
-- **Log viewer** — In-app log viewer.
+- **Log viewer** — In-app container log viewer. View Docker container stdout/stderr output directly in the UI via a new "Logs" tab on each container. Supports configurable tail line count (50/100/500), manual refresh, and Docker stream demultiplexing. Works for both local and remote agent containers.
 - **Semver tag recovery** — Recover include-filter mismatched semver tags from watchers. Extended to advise best semver tag when current tag is non-semver (e.g., `latest`).
 - **Dashboard update chips** — Replaced verbose update status text with compact colored chips: green "up to date" or warning "N update(s)" (clickable).
 

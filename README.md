@@ -9,7 +9,7 @@
 </div>
 
 <p align="center">
-  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-1.0.2-blue" alt="Version"></a>
+  <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-1.1.0-blue" alt="Version"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-informational?logo=linux&logoColor=white" alt="Multi-arch"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-C9A227" alt="License MIT"></a>
@@ -122,7 +122,7 @@ docker pull ghcr.io/codeswhat/drydock:latest
 Auto-detect running containers and check for image updates across registries
 </td>
 <td align="center" width="33%">
-<h3>17 Notification Triggers</h3>
+<h3>16 Notification Triggers</h3>
 Slack, Discord, Telegram, SMTP, MQTT, HTTP webhooks, Gotify, NTFY, and more
 </td>
 <td align="center" width="33%">
@@ -155,7 +155,7 @@ Built-in /metrics endpoint with optional auth bypass for monitoring stacks
 </td>
 <td align="center" width="33%">
 <h3>In-App Log Viewer</h3>
-Browse application logs directly in the web UI
+Browse container and application logs in the web UI with level filtering, agent source selection, and tail control
 </td>
 </tr>
 </table>
@@ -188,7 +188,7 @@ Browse application logs directly in the web UI
 | **DHI registry** | `dhi.io` registry provider |
 | **Custom URL icons** | URL-based icons via `dd.display.icon` label |
 | **Version skip UI** | Skip specific versions from the web interface |
-| **In-app log viewer** | Browse logs in the UI |
+| **In-app log viewer** | View container stdout/stderr logs and application runtime logs with level filtering and agent source selection |
 | **Semver tag recovery** | Recover mismatched semver tags from include filters |
 | **Per-image config presets** | `imgset` defaults for per-image configuration |
 
@@ -235,6 +235,7 @@ Browse application logs directly in the web UI
 | GitLab | `gitlab` | `DD_REGISTRY_GITLAB_{name}_TOKEN` |
 | GitHub (GHCR) | `ghcr` | `DD_REGISTRY_GHCR_{name}_TOKEN` |
 | Gitea / Forgejo | `gitea` | `DD_REGISTRY_GITEA_{name}_LOGIN`, `_PASSWORD` |
+| TrueForge | `trueforge` | `DD_REGISTRY_TRUEFORGE_{name}_NAMESPACE`, `_ACCOUNT`, `_TOKEN` |
 | Custom (any v2) | `custom` | `DD_REGISTRY_CUSTOM_{name}_URL` + optional auth |
 
 See [Registry docs](docs/configuration/registries/README.md) for full configuration.
@@ -246,7 +247,7 @@ See [Registry docs](docs/configuration/registries/README.md) for full configurat
 ## Supported Triggers
 
 <details>
-<summary><strong>Notification triggers</strong> (17 providers)</summary>
+<summary><strong>Notification triggers</strong> (16 providers)</summary>
 
 All env vars use the `DD_` prefix; Docker labels use the `dd.` prefix.
 

@@ -143,11 +143,15 @@
             </v-tab>
             <v-tab>
               <span v-if="smAndUp">Container</span>
-              <IconRenderer 
+              <IconRenderer
                 :icon="container.displayIcon"
                 :size="24"
                 :margin-right="8"
               />
+            </v-tab>
+            <v-tab>
+              <span v-if="smAndUp">Logs</span>
+              <v-icon>mdi-text-box</v-icon>
             </v-tab>
             <v-tab v-if="container.error">
               <span v-if="smAndUp">Error</span>
@@ -172,6 +176,9 @@
             </v-window-item>
             <v-window-item>
               <container-detail :container="container" />
+            </v-window-item>
+            <v-window-item>
+              <container-logs :container="container" />
             </v-window-item>
             <v-window-item v-if="container.error">
               <container-error :error="container.error" />

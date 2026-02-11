@@ -132,6 +132,8 @@ config.global.stubs = {
   'v-window': { template: '<div class="v-window"><slot /></div>' },
   'v-window-item': { template: '<div class="v-window-item"><slot /></div>' },
   'v-dialog': { template: '<div class="v-dialog"><slot /></div>' },
+  'v-progress-circular': { template: '<div class="v-progress-circular"><slot /></div>' },
+  'v-alert': { template: '<div class="v-alert"><slot /></div>', props: ['type'] },
   'v-divider': { template: '<div class="v-divider"></div>' },
   'v-spacer': { template: '<div class="v-spacer"></div>' },
   'v-tooltip': { template: '<div class="v-tooltip"><slot /></div>' },
@@ -155,6 +157,8 @@ config.global.stubs = {
   'container-image': { template: '<div class="container-image"><slot /></div>' },
   'container-detail': { template: '<div class="container-detail"><slot /></div>' },
   'container-update': { template: '<div class="container-update"><slot /></div>' },
+  'container-logs': { template: '<div class="container-logs"><slot /></div>' },
+  'application-logs': { template: '<div class="application-logs"><slot /></div>' },
   'container-triggers': { template: '<div class="container-triggers"><slot /></div>' },
   'IconRenderer': { template: '<div class="icon-renderer"><slot /></div>' }
 };

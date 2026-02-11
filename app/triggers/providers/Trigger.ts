@@ -76,6 +76,124 @@ function parseMethodCall(
     return { objPath, method, rawArgs };
 }
 
+/** Allowed safe string/array methods for template expressions. */
+const ALLOWED_METHODS = new Set([
+    'substring',
+    'slice',
+    'toLowerCase',
+    'toUpperCase',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'replace',
+    'split',
+    'indexOf',
+    'lastIndexOf',
+    'startsWith',
+    'endsWith',
+    'includes',
+    'charAt',
+    'padStart',
+    'padEnd',
+    'repeat',
+    'toString',
+]);
+
+function evalTernary(
+    trimmed: string,
+    vars: Record<string, any>,
+): string | undefined {
+    const ternaryIdx = findTopLevelOperator(trimmed, isOperator('?'));
+    if (ternaryIdx === -1) return undefined;
+    const condition = trimmed.slice(0, ternaryIdx);
+    const rest = trimmed.slice(ternaryIdx + 1);
+    const colonIdx = findTopLevelOperator(rest, isOperator(':'));
+    if (colonIdx === -1) return undefined;
+    const consequent = rest.slice(0, colonIdx);
+    const alternate = rest.slice(colonIdx + 1);
+    const condVal = safeEvalExpr(condition, vars);
+    return condVal
+        ? String(safeEvalExpr(consequent, vars))
+        : String(safeEvalExpr(alternate, vars));
+}
+
+function evalLogicalAnd(
+    trimmed: string,
+    vars: Record<string, any>,
+): string | undefined {
+    const andIdx = findTopLevelOperator(trimmed, isOperator('&&'));
+    if (andIdx === -1) return undefined;
+    const left = trimmed.slice(0, andIdx);
+    const right = trimmed.slice(andIdx + 2);
+    const leftVal = safeEvalExpr(left, vars);
+    if (!leftVal) return leftVal;
+    return safeEvalExpr(right, vars);
+}
+
+function evalConcat(
+    trimmed: string,
+    vars: Record<string, any>,
+): string | undefined {
+    const plusIdx = findTopLevelOperator(trimmed, isPlusOperator);
+    if (plusIdx === -1) return undefined;
+    const left = trimmed.slice(0, plusIdx);
+    const right = trimmed.slice(plusIdx + 1);
+    return String(safeEvalExpr(left, vars)) + String(safeEvalExpr(right, vars));
+}
+
+function evalStringLiteral(trimmed: string): string | undefined {
+    if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+        return trimmed
+            .slice(1, -1)
+            .replace(/\\n/g, '\n')
+            .replace(/\\t/g, '\t')
+            .replace(/\\"/g, '"')
+            .replace(/\\'/g, "'");
+    }
+    return undefined;
+}
+
+function evalNumberLiteral(trimmed: string): any | undefined {
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+        return Number(trimmed);
+    }
+    return undefined;
+}
+
+function evalMethodCall(
+    trimmed: string,
+    vars: Record<string, any>,
+): string | undefined {
+    const methodMatch = parseMethodCall(trimmed);
+    if (!methodMatch) return undefined;
+    const { objPath, method, rawArgs } = methodMatch;
+    const target = safeEvalExpr(objPath, vars);
+    if (target != null && typeof target[method] === 'function') {
+        if (!ALLOWED_METHODS.has(method)) {
+            return '';
+        }
+        const args = rawArgs
+            ? rawArgs.split(',').map((a: string) => safeEvalExpr(a, vars))
+            : [];
+        return target[method](...args);
+    }
+    return '';
+}
+
+function evalPropertyPath(
+    trimmed: string,
+    vars: Record<string, any>,
+): string | undefined {
+    if (isValidPropertyPath(trimmed)) {
+        const val = resolvePath(vars, trimmed);
+        return val != null ? val : '';
+    }
+    return undefined;
+}
+
 /**
  * Safely evaluate a template expression against a known set of variables.
  *
@@ -93,106 +211,19 @@ function safeEvalExpr(
 ): string {
     const trimmed = expr.trim();
 
-    // --- ternary: condition ? consequent : alternate ---
-    // Find the top-level '?' that is not inside quotes or parens
-    const ternaryIdx = findTopLevel(trimmed, '?');
-    if (ternaryIdx !== -1) {
-        const condition = trimmed.slice(0, ternaryIdx);
-        const rest = trimmed.slice(ternaryIdx + 1);
-        const colonIdx = findTopLevel(rest, ':');
-        if (colonIdx !== -1) {
-            const consequent = rest.slice(0, colonIdx);
-            const alternate = rest.slice(colonIdx + 1);
-            const condVal = safeEvalExpr(condition, vars);
-            return condVal
-                ? String(safeEvalExpr(consequent, vars))
-                : String(safeEvalExpr(alternate, vars));
-        }
-    }
+    const evaluators = [
+        evalTernary,
+        evalLogicalAnd,
+        evalConcat,
+        evalStringLiteral,
+        evalNumberLiteral,
+        evalMethodCall,
+        evalPropertyPath,
+    ];
 
-    // --- logical AND: a && b ---
-    const andIdx = findTopLevel(trimmed, '&&');
-    if (andIdx !== -1) {
-        const left = trimmed.slice(0, andIdx);
-        const right = trimmed.slice(andIdx + 2);
-        const leftVal = safeEvalExpr(left, vars);
-        if (!leftVal) return leftVal;
-        return safeEvalExpr(right, vars);
-    }
-
-    // --- string concatenation with + ---
-    const plusIdx = findTopLevelPlus(trimmed);
-    if (plusIdx !== -1) {
-        const left = trimmed.slice(0, plusIdx);
-        const right = trimmed.slice(plusIdx + 1);
-        return String(safeEvalExpr(left, vars)) + String(safeEvalExpr(right, vars));
-    }
-
-    // --- string literal: "..." ---
-    if (
-        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-        (trimmed.startsWith("'") && trimmed.endsWith("'"))
-    ) {
-        return trimmed
-            .slice(1, -1)
-            .replace(/\\n/g, '\n')
-            .replace(/\\t/g, '\t')
-            .replace(/\\"/g, '"')
-            .replace(/\\'/g, "'");
-    }
-
-    // --- number literal ---
-    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
-        return Number(trimmed) as any;
-    }
-
-    // --- method call: path.method(args) ---
-    // Use string splitting instead of a complex regex to avoid ReDoS
-    const methodMatch = parseMethodCall(trimmed);
-    if (methodMatch) {
-        const objPath = methodMatch.objPath;
-        const method = methodMatch.method;
-        const rawArgs = methodMatch.rawArgs;
-        const target = safeEvalExpr(objPath, vars);
-        if (target != null && typeof target[method] === 'function') {
-            // Only allow safe string/array methods
-            const allowedMethods = [
-                'substring',
-                'slice',
-                'toLowerCase',
-                'toUpperCase',
-                'trim',
-                'trimStart',
-                'trimEnd',
-                'replace',
-                'split',
-                'indexOf',
-                'lastIndexOf',
-                'startsWith',
-                'endsWith',
-                'includes',
-                'charAt',
-                'padStart',
-                'padEnd',
-                'repeat',
-                'toString',
-            ];
-            if (!allowedMethods.includes(method)) {
-                return '';
-            }
-            const args = rawArgs
-                ? rawArgs.split(',').map((a: string) => safeEvalExpr(a, vars))
-                : [];
-            return target[method](...args);
-        }
-        return '';
-    }
-
-    // --- simple property path: container.updateKind.kind ---
-    // Use split-and-validate instead of a nested-group regex to avoid ReDoS
-    if (isValidPropertyPath(trimmed)) {
-        const val = resolvePath(vars, trimmed);
-        return val != null ? val : '';
+    for (const evaluator of evaluators) {
+        const result = evaluator(trimmed, vars);
+        if (result !== undefined) return result;
     }
 
     // Unsupported expression – return empty string for safety
@@ -200,42 +231,30 @@ function safeEvalExpr(
 }
 
 /**
- * Find the index of a top-level operator (not inside quotes or parentheses).
+ * Predicate factory for matching a fixed operator string at position i.
  */
-function findTopLevel(str: string, op: string): number {
-    let depth = 0;
-    let inDouble = false;
-    let inSingle = false;
-    for (let i = 0; i < str.length; i++) {
-        const ch = str[i];
-        if (ch === '\\') {
-            i++;
-            continue;
-        }
-        if (ch === '"' && !inSingle) {
-            inDouble = !inDouble;
-            continue;
-        }
-        if (ch === "'" && !inDouble) {
-            inSingle = !inSingle;
-            continue;
-        }
-        if (inDouble || inSingle) continue;
-        if (ch === '(') depth++;
-        if (ch === ')') depth--;
-        if (depth === 0 && str.slice(i, i + op.length) === op) {
-            return i;
-        }
-    }
-    return -1;
+function isOperator(op: string): (str: string, i: number) => boolean {
+    return (str, i) => str.slice(i, i + op.length) === op;
 }
 
 /**
- * Find the index of a top-level '+' that is not part of '++' and is not
- * inside quotes or parentheses. Skips '+' that looks like a numeric sign
- * after another operator.
+ * Predicate for matching a top-level '+' that is not part of '++' and has
+ * a non-whitespace token on the left (i.e. not a unary plus / numeric sign).
  */
-function findTopLevelPlus(str: string): number {
+function isPlusOperator(str: string, i: number): boolean {
+    if (str[i] !== '+' || str[i + 1] === '+') return false;
+    const left = str.slice(0, i).trim();
+    return left.length > 0;
+}
+
+/**
+ * Find the index of a top-level operator (not inside quotes or parentheses)
+ * that satisfies the given predicate.
+ */
+function findTopLevelOperator(
+    str: string,
+    predicate: (str: string, i: number) => boolean,
+): number {
     let depth = 0;
     let inDouble = false;
     let inSingle = false;
@@ -256,12 +275,8 @@ function findTopLevelPlus(str: string): number {
         if (inDouble || inSingle) continue;
         if (ch === '(') depth++;
         if (ch === ')') depth--;
-        if (depth === 0 && ch === '+' && str[i + 1] !== '+') {
-            // Make sure there is a non-whitespace token on the left
-            const left = str.slice(0, i).trim();
-            if (left.length > 0) {
-                return i;
-            }
+        if (depth === 0 && predicate(str, i)) {
+            return i;
         }
     }
     return -1;

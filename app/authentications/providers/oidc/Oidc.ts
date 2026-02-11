@@ -10,53 +10,73 @@ const OIDC_CHECKS_TTL_MS = 10 * 60 * 1000;
 const OIDC_MAX_PENDING_CHECKS = 5;
 const oidcSessionLocks = new Map<string, Promise<void>>();
 
-function normalizePendingChecks(rawChecks) {
-    const now = Date.now();
-    const pendingChecks = {};
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === 'string' && value.length > 0;
+}
 
-    if (rawChecks && typeof rawChecks === 'object') {
-        if (rawChecks.pending && typeof rawChecks.pending === 'object') {
-            Object.entries(rawChecks.pending).forEach(([state, check]: any) => {
-                if (
-                    typeof state === 'string' &&
-                    state &&
-                    check &&
-                    typeof check.codeVerifier === 'string' &&
-                    check.codeVerifier
-                ) {
-                    const createdAt =
-                        typeof check.createdAt === 'number'
-                            ? check.createdAt
-                            : now;
-                    if (now - createdAt <= OIDC_CHECKS_TTL_MS) {
-                        pendingChecks[state] = {
-                            codeVerifier: check.codeVerifier,
-                            createdAt,
-                        };
-                    }
-                }
-            });
+function isValidCheckEntry(state: unknown, check: any): boolean {
+    return (
+        isNonEmptyString(state) &&
+        !!check &&
+        isNonEmptyString(check.codeVerifier)
+    );
+}
+
+function collectValidChecks(pending: Record<string, any>, now: number) {
+    const result = {};
+    Object.entries(pending).forEach(([state, check]: any) => {
+        if (!isValidCheckEntry(state, check)) {
+            return;
         }
+        const createdAt =
+            typeof check.createdAt === 'number' ? check.createdAt : now;
+        if (now - createdAt <= OIDC_CHECKS_TTL_MS) {
+            result[state] = { codeVerifier: check.codeVerifier, createdAt };
+        }
+    });
+    return result;
+}
 
-        // Backward compatibility with previously persisted single-check shape.
-        if (
-            Object.keys(pendingChecks).length === 0 &&
-            typeof rawChecks.state === 'string' &&
-            rawChecks.state &&
-            typeof rawChecks.codeVerifier === 'string' &&
-            rawChecks.codeVerifier
-        ) {
-            pendingChecks[rawChecks.state] = {
+function convertLegacyFormat(rawChecks: any, now: number) {
+    if (
+        isNonEmptyString(rawChecks.state) &&
+        isNonEmptyString(rawChecks.codeVerifier)
+    ) {
+        return {
+            [rawChecks.state]: {
                 codeVerifier: rawChecks.codeVerifier,
                 createdAt: now,
-            };
-        }
+            },
+        };
     }
+    return {};
+}
 
-    const mostRecentChecks = Object.entries(pendingChecks)
+function limitToMostRecent(pendingChecks: Record<string, any>) {
+    const mostRecent = Object.entries(pendingChecks)
         .sort(([, c1]: any, [, c2]: any) => c2.createdAt - c1.createdAt)
         .slice(0, OIDC_MAX_PENDING_CHECKS);
-    return Object.fromEntries(mostRecentChecks);
+    return Object.fromEntries(mostRecent);
+}
+
+function normalizePendingChecks(rawChecks) {
+    const now = Date.now();
+
+    if (!rawChecks || typeof rawChecks !== 'object') {
+        return {};
+    }
+
+    let pendingChecks = {};
+    if (rawChecks.pending && typeof rawChecks.pending === 'object') {
+        pendingChecks = collectValidChecks(rawChecks.pending, now);
+    }
+
+    // Backward compatibility with previously persisted single-check shape.
+    if (Object.keys(pendingChecks).length === 0) {
+        pendingChecks = convertLegacyFormat(rawChecks, now);
+    }
+
+    return limitToMostRecent(pendingChecks);
 }
 
 async function withOidcSessionLock(sessionId: string, operation: any) {
