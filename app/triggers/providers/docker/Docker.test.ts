@@ -29,6 +29,25 @@ vi.mock('../../../store/backup', () => ({
   pruneOldBackups: vi.fn(),
 }));
 
+const mockRunHook = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/HookRunner.js', () => ({
+  runHook: mockRunHook,
+}));
+
+const mockStartHealthMonitor = vi.hoisted(() => vi.fn().mockReturnValue({ abort: vi.fn() }));
+vi.mock('./HealthMonitor.js', () => ({
+  startHealthMonitor: mockStartHealthMonitor,
+}));
+
+vi.mock('../../../store/audit.js', () => ({
+  insertAudit: vi.fn(),
+}));
+
+const mockAuditCounterInc = vi.hoisted(() => vi.fn());
+vi.mock('../../../prometheus/audit.js', () => ({
+  getAuditCounter: () => ({ inc: mockAuditCounterInc }),
+}));
+
 vi.mock('../../../registry', () => ({
   getState() {
     return {
@@ -918,4 +937,267 @@ test('getPrimaryNetworkName should return NetworkMode when it exists in network 
 test('getPrimaryNetworkName should return first network when NetworkMode not in list', () => {
   const container = { HostConfig: { NetworkMode: 'host' } };
   expect(docker.getPrimaryNetworkName(container, ['bridge', 'custom'])).toBe('bridge');
+});
+
+// --- Lifecycle hooks ---
+
+describe('lifecycle hooks', () => {
+  beforeEach(() => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: false };
+    docker.log = log;
+    stubTriggerFlow({ running: true });
+    mockRunHook.mockReset();
+    mockAuditCounterInc.mockReset();
+  });
+
+  test('trigger should run pre-hook before pull and post-hook after recreate', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 0, stdout: 'ok', stderr: '', timedOut: false });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.hook.pre': 'echo before', 'dd.hook.post': 'echo after' },
+      }),
+    );
+
+    expect(mockRunHook).toHaveBeenCalledTimes(2);
+    expect(mockRunHook).toHaveBeenCalledWith('echo before', expect.objectContaining({ label: 'pre-update' }));
+    expect(mockRunHook).toHaveBeenCalledWith('echo after', expect.objectContaining({ label: 'post-update' }));
+  });
+
+  test('trigger should not call hooks when no hook labels are set', async () => {
+    await docker.trigger(createTriggerContainer());
+
+    expect(mockRunHook).not.toHaveBeenCalled();
+  });
+
+  test('trigger should abort when pre-hook fails and hookPreAbort is true (default)', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'err', timedOut: false });
+
+    await expect(
+      docker.trigger(
+        createTriggerContainer({
+          labels: { 'dd.hook.pre': 'exit 1' },
+        }),
+      ),
+    ).rejects.toThrowError('Pre-update hook exited with code 1');
+
+    expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'hook-pre-failed' });
+  });
+
+  test('trigger should continue when pre-hook fails and hookPreAbort is false', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'err', timedOut: false });
+
+    await expect(
+      docker.trigger(
+        createTriggerContainer({
+          labels: { 'dd.hook.pre': 'exit 1', 'dd.hook.pre.abort': 'false' },
+        }),
+      ),
+    ).resolves.toBeUndefined();
+
+    expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'hook-pre-failed' });
+  });
+
+  test('trigger should abort when pre-hook times out and hookPreAbort is true', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 1, stdout: '', stderr: '', timedOut: true });
+
+    await expect(
+      docker.trigger(
+        createTriggerContainer({
+          labels: { 'dd.hook.pre': 'sleep 100', 'dd.hook.timeout': '500' },
+        }),
+      ),
+    ).rejects.toThrowError('Pre-update hook timed out after 500ms');
+  });
+
+  test('trigger should use wud.* labels as fallback', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 0, stdout: 'ok', stderr: '', timedOut: false });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'wud.hook.pre': 'echo legacy-pre', 'wud.hook.post': 'echo legacy-post' },
+      }),
+    );
+
+    expect(mockRunHook).toHaveBeenCalledWith('echo legacy-pre', expect.objectContaining({ label: 'pre-update' }));
+    expect(mockRunHook).toHaveBeenCalledWith('echo legacy-post', expect.objectContaining({ label: 'post-update' }));
+  });
+
+  test('trigger should not abort on post-hook failure', async () => {
+    mockRunHook
+      .mockResolvedValueOnce({ exitCode: 0, stdout: 'ok', stderr: '', timedOut: false })
+      .mockResolvedValueOnce({ exitCode: 1, stdout: '', stderr: 'post-err', timedOut: false });
+
+    await expect(
+      docker.trigger(
+        createTriggerContainer({
+          labels: { 'dd.hook.pre': 'echo before', 'dd.hook.post': 'exit 1' },
+        }),
+      ),
+    ).resolves.toBeUndefined();
+
+    expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'hook-pre-success' });
+    expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'hook-post-failed' });
+  });
+
+  test('trigger should emit hook-post-success audit on successful post-hook', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 0, stdout: 'done', stderr: '', timedOut: false });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.hook.post': 'echo done' },
+      }),
+    );
+
+    expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'hook-post-success' });
+  });
+
+  test('trigger should pass hook environment variables', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '', timedOut: false });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.hook.pre': 'echo $DD_CONTAINER_NAME' },
+      }),
+    );
+
+    expect(mockRunHook).toHaveBeenCalledWith(
+      'echo $DD_CONTAINER_NAME',
+      expect.objectContaining({
+        env: expect.objectContaining({
+          DD_CONTAINER_NAME: 'container-name',
+          DD_IMAGE_NAME: 'test/test',
+        }),
+      }),
+    );
+  });
+
+  test('trigger should use custom timeout from label', async () => {
+    mockRunHook.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '', timedOut: false });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.hook.pre': 'echo hi', 'dd.hook.timeout': '30000' },
+      }),
+    );
+
+    expect(mockRunHook).toHaveBeenCalledWith(
+      'echo hi',
+      expect.objectContaining({ timeout: 30000 }),
+    );
+  });
+});
+
+// --- Auto-rollback / health monitor integration ---
+
+describe('auto-rollback health monitor integration', () => {
+  beforeEach(() => {
+    docker.configuration = { ...configurationValid, dryrun: false, prune: false };
+    docker.log = log;
+    mockRunHook.mockReset();
+    mockStartHealthMonitor.mockReset();
+    mockStartHealthMonitor.mockReturnValue({ abort: vi.fn() });
+  });
+
+  test('trigger should start health monitor when dd.rollback.auto=true and HEALTHCHECK exists', async () => {
+    stubTriggerFlow({ running: true, inspectOverrides: { State: { Running: true, Health: { Status: 'healthy' } } } });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.rollback.auto': 'true' },
+      }),
+    );
+
+    expect(mockStartHealthMonitor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        containerId: '123456789',
+        containerName: 'container-name',
+        backupImageTag: '1.0.0',
+        window: 300000,
+        interval: 10000,
+      }),
+    );
+  });
+
+  test('trigger should NOT start health monitor when dd.rollback.auto is not set', async () => {
+    stubTriggerFlow({ running: true });
+
+    await docker.trigger(createTriggerContainer());
+
+    expect(mockStartHealthMonitor).not.toHaveBeenCalled();
+  });
+
+  test('trigger should NOT start health monitor when dd.rollback.auto=false', async () => {
+    stubTriggerFlow({ running: true });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.rollback.auto': 'false' },
+      }),
+    );
+
+    expect(mockStartHealthMonitor).not.toHaveBeenCalled();
+  });
+
+  test('trigger should warn when auto-rollback enabled but no HEALTHCHECK', async () => {
+    const warnSpy = vi.fn();
+    const infoSpy = vi.fn();
+    const debugSpy = vi.fn();
+    docker.log = { child: () => ({ warn: warnSpy, info: infoSpy, debug: debugSpy }) };
+
+    stubTriggerFlow({ running: true, inspectOverrides: { State: { Running: true } } });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: { 'dd.rollback.auto': 'true' },
+      }),
+    );
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Auto-rollback enabled but container has no HEALTHCHECK defined'),
+    );
+    expect(mockStartHealthMonitor).not.toHaveBeenCalled();
+  });
+
+  test('trigger should use custom window and interval from labels', async () => {
+    stubTriggerFlow({ running: true, inspectOverrides: { State: { Running: true, Health: { Status: 'healthy' } } } });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: {
+          'dd.rollback.auto': 'true',
+          'dd.rollback.window': '60000',
+          'dd.rollback.interval': '5000',
+        },
+      }),
+    );
+
+    expect(mockStartHealthMonitor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: 60000,
+        interval: 5000,
+      }),
+    );
+  });
+
+  test('trigger should use wud.* labels as fallback for auto-rollback', async () => {
+    stubTriggerFlow({ running: true, inspectOverrides: { State: { Running: true, Health: { Status: 'healthy' } } } });
+
+    await docker.trigger(
+      createTriggerContainer({
+        labels: {
+          'wud.rollback.auto': 'true',
+          'wud.rollback.window': '120000',
+          'wud.rollback.interval': '3000',
+        },
+      }),
+    );
+
+    expect(mockStartHealthMonitor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: 120000,
+        interval: 3000,
+      }),
+    );
+  });
 });

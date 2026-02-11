@@ -7,8 +7,12 @@ import {
   emitSelfUpdateStarting,
 } from '../../../event/index.js';
 import { fullName } from '../../../model/container.js';
+import { getAuditCounter } from '../../../prometheus/audit.js';
 import { getState } from '../../../registry/index.js';
+import * as auditStore from '../../../store/audit.js';
 import * as backupStore from '../../../store/backup.js';
+import { runHook } from '../../hooks/HookRunner.js';
+import { startHealthMonitor } from './HealthMonitor.js';
 import Trigger from '../Trigger.js';
 
 const PULL_PROGRESS_LOG_INTERVAL_MS = 2000;
@@ -614,6 +618,76 @@ class Docker extends Trigger {
 
       const currentContainerSpec = await this.inspectContainer(currentContainer, logContainer);
 
+      // Read hook labels from container
+      const hookPre =
+        container.labels?.['dd.hook.pre'] ?? container.labels?.['wud.hook.pre'];
+      const hookPost =
+        container.labels?.['dd.hook.post'] ?? container.labels?.['wud.hook.post'];
+      const hookPreAbort =
+        (
+          container.labels?.['dd.hook.pre.abort'] ??
+          container.labels?.['wud.hook.pre.abort'] ??
+          'true'
+        ).toLowerCase() === 'true';
+      const hookTimeout = Number.parseInt(
+        container.labels?.['dd.hook.timeout'] ??
+          container.labels?.['wud.hook.timeout'] ??
+          '60000',
+        10,
+      );
+
+      // Build environment variables for hooks
+      const hookEnv = {
+        DD_CONTAINER_NAME: container.name,
+        DD_CONTAINER_ID: container.id,
+        DD_IMAGE_NAME: container.image.name,
+        DD_IMAGE_TAG: container.image.tag.value,
+        DD_UPDATE_KIND: container.updateKind.kind,
+        DD_UPDATE_FROM: container.updateKind.localValue ?? '',
+        DD_UPDATE_TO: container.updateKind.remoteValue ?? '',
+      };
+
+      // Run pre-update hook
+      if (hookPre) {
+        const preResult = await runHook(hookPre, {
+          timeout: hookTimeout,
+          env: hookEnv,
+          label: 'pre-update',
+        });
+
+        if (preResult.exitCode !== 0 || preResult.timedOut) {
+          const details = preResult.timedOut
+            ? `Pre-update hook timed out after ${hookTimeout}ms`
+            : `Pre-update hook exited with code ${preResult.exitCode}: ${preResult.stderr}`;
+          auditStore.insertAudit({
+            id: '',
+            timestamp: new Date().toISOString(),
+            action: 'hook-pre-failed',
+            containerName: fullName(container),
+            containerImage: container.image.name,
+            status: 'error',
+            details,
+          });
+          getAuditCounter()?.inc({ action: 'hook-pre-failed' });
+          logContainer.warn(details);
+
+          if (hookPreAbort) {
+            throw new Error(details);
+          }
+        } else {
+          auditStore.insertAudit({
+            id: '',
+            timestamp: new Date().toISOString(),
+            action: 'hook-pre-success',
+            containerName: fullName(container),
+            containerImage: container.image.name,
+            status: 'success',
+            details: `Pre-update hook completed: ${preResult.stdout}`.trim(),
+          });
+          getAuditCounter()?.inc({ action: 'hook-pre-success' });
+        }
+      }
+
       // Detect self-update: check if container image name is 'drydock' or ends with '/drydock'
       const isSelfUpdate =
         container.image.name === 'drydock' || container.image.name.endsWith('/drydock');
@@ -665,7 +739,94 @@ class Docker extends Trigger {
         logContainer,
       );
 
+      // Run post-update hook (best-effort, never aborts)
+      if (hookPost) {
+        const postResult = await runHook(hookPost, {
+          timeout: hookTimeout,
+          env: hookEnv,
+          label: 'post-update',
+        });
+
+        if (postResult.exitCode !== 0 || postResult.timedOut) {
+          const details = postResult.timedOut
+            ? `Post-update hook timed out after ${hookTimeout}ms`
+            : `Post-update hook exited with code ${postResult.exitCode}: ${postResult.stderr}`;
+          auditStore.insertAudit({
+            id: '',
+            timestamp: new Date().toISOString(),
+            action: 'hook-post-failed',
+            containerName: fullName(container),
+            containerImage: container.image.name,
+            status: 'error',
+            details,
+          });
+          getAuditCounter()?.inc({ action: 'hook-post-failed' });
+          logContainer.warn(details);
+        } else {
+          auditStore.insertAudit({
+            id: '',
+            timestamp: new Date().toISOString(),
+            action: 'hook-post-success',
+            containerName: fullName(container),
+            containerImage: container.image.name,
+            status: 'success',
+            details: `Post-update hook completed: ${postResult.stdout}`.trim(),
+          });
+          getAuditCounter()?.inc({ action: 'hook-post-success' });
+        }
+      }
+
       await this.cleanupOldImages(dockerApi, registry, container, logContainer);
+
+      // Check for auto-rollback labels
+      const autoRollback =
+        (
+          container.labels?.['dd.rollback.auto'] ??
+          container.labels?.['wud.rollback.auto'] ??
+          'false'
+        ).toLowerCase() === 'true';
+      const rollbackWindow = Number.parseInt(
+        container.labels?.['dd.rollback.window'] ??
+          container.labels?.['wud.rollback.window'] ??
+          '300000',
+        10,
+      );
+      const rollbackInterval = Number.parseInt(
+        container.labels?.['dd.rollback.interval'] ??
+          container.labels?.['wud.rollback.interval'] ??
+          '10000',
+        10,
+      );
+
+      if (autoRollback) {
+        // Inspect the newly created container to check for HEALTHCHECK
+        const newContainer = await this.getCurrentContainer(dockerApi, container);
+        if (newContainer) {
+          const newContainerSpec = await this.inspectContainer(newContainer, logContainer);
+          const hasHealthcheck = !!newContainerSpec?.State?.Health;
+
+          if (!hasHealthcheck) {
+            logContainer.warn(
+              'Auto-rollback enabled but container has no HEALTHCHECK defined — skipping health monitoring',
+            );
+          } else {
+            logContainer.info(
+              `Starting health monitor (window=${rollbackWindow}ms, interval=${rollbackInterval}ms)`,
+            );
+            startHealthMonitor({
+              dockerApi,
+              containerId: container.id,
+              containerName: container.name,
+              backupImageTag: container.image.tag.value,
+              backupImageDigest: container.image.digest?.repo,
+              window: rollbackWindow,
+              interval: rollbackInterval,
+              triggerInstance: this,
+              log: logContainer,
+            });
+          }
+        }
+      }
 
       // Notify that this container has been updated so notification
       // triggers can dismiss previously sent messages.
