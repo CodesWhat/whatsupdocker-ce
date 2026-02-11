@@ -1,19 +1,20 @@
-# Changelog — drydock
+# Changelog
 
-This changelog covers all changes in **drydock** since forking from [getwud/wud](https://github.com/getwud/wud) upstream.
+All notable changes to this project will be documented in this file.
 
-**Fork point:** upstream post-8.1.1 (2025-11-27)
-**Upstream baseline:** WUD 8.1.1 + 65 merged PRs on `main` (Vue 3 migration, Alpine base image, Rocket.Chat trigger, threshold system, semver improvements, request→axios migration, and more)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+> **Fork point:** upstream post-8.1.1 (2025-11-27)
+> **Upstream baseline:** WUD 8.1.1 + 65 merged PRs on `main` (Vue 3 migration, Alpine base image, Rocket.Chat trigger, threshold system, semver improvements, request→axios migration, and more)
 
-## 1.2.0
+## [Unreleased]
 
-### Features
+### Added
 
 - **Grafana dashboard template** — Importable Grafana JSON dashboard with panels for overview stats, watcher activity, trigger execution, registry response times, and audit entries. Uses datasource templating for portable Prometheus configuration.
 - **Audit log backend** — `AuditEntry` model, LokiJS-backed store with pagination and pruning, `GET /api/audit` endpoint with filtering, `dd_audit_entries_total` Prometheus counter, and automatic logging of container lifecycle events (update-available, update-applied, update-failed, rollback, preview, container-added, container-removed).
-- **Font Awesome 6 migration** — Replaced all Material Design Icons (`mdi-*`) with Font Awesome 6 equivalents. Configured Vuetify FA icon set, updated all service icon getters, component templates, and 54 test files. Removed `@mdi/font` dependency.
+- **Font Awesome 6 migration** — Replaced all Material Design Icons (`mdi-*`) with Font Awesome 6 equivalents. Configured Vuetify FA icon set, updated all service icon getters, component templates, and 54 test files.
 - **Dry-run preview API** — `POST /api/containers/:id/preview` returns what an update would do (current/new image, update kind, running state, networks) without performing it.
 - **Pre-update image backup and rollback** — LokiJS-backed backup store records container image state before each Docker trigger update. `GET /api/backups`, `GET /api/:id/backups`, and `POST /api/:id/rollback` endpoints. Configurable retention via `DD_TRIGGER_DOCKER_{name}_BACKUP_COUNT` (default 3).
 - **Frontend wiring** — Preview dialog with loading/error/success states wired to dry-run API. Full audit log table with filtering, pagination, and responsive column hiding replacing the MonitoringHistory placeholder. Recent Activity dashboard card showing latest 5 audit entries.
@@ -24,8 +25,10 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 - **Webhook API for on-demand triggers** — Token-authenticated HTTP endpoints (`POST /api/webhook/watch`, `/watch/:name`, `/update/:name`) for CI/CD integration. Gated by `DD_SERVER_WEBHOOK_ENABLED` and `DD_SERVER_WEBHOOK_TOKEN`. Includes rate limiting (30 req/15min), audit logging, Prometheus counter (`dd_webhook_total`), and a configuration info panel on the Server settings page.
 - **Container grouping / stack views** — New `GET /api/containers/groups` endpoint returns containers grouped by stack. Supports explicit group assignment via `dd.group` / `wud.group` labels with automatic fallback to `com.docker.compose.project`. Collapsible `ContainerGroup` component with group header showing name, container count, and update badges. "Smart group" filter option for automatic stack detection (`dd.group` > `wud.group` > compose project). "Update all in group" action to batch-update all containers in a group.
 - **Graceful self-update UI** — Self-update detection when drydock updates its own container. Server-Sent Events (SSE) endpoint at `/api/events/ui` for real-time browser push. Full-screen DVD-style bouncing whale logo overlay during self-updates with smooth phase transitions (updating, restarting, reconnecting, ready). Automatic health polling and page reload after restart.
+- **Lifecycle hooks (pre/post-update commands)** — Execute shell commands before and after container updates via `dd.hook.pre` and `dd.hook.post` labels. Pre-hook failures abort the update by default (`dd.hook.pre.abort=true`). Configurable timeout via `dd.hook.timeout` (default 60s). Environment variables exposed: `DD_CONTAINER_NAME`, `DD_IMAGE_NAME`, `DD_TAG_OLD`, `DD_TAG_NEW`, etc. Includes audit logging for hook success/failure and UI display in ContainerDetail panel.
+- **Automatic rollback on health check failure** — Monitors container health after updates and automatically rolls back to the previous image if the container becomes unhealthy. Configured via `dd.rollback.auto=true`, `dd.rollback.window` (default 300s), and `dd.rollback.interval` (default 10s). Requires Docker HEALTHCHECK on the container. Uses existing backup store for rollback images. Includes audit logging and UI display in ContainerDetail panel.
 
-### Bug Fixes
+### Fixed
 
 - **Navigation drawer not visible** — Used computed model for permanent/temporary modes; passing `model-value=undefined` caused Vuetify to treat the drawer as closed.
 - **Dark theme missing colors** — Added `info`, `success`, and `warning` color definitions to the dark theme.
@@ -33,60 +36,53 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 - **Invalid `text-body-3` CSS class** — Replaced with valid `text-body-2` in ConfigurationItem and TriggerDetail.
 - **404 catch-all route** — Added catch-all redirect to home for unknown routes.
 
-### Code Quality
+### Changed
 
-- **Dead code removal** — Deleted unused `AppFooter` and `ConfigurationStateView` components, dead computed props (`filteredUpdates`, `upToDateCount`), duplicate `isTriggering` reset, dead `mdi:` prefix replacement in IconRenderer, dead `container-deleted` listener, and Maintenance Windows placeholder.
 - **Audit event wiring** — Wired audit log entries and Prometheus counter increments for rollback, preview, container-added, container-removed, update-applied, and update-failed events. Registered `ContainerUpdateFailed` event with try/catch in Docker trigger.
 - **Test updates** — 20+ test files updated for v1.2.0 icon changes, CSS selectors, HomeView data model, theme toggle relocation, and audit module wiring. Removed obsolete specs.
-- **Removed `@mdi/font` dependency** — Dropped unused Material Design Icons package.
 - **Updated doc icon examples** — Switched icon examples to prefer `hl:` and `si:` prefixes over deprecated `mdi:`.
 
----
+### Removed
 
-## 1.1.1
+- **Dead code removal** — Deleted unused `AppFooter` and `ConfigurationStateView` components, dead computed props (`filteredUpdates`, `upToDateCount`), duplicate `isTriggering` reset, dead `mdi:` prefix replacement in IconRenderer, dead `container-deleted` listener, and Maintenance Windows placeholder.
+- **Removed `@mdi/font` dependency** — Dropped unused Material Design Icons package.
 
-### Bug Fixes
+## [1.1.1] - 2026-02-11
+
+### Fixed
 
 - **Read-only Docker socket support** — Privilege drop prevented non-root users from connecting to `:ro` socket mounts. Added `DD_RUN_AS_ROOT=true` env var to skip the drop, improved EACCES error messages, and documented socket proxy as the recommended secure alternative. (Fixes #38)
 - **Prometheus container gauge agent label** — Fixed missing `agent` label in the container gauge initial labelset, preventing "not previously registered" errors when agents report containers. (Fixes #39)
 - **Snackbar toast transparency** — Used `flat` variant for solid background on toast notifications.
 - **Container filter responsive layout** — Fixed filter breakpoints for consistent responsive behavior. (#40)
 
----
+## [1.1.0] - 2026-02-10
 
-## 1.1.0
-
-### Features
+### Added
 
 - **Application log viewer** — New Configuration > Logs page with a terminal-style viewer for drydock's own runtime logs (startup, polling, registry checks, trigger events, errors). Backed by an in-memory ring buffer (last 1,000 entries) exposed via `GET /api/log/entries`. Supports level filtering (debug/info/warn/error), configurable tail count (50/100/500/1,000), color-coded output, and auto-scroll to newest entries. An info tooltip shows the configured server log level.
 - **Agent log source selector** — When agents are configured, a "Source" dropdown appears in the log viewer to switch between the controller's own logs and any connected agent's logs. Disconnected agents are shown but disabled. Agent logs are proxied via `GET /api/agents/:name/log/entries`.
 - **Container log viewer** — New "Logs" tab in the container detail expansion panel to view container stdout/stderr output directly in the UI with tail control and refresh.
 
----
+## [1.0.2] - 2026-02-10
 
-## 1.0.2
-
-### Bug Fixes
+### Fixed
 
 - **Registry and trigger crashes in agent mode** — `getSummaryTags()` and `getTriggerCounter()` also return `undefined` in agent mode. Added optional chaining to all remaining Prometheus call sites so agent mode doesn't crash when processing containers or firing triggers. (Fixes #33)
 
----
+## [1.0.1] - 2026-02-10
 
-## 1.0.1
-
-### Bug Fixes
+### Fixed
 
 - **Prometheus gauge crash in agent mode** — `getWatchContainerGauge()` returns `undefined` in agent mode since Prometheus is not initialized. Added optional chaining so the `.set()` call is safely skipped. This was the root cause of containers not being discovered in agent mode. (Fixes #23, #31)
 
-### Infrastructure
+### Changed
 
 - **su-exec privilege dropping** — Entrypoint detects the docker socket GID and drops from root to the `node` user via `su-exec` when possible. Stays root only for GID 0 sockets (Docker Desktop / OrbStack). (Refs #25)
 - **tini init system** — Added `tini` as PID 1 for proper signal forwarding to the Node process.
 - **Graceful shutdown** — `SIGINT`/`SIGTERM` handlers now call `process.exit()` after cleanup so the container actually stops.
 
----
-
-## 1.0.0
+## [1.0.0] - 2026-02-10
 
 First semver release. Drydock adopts semantic versioning starting with this release, replacing the previous CalVer (YYYY.MM.PATCH) scheme.
 
@@ -97,99 +93,67 @@ First semver release. Drydock adopts semantic versioning starting with this rele
 - **Workflow hardening** — Set top-level `permissions: read-all` in `release.yml` and `codeql.yml`. Pinned all CodeQL action refs to commit hashes. Added CodeQL config to exclude `js/clear-text-logging` false positives.
 - **CVE-2026-24001** — Updated `diff` dependency in e2e tests (4.0.2 → 4.0.4).
 
-### Testing
+### Changed
 
 - **+285 UI tests** — 15 new spec files and 7 expanded existing specs covering configuration views, container components, trigger detail, services, router, and app shell. UI test count: 163 → 285.
 - **+59 app tests** — New edge-case tests for ReDoS guard branches, `parseMethodCall` parsing, and Docker watcher label resolution. App test count: 1,254 → 1,313.
-
-### Code Quality
-
 - **Complexity refactors** — Extracted helpers from high-complexity functions: `parseTriggerList`/`applyPolicyAction` (`container.ts`), `resolveLabelsFromContainer`/`mergeConfigWithImgset` (`Docker.ts`).
 - **Biome lint fixes** — `import type` corrections and unused variable cleanup across 17 files.
-- **Removed legacy `vue.config.js`** — Dead Vue CLI config file; project uses Vite.
 - **Fixed doc links** — Corrected broken fragment links in `docs/_coverpage.md`.
 
----
+### Removed
 
-## 2026.2.3
+- **Removed legacy `vue.config.js`** — Dead Vue CLI config file; project uses Vite.
 
-### Bug Fixes
+## [2026.2.3] - 2026-02-10
+
+### Fixed
 
 - **NTFY trigger auth 401** — Bearer token auth used unsupported `axios.auth.bearer` property; now sends `Authorization: Bearer <token>` header. Basic auth property names corrected to `username`/`password`. (#27)
 - **Agent mode missing /health** — Added unauthenticated `/health` endpoint to the agent server, mounted before the auth middleware so Docker healthchecks work without the agent secret. (#27)
 
-### Infrastructure
+### Changed
 
 - **Lefthook pre-push hooks** — Added `lefthook.yml` with pre-push checks (lint + build + test).
-
-### Maintenance
-
 - **Removed startup warning** — Removed "Known Issue" notice from README now that container startup issues are resolved.
 
----
+## [2026.2.2] - 2026-02-10
 
-## 2026.2.2
-
-### Security / CI
+### Security
 
 - **Cosign keyless signing** — Container image releases are now signed with Sigstore cosign keyless signing for supply chain integrity.
 - **Least-privilege workflow permissions** — Replaced overly broad `read-all` with minimum specific permissions across all CI/CD workflows.
 - **CodeQL and Scorecard fixes** — Resolved all high-severity CodeQL and OpenSSF Scorecard security alerts.
 - **Pinned CI actions** — All CI action references pinned to commit hashes with Dockerfile base image digest.
 
-### Testing
-
-- **97% test coverage** — Boosted from 76% to 97% with 449 new tests (1,254 total across 95 test files).
-- **Fuzz testing** — Added property-based fuzz tests with fast-check for Docker image name parsing.
-
-### Code Quality
-
-- **Static analysis fixes** — Optional chaining, `String#replaceAll()`, `readonly` modifiers, `Number.NaN`, concise regex syntax, removed unused imports, moved functions to outer scope.
-- **Reduced code duplication** — Refactored duplicated code in registries, triggers, and store test files flagged by SonarCloud.
-
-### Dependencies
-
-- **Pino logging** — Replaced bunyan with pino to eliminate vulnerable transitive dependencies. Added pino-pretty for human-readable log output.
-
-### Maintenance
-
-- **Renamed wud to drydock** — Project references updated from upstream naming across Dockerfile, entrypoint, package files, scripts, and test fixtures.
-- **CONTRIBUTING.md** — Added contributor guidelines.
-- **OpenSSF Best Practices badge** — Added to README.
-- **SonarCloud integration** — Added project configuration.
-
-### Features
+### Added
 
 - **Auto-dismiss notifications after container update** — New `resolvenotifications` option for triggers (default: `false`). When enabled, notification triggers automatically delete the sent message after the Docker trigger successfully updates the container. Implemented for Gotify via its `deleteMessage` API. Other providers (Slack, Discord, ntfy) can add support by overriding the new `dismiss()` method on the base Trigger class. New `containerUpdateApplied` event emitted by the Docker trigger on successful update.
 
-### Bug Fixes
+### Fixed
 
 - **Agent mode Prometheus crash** — Guard `getWatchContainerGauge().set()` against undefined in Agent mode where Prometheus is not initialized, fixing "Cannot read properties of undefined (reading 'set')" crash (#23)
 - **Sanitize version logging** — Sanitize version strings from env vars before logging to resolve CodeQL clear-text-logging alerts in `index.ts` and `store/migrate.ts`
 - **Broken event test assertion** — Fix `expect()` without matcher in event test
 
-### Infrastructure
+### Changed
 
-- **Multi-arch container images** — Docker images now built for both `linux/amd64` and `linux/arm64` architectures, published to GHCR
-- **Lefthook pre-push hooks** — Added lefthook config with pre-push checks (lint + build + test) and `npm run check` convenience script
-- **CodeQL query exclusion** — Exclude `js/clear-text-logging` query (false positives on DD_VERSION env var)
+- **97% test coverage** — Boosted from 76% to 97% with 449 new tests (1,254 total across 95 test files).
+- **Fuzz testing** — Added property-based fuzz tests with fast-check for Docker image name parsing.
+- **Static analysis fixes** — Optional chaining, `String#replaceAll()`, `readonly` modifiers, `Number.NaN`, concise regex syntax, removed unused imports, moved functions to outer scope.
+- **Reduced code duplication** — Refactored duplicated code in registries, triggers, and store test files flagged by SonarCloud.
+- **Pino logging** — Replaced bunyan with pino to eliminate vulnerable transitive dependencies. Added pino-pretty for human-readable log output.
+- **Renamed wud to drydock** — Project references updated from upstream naming across Dockerfile, entrypoint, package files, scripts, and test fixtures.
+- **CONTRIBUTING.md** — Added contributor guidelines.
+- **OpenSSF Best Practices badge** — Added to README.
+- **SonarCloud integration** — Added project configuration.
+- **Multi-arch container images** — Docker images now built for both `linux/amd64` and `linux/arm64` architectures, published to GHCR.
+- **Lefthook pre-push hooks** — Added lefthook config with pre-push checks (lint + build + test) and `npm run check` convenience script.
+- **CodeQL query exclusion** — Exclude `js/clear-text-logging` query (false positives on DD_VERSION env var).
 
----
+## [2026.1.0]
 
-## 2026.1.0 (398 files changed)
-
-### Architecture / Tooling
-
-- **TypeScript migration (app)** — Entire backend converted from JavaScript to TypeScript with ES Modules (`NodeNext`). 232 `.ts` files added/renamed, all `.js` source files removed.
-- **TypeScript migration (UI)** — Vue 3 frontend migrated from JS to TS. 29 `.vue` files updated, component props/emits typed.
-- **Jest → Vitest (app)** — All 64 app test files (664 tests) migrated from Jest to Vitest. Test runner unified across app and UI.
-- **Jest → Vitest (UI)** — UI unit tests migrated from Jest to Vitest with improved coverage.
-- **Vitest 4 + modern deps** — Upgraded vitest 3→4, uuid 11→13, flat 5→6, snake-case 3→4. Fixed vitest 4 mock constructor breaking change.
-- **ESM baseline** — Cut over to `NodeNext` module resolution. Removed Babel, added `tsconfig.json`.
-- **Biome linter** — Replaced ESLint with Biome for formatting and linting.
-- **CI cleanup** — Removed Code Climate config, renamed Travis config to `ci.config.yml`.
-
-### Features
+### Added
 
 - **Agent mode** — Distributed monitoring with remote agent architecture. Agent components, SSE-based communication, dedicated API routes.
 - **OIDC token lifecycle** — Remote watcher HTTPS auth with `Basic` + `Bearer` token support. TLS/mTLS compatibility for `DD_WATCHER_{name}_HOST`.
@@ -211,7 +175,7 @@ First semver release. Drydock adopts semantic versioning starting with this rele
 - **Semver tag recovery** — Recover include-filter mismatched semver tags from watchers. Extended to advise best semver tag when current tag is non-semver (e.g., `latest`).
 - **Dashboard update chips** — Replaced verbose update status text with compact colored chips: green "up to date" or warning "N update(s)" (clickable).
 
-### Bug Fixes
+### Fixed
 
 - **eval() code injection** — Replaced `eval()` in trigger template rendering with safe expression evaluator supporting property paths, method allowlist, ternaries, and string concatenation.
 - **Digest-only update prune crash** — Docker trigger prune logic now correctly excludes current image during digest-only updates and handles post-prune errors gracefully.
@@ -234,6 +198,17 @@ First semver release. Drydock adopts semantic versioning starting with this rele
 - **Docker rename event not captured** — Added `rename` to Docker event listener so container name updates are captured after compose recreates.
 - **UI duplicate drawer logo** — Removed duplicate logo in navigation drawer.
 
+### Changed
+
+- **TypeScript migration (app)** — Entire backend converted from JavaScript to TypeScript with ES Modules (`NodeNext`). 232 `.ts` files added/renamed, all `.js` source files removed.
+- **TypeScript migration (UI)** — Vue 3 frontend migrated from JS to TS. 29 `.vue` files updated, component props/emits typed.
+- **Jest → Vitest (app)** — All 64 app test files (664 tests) migrated from Jest to Vitest. Test runner unified across app and UI.
+- **Jest → Vitest (UI)** — UI unit tests migrated from Jest to Vitest with improved coverage.
+- **Vitest 4 + modern deps** — Upgraded vitest 3→4, uuid 11→13, flat 5→6, snake-case 3→4. Fixed vitest 4 mock constructor breaking change.
+- **ESM baseline** — Cut over to `NodeNext` module resolution. Removed Babel, added `tsconfig.json`.
+- **Biome linter** — Replaced ESLint with Biome for formatting and linting.
+- **CI cleanup** — Removed Code Climate config, renamed Travis config to `ci.config.yml`.
+
 ### Dependencies
 
 | Package | Upstream (8.1.1) | drydock |
@@ -246,18 +221,7 @@ First semver release. Drydock adopts semantic versioning starting with this rele
 | typescript | — | 5.9 |
 | biome | — | 2.3 |
 
-### Stats
-
-| Metric | Value |
-| --- | --- |
-| Files changed | 392 |
-| Insertions | +25,725 |
-| Deletions | -25,995 |
-| App tests | 709 (vitest) |
-| UI tests | 163 (vitest) |
-| Total tests | 872 |
-
----
+> **Stats:** 392 files changed, +25,725 insertions, -25,995 deletions, 872 total tests (709 app + 163 UI).
 
 ## Upstream Backports
 
@@ -281,3 +245,13 @@ Remaining upstream-only changes (not ported — not applicable to drydock):
 | Fix prettier | drydock uses Biome |
 | Fix codeberg tests | Covered by drydock's own tests |
 | Update changelog | Upstream-specific |
+
+[Unreleased]: https://github.com/CodesWhat/drydock/compare/1.1.2...HEAD
+[1.1.1]: https://github.com/CodesWhat/drydock/compare/v1.1.0...1.1.1
+[1.1.0]: https://github.com/CodesWhat/drydock/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/CodesWhat/drydock/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/CodesWhat/drydock/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
+[2026.2.3]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
+[2026.2.2]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
+[2026.1.0]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0

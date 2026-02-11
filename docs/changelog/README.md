@@ -11,6 +11,8 @@
 - :star: [UI/API] - Add container grouping by stack with `GET /api/containers/groups` endpoint, `dd.group` / `wud.group` labels, and compose project auto-detection
 - :star: [UI] - Add collapsible `ContainerGroup` component with group header, update badges, and "Update all in group" bulk action
 - :star: [UI] - Add graceful self-update overlay with DVD-style bouncing whale logo, SSE push via `/api/events/ui`, and automatic health polling with page reload
+- :star: [TRIGGER] - Add lifecycle hooks for pre/post-update shell commands (`dd.hook.pre`, `dd.hook.post`) with abort-on-failure and configurable timeout
+- :star: [TRIGGER] - Add automatic rollback on health check failure (`dd.rollback.auto`) with configurable monitoring window and polling interval
 
 ## 8.1.1
 - :fire: [TELEGRAM] - Fix markdown character escape

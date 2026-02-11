@@ -39,7 +39,7 @@
 - [Quick Start](#quick-start)
 - [Screenshots](#screenshots)
 - [Features](#features)
-- [Architecture](#architecture)
+- [How drydock Compares](#how-drydock-compares)
 - [Supported Registries](#supported-registries)
 - [Supported Triggers](#supported-triggers)
 - [Authentication](#authentication)
@@ -172,19 +172,37 @@ Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles
 
 ---
 
-## Architecture
+## How drydock Compares
 
 > For the full itemized changelog, see [CHANGELOG.md](CHANGELOG.md).
 
-| | WUD | drydock |
-|---|---|---|
-| **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
-| **Test runner** | Jest | Vitest 4 |
-| **Linter** | ESLint + Prettier | Biome |
-| **Express** | 4.x | 5.x |
-| **Build system** | Babel | `tsc` (no transpiler) |
+| Feature | drydock | Watchtower | WUD | Diun | Ouroboros |
+|---------|---------|------------|-----|------|-----------|
+| Web UI / Dashboard | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Auto-update containers | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Docker Compose updates | ✅ | ⚠️ | ✅ | ❌ | ❌ |
+| Notification triggers | 16 | ~18 (via Shoutrrr) | 14 | 17 | ~6 |
+| Registry providers | 15 | ⚠️ (any via Docker auth) | 8 | ⚠️ (any via regopts) | ⚠️ (any via Docker auth) |
+| OIDC / SSO authentication | ✅ | ❌ | ❌ | ❌ | ❌ |
+| REST API | ✅ | ⚠️ (update + metrics only) | ✅ | ⚠️ (gRPC) | ❌ |
+| Prometheus metrics | ✅ | ✅ | ✅ | ❌ | ✅ |
+| MQTT / Home Assistant | ✅ | ❌ | ✅ | ✅ | ❌ |
+| Image backup & rollback | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Container grouping / stacks | ✅ | ⚠️ (linked containers) | ✅ | ❌ | ❌ |
+| Lifecycle hooks (pre/post) | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Webhook API for CI/CD | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Container start/stop/restart | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Distributed agents (remote hosts) | ✅ | ⚠️ (single remote host) | ❌ | ✅ (Docker/K8s/Swarm/Nomad) | ❌ |
+| Audit log | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Semver-aware updates | ✅ | ❌ | ✅ | ✅ | ❌ |
+| Digest watching | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Multi-arch image (amd64/arm64) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Actively maintained | ✅ | ❌ (archived Dec 2025) | ✅ | ✅ | ❌ (unmaintained) |
 
-### drydock-Only Features
+> Data based on publicly available documentation as of February 2026.
+> Contributions welcome if any information is inaccurate.
+
+### Additional Features vs WUD
 
 | Feature | Description |
 |---------|-------------|
@@ -208,6 +226,7 @@ Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles
 | **Font Awesome 6 icons** | Migrated from MDI to FA6 with support for `fab:`/`far:`/`fas:` prefix syntax |
 | **Container actions** | Start/stop/restart containers via API and UI, gated by `DD_SERVER_FEATURE_CONTAINERACTIONS` |
 | **Webhook API** | Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles and updates, gated by `DD_SERVER_WEBHOOK_ENABLED` and `DD_SERVER_WEBHOOK_TOKEN` |
+| **Lifecycle hooks** | Pre/post-update shell command hooks with configurable timeout |
 
 ### Bug Fixes (not in WUD)
 
@@ -219,6 +238,19 @@ Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles
 | Multi-network container recreate | Reconnects additional networks after recreation |
 | docker-compose post_start hooks | Hooks now execute after updates |
 | Express 5 wildcard routes | Named wildcard params for Express 5 compat |
+
+<details>
+<summary><strong>Tech stack: drydock vs WUD</strong></summary>
+
+| | WUD | drydock |
+|---|---|---|
+| **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
+| **Test runner** | Jest | Vitest 4 |
+| **Linter** | ESLint + Prettier | Biome |
+| **Express** | 4.x | 5.x |
+| **Build system** | Babel | `tsc` (no transpiler) |
+
+</details>
 
 ---
 
