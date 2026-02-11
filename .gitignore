@@ -109,6 +109,7 @@ dist/
 
 # Audit/findings files
 .audit/
+.research-findings.md
 
 # Playwright MCP
 .playwright-mcp/
