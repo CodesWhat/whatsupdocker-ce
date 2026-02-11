@@ -1,4 +1,4 @@
-import { ref, onMounted, defineComponent } from "vue";
+import { ref, computed, onMounted, defineComponent } from "vue";
 import { useTheme, useDisplay } from "vuetify";
 import { getContainerIcon } from "@/services/container";
 import { getRegistryIcon } from "@/services/registry";
@@ -22,6 +22,13 @@ export default defineComponent({
     const theme = useTheme();
     const { smAndDown } = useDisplay();
     const mini = ref(false);
+
+    // On desktop, drawer is always visible (permanent).
+    // On mobile, it's controlled by modelValue from the parent.
+    const drawerModel = computed({
+      get: () => smAndDown.value ? props.modelValue : true,
+      set: (val: boolean) => emit("update:modelValue", val),
+    });
 
     // Migrate legacy darkMode to themeMode
     if (localStorage.darkMode !== undefined && localStorage.themeMode === undefined) {
@@ -118,6 +125,7 @@ export default defineComponent({
       darkMode,
       themeMode,
       smAndDown,
+      drawerModel,
       containerIcon: getContainerIcon(),
       monitoringItems,
       monitoringItemsSorted: [...monitoringItems].sort((a, b) =>
