@@ -7,6 +7,7 @@ const log = logger.child({ component: 'store' });
 import { getStoreConfiguration } from '../configuration/index.js';
 
 import * as app from './app.js';
+import * as audit from './audit.js';
 import * as container from './container.js';
 
 // Store Configuration Schema
@@ -29,6 +30,7 @@ let db;
 
 function createCollections() {
     app.createCollections(db);
+    audit.createCollections(db);
     container.createCollections(db);
 }
 

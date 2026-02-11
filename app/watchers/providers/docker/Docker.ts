@@ -52,7 +52,11 @@ import {
     type ContainerImage,
 } from '../../../model/container.js';
 import * as registry from '../../../registry/index.js';
-import { getWatchContainerGauge } from '../../../prometheus/watcher.js';
+import {
+    getWatchContainerGauge,
+    getMaintenanceSkipCounter,
+} from '../../../prometheus/watcher.js';
+import { isInMaintenanceWindow } from './maintenance.js';
 import Watcher from '../../Watcher.js';
 import type { ComponentConfiguration } from '../../../registry/Component.js';
 
@@ -78,6 +82,8 @@ export interface DockerWatcherConfiguration extends ComponentConfiguration {
     watchdigest?: any;
     watchevents: boolean;
     watchatstart: boolean;
+    maintenancewindow?: string;
+    maintenancewindowtz: string;
     imgset?: Record<string, any>;
 }
 
@@ -945,6 +951,8 @@ class Docker extends Watcher {
             watchdigest: this.joi.any(),
             watchevents: this.joi.boolean().default(true),
             watchatstart: this.joi.boolean().default(true),
+            maintenancewindow: joi.string().cron().optional(),
+            maintenancewindowtz: this.joi.string().default('UTC'),
             imgset: this.joi
                 .object()
                 .pattern(
@@ -1961,6 +1969,27 @@ class Docker extends Watcher {
         if (!this.log || typeof this.log.info !== 'function') {
             return [];
         }
+
+        // Check maintenance window before proceeding
+        if (
+            this.configuration.maintenancewindow &&
+            !isInMaintenanceWindow(
+                this.configuration.maintenancewindow,
+                this.configuration.maintenancewindowtz,
+            )
+        ) {
+            this.log.info(
+                'Skipping update check - outside maintenance window',
+            );
+            const counter = getMaintenanceSkipCounter();
+            if (counter) {
+                counter
+                    .labels({ type: this.type, name: this.name })
+                    .inc();
+            }
+            return [];
+        }
+
         this.log.info(`Cron started (${this.configuration.cron})`);
 
         // Get container reports

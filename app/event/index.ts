@@ -208,6 +208,34 @@ export function registerWatcherStop(handler) {
     eventEmitter.on(DD_WATCHER_STOP, handler);
 }
 
+// Audit log integration
+import * as auditStore from '../store/audit.js';
+
+registerContainerReport(async (containerReport) => {
+    if (containerReport?.container?.updateAvailable) {
+        auditStore.insertAudit({
+            id: '',
+            timestamp: new Date().toISOString(),
+            action: 'update-available',
+            containerName: containerReport.container.name,
+            containerImage: containerReport.container.image?.name,
+            fromVersion: containerReport.container.updateKind?.localValue,
+            toVersion: containerReport.container.updateKind?.remoteValue,
+            status: 'info',
+        });
+    }
+}, { id: 'audit', order: 200 });
+
+registerContainerUpdateApplied(async (containerId: string) => {
+    auditStore.insertAudit({
+        id: '',
+        timestamp: new Date().toISOString(),
+        action: 'update-applied',
+        containerName: containerId,
+        status: 'success',
+    });
+}, { id: 'audit', order: 200 });
+
 // Testing helper.
 export function clearAllListenersForTests() {
     eventEmitter.removeAllListeners();

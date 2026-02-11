@@ -6,6 +6,7 @@ import * as containerRouter from './container.js';
 import * as watcherRouter from './watcher.js';
 import * as triggerRouter from './trigger.js';
 import * as registryRouter from './registry.js';
+import * as auditRouter from './audit.js';
 import * as authenticationRouter from './authentication.js';
 import * as logRouter from './log.js';
 import * as storeRouter from './store.js';
@@ -55,6 +56,9 @@ export function init() {
 
     // Mount agents
     router.use('/agents', agentRouter.init());
+
+    // Mount audit log
+    router.use('/audit', auditRouter.init());
 
     // All other API routes => 404
     router.get('/{*path}', (req, res) => res.sendStatus(404));
