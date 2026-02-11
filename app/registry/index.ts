@@ -312,53 +312,70 @@ function applyProviderSharedTriggerConfiguration(
     return normalizedConfigurations;
 }
 
-function getSharedTriggerConfigurationByName(configurations: Record<string, any>) {
+/**
+ * Collect all shared-key values across providers, grouped by trigger name.
+ * Returns a map of triggerName -> key -> Set of distinct values.
+ */
+function collectValuesByName(
+    configurations: Record<string, any>,
+): Record<string, Record<string, Set<any>>> {
     const valuesByName: Record<string, Record<string, Set<any>>> = {};
 
-    Object.keys(configurations || {}).forEach((provider) => {
+    for (const provider of Object.keys(configurations || {})) {
         const providerConfigurations = configurations[provider];
         if (!isRecord(providerConfigurations)) {
-            return;
+            continue;
         }
-        Object.keys(providerConfigurations).forEach((triggerName) => {
+        for (const triggerName of Object.keys(providerConfigurations)) {
             const triggerConfiguration = providerConfigurations[triggerName];
             if (!isRecord(triggerConfiguration)) {
-                return;
+                continue;
             }
-            const triggerNameNormalized = triggerName.toLowerCase();
-            if (!valuesByName[triggerNameNormalized]) {
-                valuesByName[triggerNameNormalized] = {};
+            const normalized = triggerName.toLowerCase();
+            if (!valuesByName[normalized]) {
+                valuesByName[normalized] = {};
             }
-
-            SHARED_TRIGGER_CONFIGURATION_KEYS.forEach((key) => {
+            for (const key of SHARED_TRIGGER_CONFIGURATION_KEYS) {
                 if (triggerConfiguration[key] === undefined) {
-                    return;
+                    continue;
                 }
-                if (!valuesByName[triggerNameNormalized][key]) {
-                    valuesByName[triggerNameNormalized][key] = new Set();
+                if (!valuesByName[normalized][key]) {
+                    valuesByName[normalized][key] = new Set();
                 }
-                valuesByName[triggerNameNormalized][key].add(
-                    triggerConfiguration[key],
-                );
-            });
-        });
-    });
+                valuesByName[normalized][key].add(triggerConfiguration[key]);
+            }
+        }
+    }
 
-    const sharedConfigurationByName: Record<string, any> = {};
-    Object.keys(valuesByName).forEach((triggerName) => {
-        SHARED_TRIGGER_CONFIGURATION_KEYS.forEach((key) => {
+    return valuesByName;
+}
+
+/**
+ * From collected values, extract keys where all providers agree on a single value.
+ */
+function extractSharedValues(
+    valuesByName: Record<string, Record<string, Set<any>>>,
+): Record<string, any> {
+    const shared: Record<string, any> = {};
+
+    for (const triggerName of Object.keys(valuesByName)) {
+        for (const key of SHARED_TRIGGER_CONFIGURATION_KEYS) {
             const valuesForKey = valuesByName[triggerName][key];
             if (valuesForKey && valuesForKey.size === 1) {
-                if (!sharedConfigurationByName[triggerName]) {
-                    sharedConfigurationByName[triggerName] = {};
+                if (!shared[triggerName]) {
+                    shared[triggerName] = {};
                 }
-                sharedConfigurationByName[triggerName][key] =
-                    Array.from(valuesForKey)[0];
+                shared[triggerName][key] = Array.from(valuesForKey)[0];
             }
-        });
-    });
+        }
+    }
 
-    return sharedConfigurationByName;
+    return shared;
+}
+
+function getSharedTriggerConfigurationByName(configurations: Record<string, any>) {
+    const valuesByName = collectValuesByName(configurations);
+    return extractSharedValues(valuesByName);
 }
 
 function applySharedTriggerConfigurationByName(
@@ -403,6 +420,41 @@ function applySharedTriggerConfigurationByName(
 }
 
 /**
+ * Check whether a record contains only shared trigger configuration keys
+ * with scalar values (i.e. it qualifies as a trigger group entry).
+ */
+function isValidTriggerGroup(entry: Record<string, any>): boolean {
+    const keys = Object.keys(entry);
+    return (
+        keys.length > 0 &&
+        keys.every(
+            (k) =>
+                SHARED_TRIGGER_CONFIGURATION_KEYS.includes(k.toLowerCase()) &&
+                !isRecord(entry[k]),
+        )
+    );
+}
+
+/**
+ * Classify a single top-level configuration entry as either a known provider,
+ * a trigger group (shared defaults), or an unknown provider.
+ */
+function classifyConfigurationEntry(
+    key: string,
+    value: any,
+    knownProviderSet: Set<string>,
+): 'provider' | 'trigger-group' {
+    const keyLower = key.toLowerCase();
+    if (knownProviderSet.has(keyLower)) {
+        return 'provider';
+    }
+    if (isRecord(value) && isValidTriggerGroup(value)) {
+        return 'trigger-group';
+    }
+    return 'provider';
+}
+
+/**
  * Extract trigger group defaults and apply them across providers.
  *
  * A "trigger group" entry is a top-level key in the trigger configuration
@@ -441,33 +493,22 @@ function applyTriggerGroupDefaults(
     const triggerGroupDefaults: Record<string, Record<string, any>> = {};
     const providerConfigurations: Record<string, any> = {};
 
-    Object.keys(configurations).forEach((key) => {
-        const keyLower = key.toLowerCase();
-        if (knownProviderSet.has(keyLower)) {
-            providerConfigurations[key] = configurations[key];
-        } else if (isRecord(configurations[key])) {
-            // This looks like a trigger group entry (e.g. "update: { threshold: 'minor' }")
-            // Only treat it as a group if its values are all scalar (shared config keys)
-            const entry = configurations[key];
-            const allSharedKeys = Object.keys(entry).every(
-                (k) =>
-                    SHARED_TRIGGER_CONFIGURATION_KEYS.includes(
-                        k.toLowerCase(),
-                    ) && !isRecord(entry[k]),
+    for (const key of Object.keys(configurations)) {
+        const classification = classifyConfigurationEntry(
+            key,
+            configurations[key],
+            knownProviderSet,
+        );
+        if (classification === 'trigger-group') {
+            const keyLower = key.toLowerCase();
+            triggerGroupDefaults[keyLower] = configurations[key];
+            log.info(
+                `Detected trigger group '${keyLower}' with shared configuration: ${JSON.stringify(configurations[key])}`,
             );
-            if (allSharedKeys && Object.keys(entry).length > 0) {
-                triggerGroupDefaults[keyLower] = entry;
-                log.info(
-                    `Detected trigger group '${keyLower}' with shared configuration: ${JSON.stringify(entry)}`,
-                );
-            } else {
-                // Has non-shared keys -- treat as a normal provider entry
-                providerConfigurations[key] = configurations[key];
-            }
         } else {
             providerConfigurations[key] = configurations[key];
         }
-    });
+    }
 
     if (Object.keys(triggerGroupDefaults).length === 0) {
         return configurations;
@@ -475,19 +516,18 @@ function applyTriggerGroupDefaults(
 
     // Apply trigger group defaults to matching triggers across all providers
     const result: Record<string, any> = {};
-    Object.keys(providerConfigurations).forEach((provider) => {
+    for (const provider of Object.keys(providerConfigurations)) {
         const providerConfig = providerConfigurations[provider];
         if (!isRecord(providerConfig)) {
             result[provider] = providerConfig;
-            return;
+            continue;
         }
         result[provider] = {};
-        Object.keys(providerConfig).forEach((triggerName) => {
+        for (const triggerName of Object.keys(providerConfig)) {
             const triggerConfig = providerConfig[triggerName];
             const groupDefaults =
                 triggerGroupDefaults[triggerName.toLowerCase()];
             if (groupDefaults && isRecord(triggerConfig)) {
-                // Group defaults are applied first, then overridden by explicit config
                 result[provider][triggerName] = {
                     ...groupDefaults,
                     ...triggerConfig,
@@ -495,8 +535,8 @@ function applyTriggerGroupDefaults(
             } else {
                 result[provider][triggerName] = triggerConfig;
             }
-        });
-    });
+        }
+    }
 
     return result;
 }

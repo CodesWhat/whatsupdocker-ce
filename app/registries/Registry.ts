@@ -23,18 +23,20 @@ export interface RegistryTagsList {
     tags: string[];
 }
 
+export interface ManifestEntry {
+    digest: string;
+    mediaType: string;
+    platform: {
+        architecture: string;
+        os: string;
+        variant?: string;
+    };
+}
+
 export interface RegistryManifestResponse {
     schemaVersion: number;
     mediaType?: string;
-    manifests?: {
-        digest: string;
-        mediaType: string;
-        platform: {
-            architecture: string;
-            os: string;
-            variant?: string;
-        };
-    }[];
+    manifests?: ManifestEntry[];
     config?: {
         digest: string;
         mediaType: string;
@@ -42,6 +44,81 @@ export interface RegistryManifestResponse {
     history?: {
         v1Compatibility: string;
     }[];
+}
+
+/** Media types representing a manifest list / OCI index (multi-platform). */
+function isManifestList(mediaType: string | undefined): boolean {
+    return (
+        mediaType ===
+            'application/vnd.docker.distribution.manifest.list.v2+json' ||
+        mediaType === 'application/vnd.oci.image.index.v1+json'
+    );
+}
+
+/** Media types representing a single-platform manifest. */
+function isSingleManifest(mediaType: string | undefined): boolean {
+    return (
+        mediaType ===
+            'application/vnd.docker.distribution.manifest.v2+json' ||
+        mediaType === 'application/vnd.oci.image.manifest.v1+json'
+    );
+}
+
+/** Media types representing a legacy / config-only image. */
+function isLegacyImageConfig(mediaType: string | undefined): boolean {
+    return (
+        mediaType ===
+            'application/vnd.docker.container.image.v1+json' ||
+        mediaType === 'application/vnd.oci.image.config.v1+json'
+    );
+}
+
+/**
+ * Filter a manifest list to find the best match for the requested platform.
+ * Returns the matched manifest entry or undefined.
+ */
+function filterManifestByPlatform(
+    manifests: ManifestEntry[],
+    architecture: string,
+    os: string,
+    variant?: string,
+): ManifestEntry | undefined {
+    const matches = manifests.filter(
+        (m) => m.platform.architecture === architecture && m.platform.os === os,
+    );
+
+    if (matches.length === 0) {
+        return undefined;
+    }
+
+    // Start with first match (better than nothing)
+    let best = matches[0];
+
+    // Refine using variant when multiple matches exist
+    if (matches.length > 1 && variant !== undefined) {
+        const variantMatch = matches.find(
+            (m) => m.platform.variant === variant,
+        );
+        if (variantMatch) {
+            best = variantMatch;
+        }
+    }
+
+    return best;
+}
+
+/** Handle schemaVersion 1 manifests (legacy). */
+function handleSchemaV1(
+    response: RegistryManifestResponse,
+): RegistryManifest {
+    const v1Compat = JSON.parse(
+        response.history![0].v1Compatibility,
+    );
+    return {
+        digest: v1Compat.config ? v1Compat.config.Image : undefined,
+        created: v1Compat.created,
+        version: 1,
+    };
 }
 
 /**
@@ -152,8 +229,6 @@ class Registry extends Component {
         digest?: string,
     ): Promise<RegistryManifest> {
         const tagOrDigest = digest || image.tag.value;
-        let manifestDigestFound;
-        let manifestMediaType;
         this.log.debug(
             `${this.getId()} - Get ${image.name}:${tagOrDigest} manifest`,
         );
@@ -167,132 +242,112 @@ class Registry extends Component {
             });
         if (responseManifests) {
             log.debug(`Found manifests [${JSON.stringify(responseManifests)}]`);
-            if (responseManifests.schemaVersion === 2) {
-                log.debug('Manifests found with schemaVersion = 2');
-                log.debug(
-                    `Manifests media type detected [${responseManifests.mediaType}]`,
-                );
-                if (
-                    responseManifests.mediaType ===
-                        'application/vnd.docker.distribution.manifest.list.v2+json' ||
-                    responseManifests.mediaType ===
-                        'application/vnd.oci.image.index.v1+json'
-                ) {
-                    log.debug(
-                        `Filter manifest for [arch=${image.architecture}, os=${image.os}, variant=${image.variant}]`,
-                    );
-                    let manifestFound;
-                    const manifestFounds = responseManifests.manifests.filter(
-                        (manifest: any) =>
-                            manifest.platform.architecture ===
-                                image.architecture &&
-                            manifest.platform.os === image.os,
-                    );
-
-                    // 1 manifest matching al least? Get the first one (better than nothing)
-                    if (manifestFounds.length > 0) {
-                        [manifestFound] = manifestFounds;
-                    }
-
-                    // Multiple matching manifests? Try to refine using variant filtering
-                    if (manifestFounds.length > 1) {
-                        const manifestFoundFilteredOnVariant =
-                            manifestFounds.find(
-                                (manifest: any) =>
-                                    manifest.platform.variant === image.variant,
-                            );
-
-                        // Manifest exactly matching with variant? Select it
-                        if (manifestFoundFilteredOnVariant) {
-                            manifestFound = manifestFoundFilteredOnVariant;
-                        }
-                    }
-
-                    if (manifestFound) {
-                        log.debug(
-                            `Manifest found with [digest=${manifestFound.digest}, mediaType=${manifestFound.mediaType}]`,
-                        );
-                        manifestDigestFound = manifestFound.digest;
-                        manifestMediaType = manifestFound.mediaType;
-                    }
-                } else if (
-                    responseManifests.mediaType ===
-                        'application/vnd.docker.distribution.manifest.v2+json' ||
-                    responseManifests.mediaType ===
-                        'application/vnd.oci.image.manifest.v1+json'
-                ) {
-                    const manifestReference = manifestDigestFound || tagOrDigest;
-                    log.debug(
-                        `Manifest found with [reference=${manifestReference}, mediaType=${responseManifests.mediaType}]`,
-                    );
-                    manifestDigestFound = manifestReference;
-                    manifestMediaType = responseManifests.mediaType;
-                }
-            } else if (responseManifests.schemaVersion === 1) {
+            if (responseManifests.schemaVersion === 1) {
                 log.debug('Manifests found with schemaVersion = 1');
-                const v1Compat = JSON.parse(
-                    responseManifests.history[0].v1Compatibility,
-                );
-                const manifestFound = {
-                    digest: v1Compat.config ? v1Compat.config.Image : undefined,
-                    created: v1Compat.created,
-                    version: 1,
-                };
+                const result = handleSchemaV1(responseManifests);
                 log.debug(
-                    `Manifest found with [digest=${manifestFound.digest}, created=${manifestFound.created}, version=${manifestFound.version}]`,
+                    `Manifest found with [digest=${result.digest}, created=${result.created}, version=${result.version}]`,
                 );
-                return manifestFound;
+                return result;
             }
-            if (
-                (manifestDigestFound &&
-                    manifestMediaType ===
-                        'application/vnd.docker.distribution.manifest.v2+json') ||
-                (manifestDigestFound &&
-                    manifestMediaType ===
-                        'application/vnd.oci.image.manifest.v1+json')
-            ) {
-                log.debug(
-                    'Calling registry to get docker-content-digest header',
+            if (responseManifests.schemaVersion === 2) {
+                return this.handleSchemaV2(
+                    image,
+                    responseManifests,
+                    tagOrDigest,
                 );
-                const responseManifest =
-                    await this.callRegistry<RegistryManifestResponse>({
-                        image,
-                        method: 'head',
-                        url: `${image.registry.url}/${image.name}/manifests/${manifestDigestFound}`,
-                        headers: {
-                            Accept: manifestMediaType,
-                        },
-                        resolveWithFullResponse: true,
-                    });
-                const manifestFound = {
-                    digest: responseManifest.headers['docker-content-digest'],
-                    version: 2,
-                };
-                log.debug(
-                    `Manifest found with [digest=${manifestFound.digest}, version=${manifestFound.version}]`,
-                );
-                return manifestFound;
-            }
-            if (
-                (manifestDigestFound &&
-                    manifestMediaType ===
-                        'application/vnd.docker.container.image.v1+json') ||
-                (manifestDigestFound &&
-                    manifestMediaType ===
-                        'application/vnd.oci.image.config.v1+json')
-            ) {
-                const manifestFound = {
-                    digest: manifestDigestFound,
-                    version: 1,
-                };
-                log.debug(
-                    `Manifest found with [digest=${manifestFound.digest}, version=${manifestFound.version}]`,
-                );
-                return manifestFound;
             }
         }
         // Empty result...
         throw new Error('Unexpected error; no manifest found');
+    }
+
+    /**
+     * Handle schemaVersion 2 manifests (multi-platform list or single manifest).
+     */
+    private async handleSchemaV2(
+        image: ContainerImage,
+        response: RegistryManifestResponse,
+        tagOrDigest: string,
+    ): Promise<RegistryManifest> {
+        log.debug('Manifests found with schemaVersion = 2');
+        log.debug(
+            `Manifests media type detected [${response.mediaType}]`,
+        );
+
+        let manifestDigest: string | undefined;
+        let manifestMediaType: string | undefined;
+
+        if (isManifestList(response.mediaType)) {
+            log.debug(
+                `Filter manifest for [arch=${image.architecture}, os=${image.os}, variant=${image.variant}]`,
+            );
+            const matched = filterManifestByPlatform(
+                response.manifests!,
+                image.architecture,
+                image.os,
+                image.variant,
+            );
+            if (matched) {
+                log.debug(
+                    `Manifest found with [digest=${matched.digest}, mediaType=${matched.mediaType}]`,
+                );
+                manifestDigest = matched.digest;
+                manifestMediaType = matched.mediaType;
+            }
+        } else if (isSingleManifest(response.mediaType)) {
+            const manifestReference = tagOrDigest;
+            log.debug(
+                `Manifest found with [reference=${manifestReference}, mediaType=${response.mediaType}]`,
+            );
+            manifestDigest = manifestReference;
+            manifestMediaType = response.mediaType;
+        }
+
+        if (manifestDigest && isSingleManifest(manifestMediaType)) {
+            return this.fetchManifestDigestFromHead(
+                image,
+                manifestDigest,
+                manifestMediaType!,
+            );
+        }
+        if (manifestDigest && isLegacyImageConfig(manifestMediaType)) {
+            const result = { digest: manifestDigest, version: 1 };
+            log.debug(
+                `Manifest found with [digest=${result.digest}, version=${result.version}]`,
+            );
+            return result;
+        }
+        throw new Error('Unexpected error; no manifest found');
+    }
+
+    /**
+     * Fetch the docker-content-digest via a HEAD request.
+     */
+    private async fetchManifestDigestFromHead(
+        image: ContainerImage,
+        manifestDigest: string,
+        mediaType: string,
+    ): Promise<RegistryManifest> {
+        log.debug('Calling registry to get docker-content-digest header');
+        const responseManifest =
+            await this.callRegistry<RegistryManifestResponse>({
+                image,
+                method: 'head',
+                url: `${image.registry.url}/${image.name}/manifests/${manifestDigest}`,
+                headers: {
+                    Accept: mediaType,
+                },
+                resolveWithFullResponse: true,
+            });
+        const result = {
+            digest: responseManifest.headers['docker-content-digest'],
+            version: 2,
+        };
+        log.debug(
+            `Manifest found with [digest=${result.digest}, version=${result.version}]`,
+        );
+        return result;
     }
 
     async callRegistry<T = any>(options: {

@@ -61,6 +61,33 @@ const router = createRouter({
 });
 
 /**
+ * Validate and return the `next` query parameter as a safe redirect path.
+ * Returns the path string if valid, or `true` to proceed to the current route.
+ */
+function validateAndGetNextRoute(to): string | boolean {
+  if (to.query.next) {
+    const next = String(to.query.next);
+    if (next.startsWith('/') && !next.startsWith('//')) {
+      return next;
+    }
+  }
+  return true;
+}
+
+/**
+ * Create a redirect object that sends the user to the login page,
+ * preserving the original destination as the `next` query parameter.
+ */
+function createLoginRedirect(to) {
+  return {
+    name: "login",
+    query: {
+      next: to.path,
+    },
+  };
+}
+
+/**
  * Apply authentication navigation guard.
  * @param to
  * @param from
@@ -81,25 +108,11 @@ async function applyAuthNavigationGuard(to) {
           (router as any).app.config.globalProperties.$eventBus.emit("authenticated", user);
         }
       });
-      
-      // Next route in param? redirect (validate to prevent open redirect)
-      if (to.query.next) {
-        const next = String(to.query.next);
-        if (next.startsWith('/') && !next.startsWith('//')) {
-          return next;
-        }
-        return true;
-      } else {
-        return true;
-      }
+
+      return validateAndGetNextRoute(to);
     } else {
       // User is not authenticated => save destination as next & go to login
-      return {
-        name: "login",
-        query: {
-          next: to.path,
-        },
-      };
+      return createLoginRedirect(to);
     }
   }
 }

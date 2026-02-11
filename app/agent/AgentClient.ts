@@ -200,6 +200,51 @@ export class AgentClient {
         }, delay);
     }
 
+    private parseSseLine(line: string) {
+        if (!line.startsWith('data: ')) {
+            return;
+        }
+        try {
+            const payload = JSON.parse(line.substring(6));
+            if (payload.type && payload.data) {
+                this.handleEvent(payload.type, payload.data);
+            }
+        } catch (e: any) {
+            this.log.warn(`Error parsing SSE data: ${e.message}`);
+        }
+    }
+
+    private processSseBuffer(buffer: string): string {
+        const messages = buffer.split('\n\n');
+        // The last element is either empty (if buffer ended with \n\n) or incomplete
+        const remainder = messages.pop() || '';
+
+        for (const message of messages) {
+            for (const line of message.split('\n')) {
+                this.parseSseLine(line);
+            }
+        }
+        return remainder;
+    }
+
+    private attachStreamHandlers(stream: NodeJS.EventEmitter) {
+        const decoder = new StringDecoder('utf8');
+        let buffer = '';
+
+        stream.on('data', (chunk: Buffer) => {
+            buffer += decoder.write(chunk);
+            buffer = this.processSseBuffer(buffer);
+        });
+        stream.on('error', (e: Error) => {
+            this.log.error(`SSE Connection failed: ${e.message}`);
+            this.scheduleReconnect(1000);
+        });
+        stream.on('end', () => {
+            this.log.warn('SSE stream ended. Reconnecting...');
+            this.scheduleReconnect(1000);
+        });
+    }
+
     startSse() {
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
@@ -212,47 +257,7 @@ export class AgentClient {
             ...this.axiosOptions,
         })
             .then((response) => {
-                const stream = response.data;
-                const decoder = new StringDecoder('utf8');
-                let buffer = '';
-
-                stream.on('data', (chunk: Buffer) => {
-                    buffer += decoder.write(chunk);
-                    const messages = buffer.split('\n\n');
-                    // The last element is either empty (if buffer ended with \n\n) or incomplete
-                    buffer = messages.pop() || '';
-
-                    for (const message of messages) {
-                        const lines = message.split('\n');
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                try {
-                                    const payload = JSON.parse(
-                                        line.substring(6),
-                                    );
-                                    if (payload.type && payload.data) {
-                                        this.handleEvent(
-                                            payload.type,
-                                            payload.data,
-                                        );
-                                    }
-                                } catch (e: any) {
-                                    this.log.warn(
-                                        `Error parsing SSE data: ${e.message}`,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                });
-                stream.on('error', (e: Error) => {
-                    this.log.error(`SSE Connection failed: ${e.message}`);
-                    this.scheduleReconnect(1000);
-                });
-                stream.on('end', () => {
-                    this.log.warn('SSE stream ended. Reconnecting...');
-                    this.scheduleReconnect(1000);
-                });
+                this.attachStreamHandlers(response.data);
             })
             .catch((e) => {
                 this.log.error(

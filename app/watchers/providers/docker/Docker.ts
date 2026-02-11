@@ -1213,6 +1213,83 @@ class Docker extends Watcher {
         );
     }
 
+    /**
+     * Determine the effective OIDC grant type, applying fallbacks for
+     * missing refresh tokens, unsupported types, and device-code flow.
+     * Returns the resolved grant type and, when applicable, the device URL.
+     */
+    private determineGrantType(): { grantType: string; deviceUrl?: string } {
+        let grantType = this.getOidcGrantType();
+
+        if (grantType === 'refresh_token' && !this.remoteOidcRefreshToken) {
+            this.log.warn(
+                `OIDC refresh token is missing for ${this.name}; fallback to client_credentials grant`,
+            );
+            grantType = 'client_credentials';
+        }
+
+        if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
+            const deviceUrl = this.getOidcAuthString(OIDC_DEVICE_URL_PATHS);
+            if (!deviceUrl) {
+                this.log.warn(
+                    `OIDC device authorization URL is missing for ${this.name}; fallback to client_credentials`,
+                );
+                grantType = 'client_credentials';
+            } else {
+                return { grantType, deviceUrl };
+            }
+        }
+
+        if (
+            grantType !== 'client_credentials' &&
+            grantType !== 'refresh_token'
+        ) {
+            this.log.warn(
+                `OIDC grant type "${grantType}" is unsupported for ${this.name}; fallback to client_credentials`,
+            );
+            grantType = 'client_credentials';
+        }
+
+        return { grantType };
+    }
+
+    /**
+     * Build the URLSearchParams body for a standard OIDC token request
+     * (client_credentials or refresh_token grant).
+     */
+    private buildTokenRequestBody(
+        grantType: string,
+        params: {
+            clientId?: string;
+            clientSecret?: string;
+            scope?: string;
+            audience?: string;
+            resource?: string;
+        },
+    ): URLSearchParams {
+        const body = new URLSearchParams();
+        body.set('grant_type', grantType);
+        if (grantType === 'refresh_token' && this.remoteOidcRefreshToken) {
+            body.set('refresh_token', this.remoteOidcRefreshToken);
+        }
+        if (params.clientId) {
+            body.set('client_id', params.clientId);
+        }
+        if (params.clientSecret) {
+            body.set('client_secret', params.clientSecret);
+        }
+        if (params.scope) {
+            body.set('scope', params.scope);
+        }
+        if (params.audience) {
+            body.set('audience', params.audience);
+        }
+        if (params.resource) {
+            body.set('resource', params.resource);
+        }
+        return body;
+    }
+
     async refreshRemoteOidcAccessToken() {
         const tokenEndpoint = this.getOidcAuthString(OIDC_TOKEN_ENDPOINT_PATHS);
         if (!tokenEndpoint) {
@@ -1228,67 +1305,30 @@ class Docker extends Watcher {
         const oidcResource = this.getOidcAuthString(OIDC_RESOURCE_PATHS);
         const oidcTimeout = this.getOidcAuthNumber(OIDC_TIMEOUT_PATHS);
 
-        let grantType = this.getOidcGrantType();
-        if (grantType === 'refresh_token' && !this.remoteOidcRefreshToken) {
-            this.log.warn(
-                `OIDC refresh token is missing for ${this.name}; fallback to client_credentials grant`,
-            );
-            grantType = 'client_credentials';
-        }
+        const { grantType, deviceUrl } = this.determineGrantType();
 
         // Device code flow: delegate to the dedicated method
-        if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
-            const deviceUrl = this.getOidcAuthString(OIDC_DEVICE_URL_PATHS);
-            if (!deviceUrl) {
-                this.log.warn(
-                    `OIDC device authorization URL is missing for ${this.name}; fallback to client_credentials`,
-                );
-                grantType = 'client_credentials';
-            } else {
-                await this.performDeviceCodeFlow(
-                    deviceUrl,
-                    tokenEndpoint,
-                    oidcClientId,
-                    oidcClientSecret,
-                    oidcScope,
-                    oidcAudience,
-                    oidcResource,
-                    oidcTimeout,
-                );
-                return;
-            }
-        }
-
-        if (
-            grantType !== 'client_credentials' &&
-            grantType !== 'refresh_token'
-        ) {
-            this.log.warn(
-                `OIDC grant type "${grantType}" is unsupported for ${this.name}; fallback to client_credentials`,
+        if (grantType === 'urn:ietf:params:oauth:grant-type:device_code' && deviceUrl) {
+            await this.performDeviceCodeFlow(
+                deviceUrl,
+                tokenEndpoint,
+                oidcClientId,
+                oidcClientSecret,
+                oidcScope,
+                oidcAudience,
+                oidcResource,
+                oidcTimeout,
             );
-            grantType = 'client_credentials';
+            return;
         }
 
-        const tokenRequestBody = new URLSearchParams();
-        tokenRequestBody.set('grant_type', grantType);
-        if (grantType === 'refresh_token' && this.remoteOidcRefreshToken) {
-            tokenRequestBody.set('refresh_token', this.remoteOidcRefreshToken);
-        }
-        if (oidcClientId) {
-            tokenRequestBody.set('client_id', oidcClientId);
-        }
-        if (oidcClientSecret) {
-            tokenRequestBody.set('client_secret', oidcClientSecret);
-        }
-        if (oidcScope) {
-            tokenRequestBody.set('scope', oidcScope);
-        }
-        if (oidcAudience) {
-            tokenRequestBody.set('audience', oidcAudience);
-        }
-        if (oidcResource) {
-            tokenRequestBody.set('resource', oidcResource);
-        }
+        const tokenRequestBody = this.buildTokenRequestBody(grantType, {
+            clientId: oidcClientId,
+            clientSecret: oidcClientSecret,
+            scope: oidcScope,
+            audience: oidcAudience,
+            resource: oidcResource,
+        });
 
         const tokenResponse = await axios.post(
             tokenEndpoint,
@@ -1422,6 +1462,75 @@ class Docker extends Watcher {
     }
 
     /**
+     * Build the URLSearchParams body for a device-code token poll request.
+     */
+    private buildDeviceCodeTokenRequest(
+        deviceCode: string,
+        clientId: string | undefined,
+        clientSecret: string | undefined,
+    ): URLSearchParams {
+        const body = new URLSearchParams();
+        body.set(
+            'grant_type',
+            'urn:ietf:params:oauth:grant-type:device_code',
+        );
+        body.set('device_code', deviceCode);
+        if (clientId) {
+            body.set('client_id', clientId);
+        }
+        if (clientSecret) {
+            body.set('client_secret', clientSecret);
+        }
+        return body;
+    }
+
+    /**
+     * Handle an error response during device-code token polling.
+     * Returns an object indicating whether to continue polling and any
+     * adjustment to the poll interval, or throws on fatal errors.
+     */
+    private handleTokenErrorResponse(
+        e: any,
+        currentIntervalMs: number,
+    ): { continuePolling: boolean; newIntervalMs: number } {
+        const errorResponse = e?.response?.data;
+        const errorCode = errorResponse?.error || '';
+
+        if (errorCode === 'authorization_pending') {
+            this.log.debug(
+                `OIDC device authorization for ${this.name}: waiting for user authorization...`,
+            );
+            return { continuePolling: true, newIntervalMs: currentIntervalMs };
+        }
+
+        if (errorCode === 'slow_down') {
+            const newIntervalMs = currentIntervalMs + 5000;
+            this.log.debug(
+                `OIDC device authorization for ${this.name}: slowing down, new interval=${newIntervalMs}ms`,
+            );
+            return { continuePolling: true, newIntervalMs };
+        }
+
+        if (errorCode === 'expired_token') {
+            throw new Error(
+                `OIDC device authorization for ${this.name} failed: device code expired before user authorization`,
+            );
+        }
+
+        if (errorCode === 'access_denied') {
+            throw new Error(
+                `OIDC device authorization for ${this.name} failed: user denied the authorization request`,
+            );
+        }
+
+        const errorDescription =
+            errorResponse?.error_description || e.message;
+        throw new Error(
+            `OIDC device authorization for ${this.name} failed: ${errorDescription}`,
+        );
+    }
+
+    /**
      * Poll the token endpoint with the device_code until the user authorizes,
      * the code expires, or the maximum timeout is reached.
      */
@@ -1440,18 +1549,11 @@ class Docker extends Watcher {
         while (Date.now() - startTime < pollTimeoutMs) {
             await this.sleep(currentIntervalMs);
 
-            const tokenRequestBody = new URLSearchParams();
-            tokenRequestBody.set(
-                'grant_type',
-                'urn:ietf:params:oauth:grant-type:device_code',
+            const tokenRequestBody = this.buildDeviceCodeTokenRequest(
+                deviceCode,
+                clientId,
+                clientSecret,
             );
-            tokenRequestBody.set('device_code', deviceCode);
-            if (clientId) {
-                tokenRequestBody.set('client_id', clientId);
-            }
-            if (clientSecret) {
-                tokenRequestBody.set('client_secret', clientSecret);
-            }
 
             try {
                 const tokenResponse = await axios.post(
@@ -1489,44 +1591,14 @@ class Docker extends Watcher {
                     return;
                 }
             } catch (e: any) {
-                const errorResponse = e?.response?.data;
-                const errorCode = errorResponse?.error || '';
-
-                if (errorCode === 'authorization_pending') {
-                    // User hasn't authorized yet, continue polling
-                    this.log.debug(
-                        `OIDC device authorization for ${this.name}: waiting for user authorization...`,
-                    );
-                    continue;
-                }
-
-                if (errorCode === 'slow_down') {
-                    // Server asks us to slow down; increase the interval by 5s per RFC 8628
-                    currentIntervalMs += 5000;
-                    this.log.debug(
-                        `OIDC device authorization for ${this.name}: slowing down, new interval=${currentIntervalMs}ms`,
-                    );
-                    continue;
-                }
-
-                if (errorCode === 'expired_token') {
-                    throw new Error(
-                        `OIDC device authorization for ${this.name} failed: device code expired before user authorization`,
-                    );
-                }
-
-                if (errorCode === 'access_denied') {
-                    throw new Error(
-                        `OIDC device authorization for ${this.name} failed: user denied the authorization request`,
-                    );
-                }
-
-                // Unknown error from the token endpoint
-                const errorDescription =
-                    errorResponse?.error_description || e.message;
-                throw new Error(
-                    `OIDC device authorization for ${this.name} failed: ${errorDescription}`,
+                const result = this.handleTokenErrorResponse(
+                    e,
+                    currentIntervalMs,
                 );
+                if (result.continuePolling) {
+                    currentIntervalMs = result.newIntervalMs;
+                    continue;
+                }
             }
         }
 
@@ -2188,6 +2260,50 @@ class Docker extends Watcher {
      * Find new version for a Container.
      */
 
+    /**
+     * Resolve remote digest information when digest watching is enabled.
+     * Updates `container.image.digest.value` and populates digest/created on `result`.
+     */
+    private async handleDigestWatch(
+        container: Container,
+        registryProvider: any,
+        tagsCandidates: string[],
+        result: any,
+    ) {
+        const imageToGetDigestFrom = JSON.parse(
+            JSON.stringify(container.image),
+        );
+        if (tagsCandidates.length > 0) {
+            [imageToGetDigestFrom.tag.value] = tagsCandidates;
+        }
+
+        const remoteDigest =
+            await registryProvider.getImageManifestDigest(
+                imageToGetDigestFrom,
+            );
+
+        result.digest = remoteDigest.digest;
+        result.created = remoteDigest.created;
+
+        if (remoteDigest.version === 2) {
+            const digestV2 =
+                await registryProvider.getImageManifestDigest(
+                    imageToGetDigestFrom,
+                    container.image.digest.repo,
+                );
+            container.image.digest.value = digestV2.digest;
+        } else {
+            await this.ensureRemoteAuthHeaders();
+            const image = await this.dockerApi
+                .getImage(container.image.id)
+                .inspect();
+            container.image.digest.value =
+                image.Config.Image === ''
+                    ? undefined
+                    : image.Config.Image;
+        }
+    }
+
     async findNewVersion(container: Container, logContainer: any) {
         const registryProvider = getRegistry(container.image.registry.name);
         const result: any = { tag: container.image.tag.value };
@@ -2209,45 +2325,12 @@ class Docker extends Watcher {
 
             // Must watch digest? => Find local/remote digests on registry
             if (container.image.digest.watch && container.image.digest.repo) {
-                // If we have a tag candidate BUT we also watch digest
-                // (case where local=`mongo:8` and remote=`mongo:8.0.0`),
-                // Then get the digest of the tag candidate
-                // Else get the digest of the same tag as the local one
-                const imageToGetDigestFrom = JSON.parse(
-                    JSON.stringify(container.image),
+                await this.handleDigestWatch(
+                    container,
+                    registryProvider,
+                    tagsCandidates,
+                    result,
                 );
-                if (tagsCandidates.length > 0) {
-                    [imageToGetDigestFrom.tag.value] = tagsCandidates;
-                }
-
-                const remoteDigest =
-                    await registryProvider.getImageManifestDigest(
-                        imageToGetDigestFrom,
-                    );
-
-                result.digest = remoteDigest.digest;
-                result.created = remoteDigest.created;
-
-                if (remoteDigest.version === 2) {
-                    // Regular v2 manifest => Get manifest digest
-
-                    const digestV2 =
-                        await registryProvider.getImageManifestDigest(
-                            imageToGetDigestFrom,
-                            container.image.digest.repo,
-                        );
-                    container.image.digest.value = digestV2.digest;
-                } else {
-                    // Legacy v1 image => take Image digest as reference for comparison
-                    await this.ensureRemoteAuthHeaders();
-                    const image = await this.dockerApi
-                        .getImage(container.image.id)
-                        .inspect();
-                    container.image.digest.value =
-                        image.Config.Image === ''
-                            ? undefined
-                            : image.Config.Image;
-                }
             }
 
             // The first one in the array is the highest
