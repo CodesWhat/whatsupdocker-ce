@@ -41,6 +41,7 @@ vi.mock('cors', () => ({
 }));
 vi.mock('./container.js', () => ({
     getContainers: vi.fn(),
+    getContainerLogs: vi.fn(),
     deleteContainer: vi.fn(),
 }));
 vi.mock('./watcher.js', () => ({
@@ -142,6 +143,14 @@ describe('Agent API index', () => {
             });
             await init();
             expect(mockApp.use).toHaveBeenCalled();
+        });
+
+        test('should register container logs route', async () => {
+            process.env.DD_AGENT_SECRET = 'secret'; // NOSONAR - test fixture, not a real credential
+            await init();
+            const getCalls = mockApp.get.mock.calls;
+            const logsRoute = getCalls.find(([path]) => path === '/api/containers/:id/logs');
+            expect(logsRoute).toBeDefined();
         });
 
         test('should mount /health before auth middleware', async () => {

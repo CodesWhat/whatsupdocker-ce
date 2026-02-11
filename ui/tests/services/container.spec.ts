@@ -1,6 +1,7 @@
 import {
   getAllContainers,
   getContainerIcon,
+  getContainerLogs,
   refreshAllContainers,
   refreshContainer,
   deleteContainer,
@@ -282,6 +283,47 @@ describe('Container Service', () => {
 
       await expect(updateContainerPolicy('c1', 'enable'))
         .rejects.toThrow('Failed to update container policy enable: Internal Server Error');
+    });
+  });
+
+  describe('getContainerLogs', () => {
+    it('fetches container logs successfully', async () => {
+      const mockLogs = { logs: 'line1\nline2\nline3' };
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockLogs
+      } as any);
+
+      const result = await getContainerLogs('container1');
+
+      expect(fetch).toHaveBeenCalledWith('/api/containers/container1/logs?tail=100', {
+        credentials: 'include'
+      });
+      expect(result).toEqual(mockLogs);
+    });
+
+    it('fetches container logs with custom tail count', async () => {
+      const mockLogs = { logs: 'line1' };
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockLogs
+      } as any);
+
+      const result = await getContainerLogs('container1', 50);
+
+      expect(fetch).toHaveBeenCalledWith('/api/containers/container1/logs?tail=50', {
+        credentials: 'include'
+      });
+      expect(result).toEqual(mockLogs);
+    });
+
+    it('throws when fetching logs fails', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+      } as any);
+
+      await expect(getContainerLogs('c1')).rejects.toThrow('Failed to get logs for container c1: Internal Server Error');
     });
   });
 });

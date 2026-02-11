@@ -73,6 +73,16 @@ async function runTrigger({
   return response.json();
 }
 
+async function getContainerLogs(containerId, tail = 100) {
+  const response = await fetch(`/api/containers/${containerId}/logs?tail=${tail}`, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to get logs for container ${containerId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 async function updateContainerPolicy(containerId, action, payload = {}) {
   const response = await fetch(`/api/containers/${containerId}/update-policy`, {
     method: "PATCH",
@@ -105,6 +115,7 @@ export {
   refreshContainer,
   deleteContainer,
   getContainerTriggers,
+  getContainerLogs,
   runTrigger,
   updateContainerPolicy,
 };

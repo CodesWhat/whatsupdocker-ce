@@ -149,6 +149,7 @@ describe('Container Router', () => {
             expect(router.post).toHaveBeenCalledWith('/:id/triggers/:triggerAgent/:triggerType/:triggerName', expect.any(Function));
             expect(router.patch).toHaveBeenCalledWith('/:id/update-policy', expect.any(Function));
             expect(router.post).toHaveBeenCalledWith('/:id/watch', expect.any(Function));
+            expect(router.get).toHaveBeenCalledWith('/:id/logs', expect.any(Function));
         });
     });
 
@@ -504,6 +505,126 @@ describe('Container Router', () => {
             registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
             const res = await callWatchContainer();
             expect(res.status).toHaveBeenCalledWith(200);
+        });
+    });
+
+    describe('getContainerLogs', () => {
+        /** Build a Docker multiplexed stream buffer (8-byte header + payload per frame). */
+        function dockerStreamBuffer(text, stream = 1) {
+            const payload = Buffer.from(text, 'utf-8');
+            const header = Buffer.alloc(8);
+            header[0] = stream;
+            header.writeUInt32BE(payload.length, 4);
+            return Buffer.concat([header, payload]);
+        }
+
+        /** Helper: invoke getContainerLogs handler */
+        async function callGetContainerLogs(id = 'c1', query = {}) {
+            const handler = getHandler('get', '/:id/logs');
+            const res = createResponse();
+            await handler({ params: { id }, query }, res);
+            return res;
+        }
+
+        test('should return 404 when container not found', async () => {
+            storeContainer.getContainer.mockReturnValue(undefined);
+            const res = await callGetContainerLogs('missing');
+            expect(res.sendStatus).toHaveBeenCalledWith(404);
+        });
+
+        test('should return logs for local container', async () => {
+            const logText = '2024-01-01T00:00:00Z log line 1\n2024-01-01T00:00:01Z log line 2';
+            const mockLogs = dockerStreamBuffer(logText);
+            const mockDockerContainer = { logs: vi.fn().mockResolvedValue(mockLogs) };
+            const mockWatcher = { dockerApi: { getContainer: vi.fn().mockReturnValue(mockDockerContainer) } };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(mockWatcher.dockerApi.getContainer).toHaveBeenCalledWith('my-container');
+            expect(mockDockerContainer.logs).toHaveBeenCalledWith({
+                stdout: true, stderr: true, tail: 100, since: 0, timestamps: true, follow: false,
+            });
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ logs: logText });
+        });
+
+        test('should pass query params to docker logs', async () => {
+            const mockLogs = dockerStreamBuffer('log');
+            const mockDockerContainer = { logs: vi.fn().mockResolvedValue(mockLogs) };
+            const mockWatcher = { dockerApi: { getContainer: vi.fn().mockReturnValue(mockDockerContainer) } };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+
+            await callGetContainerLogs('c1', { tail: '50', since: '1700000000', timestamps: 'false' });
+
+            expect(mockDockerContainer.logs).toHaveBeenCalledWith({
+                stdout: true, stderr: true, tail: 50, since: 1700000000, timestamps: false, follow: false,
+            });
+        });
+
+        test('should proxy through agent for agent containers', async () => {
+            const mockAgent = { getContainerLogs: vi.fn().mockResolvedValue({ logs: 'agent logs' }) };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local', agent: 'remote' });
+            getAgent.mockReturnValue(mockAgent);
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(mockAgent.getContainerLogs).toHaveBeenCalledWith('c1', { tail: 100, since: 0, timestamps: true });
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ logs: 'agent logs' });
+        });
+
+        test('should return 500 when agent not found for agent container', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local', agent: 'remote' });
+            getAgent.mockReturnValue(undefined);
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('Agent remote not found'),
+            }));
+        });
+
+        test('should return 500 when agent call fails', async () => {
+            const mockAgent = { getContainerLogs: vi.fn().mockRejectedValue(new Error('agent error')) };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local', agent: 'remote' });
+            getAgent.mockReturnValue(mockAgent);
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('Error fetching logs from agent'),
+            }));
+        });
+
+        test('should return 500 when watcher not found', async () => {
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: {}, trigger: {} });
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('No watcher found'),
+            }));
+        });
+
+        test('should return 500 when docker API fails', async () => {
+            const mockDockerContainer = { logs: vi.fn().mockRejectedValue(new Error('docker error')) };
+            const mockWatcher = { dockerApi: { getContainer: vi.fn().mockReturnValue(mockDockerContainer) } };
+            storeContainer.getContainer.mockReturnValue({ id: 'c1', name: 'my-container', watcher: 'local' });
+            registry.getState.mockReturnValue({ watcher: { 'docker.local': mockWatcher }, trigger: {} });
+
+            const res = await callGetContainerLogs('c1');
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                error: expect.stringContaining('Error fetching container logs'),
+            }));
         });
     });
 

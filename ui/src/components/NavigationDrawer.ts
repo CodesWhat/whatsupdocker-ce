@@ -7,6 +7,7 @@ import { getServerIcon } from "@/services/server";
 import { getWatcherIcon } from "@/services/watcher";
 import { getAuthenticationIcon } from "@/services/authentication";
 import { getAgentIcon } from "@/services/agent";
+import { getLogIcon } from "@/services/log";
 import logo from "@/assets/drydock.png";
 
 export default defineComponent({
@@ -45,6 +46,11 @@ export default defineComponent({
         to: "/configuration/server",
         name: "server",
         icon: getServerIcon(),
+      },
+      {
+        to: "/configuration/logs",
+        name: "logs",
+        icon: getLogIcon(),
       },
     ];
 

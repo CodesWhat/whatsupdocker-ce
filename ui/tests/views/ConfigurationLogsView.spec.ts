@@ -24,8 +24,9 @@ describe('ConfigurationLogsView', () => {
 
   it('computes configurationItem correctly', () => {
     const item = wrapper.vm.configurationItem;
-    expect(item.name).toBe('logs');
-    expect(item.icon).toBe('mdi-bug');
+    expect(item.type).toBe('logs');
+    expect(item.name).toBe('configuration');
+    expect(item.icon).toBe('mdi-console');
     expect(item.configuration.level).toBe('info');
   });
 

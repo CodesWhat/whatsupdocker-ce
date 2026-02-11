@@ -50,7 +50,7 @@ describe('ConfigurationServerView', () => {
     const config = wrapper.vm.logConfiguration;
     expect(config.type).toBe('logs');
     expect(config.name).toBe('configuration');
-    expect(config.icon).toBe('mdi-bug');
+    expect(config.icon).toBe('mdi-console');
     expect(config.configuration).toEqual({ level: 'info' });
   });
 

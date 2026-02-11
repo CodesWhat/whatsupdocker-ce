@@ -8,6 +8,7 @@ import * as containerApi from './container.js';
 import * as watcherApi from './watcher.js';
 import * as triggerApi from './trigger.js';
 import * as eventApi from './event.js';
+import { getEntries } from '../../log/buffer.js';
 
 const log = logger.child({ component: 'agent-server' });
 
@@ -76,7 +77,15 @@ export async function init() {
     app.use(authenticate);
 
     // Routes
+    app.get('/api/log/entries', (req: Request, res: Response) => {
+        const level = req.query.level as string | undefined;
+        const component = req.query.component as string | undefined;
+        const tail = req.query.tail ? parseInt(req.query.tail as string, 10) : undefined;
+        const since = req.query.since ? parseInt(req.query.since as string, 10) : undefined;
+        res.status(200).json(getEntries({ level, component, tail, since }));
+    });
     app.get('/api/containers', containerApi.getContainers);
+    app.get('/api/containers/:id/logs', containerApi.getContainerLogs);
     app.delete('/api/containers/:id', containerApi.deleteContainer);
     app.get('/api/watchers', watcherApi.getWatchers);
     app.get('/api/triggers', triggerApi.getTriggers);

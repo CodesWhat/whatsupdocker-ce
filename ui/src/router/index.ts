@@ -48,6 +48,11 @@ const routes = [
     name: "agents",
     component: () => import("../views/ConfigurationAgentsView.vue"),
   },
+  {
+    path: "/configuration/logs",
+    name: "logs",
+    component: () => import("../views/ConfigurationLogsView.vue"),
+  },
 ];
 
 const router = createRouter({

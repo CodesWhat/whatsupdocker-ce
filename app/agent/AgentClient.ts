@@ -317,6 +317,43 @@ export class AgentClient {
         }
     }
 
+    async getLogEntries(options: { level?: string; component?: string; tail?: number; since?: number } = {}) {
+        try {
+            const params = new URLSearchParams();
+            if (options.level) params.set('level', options.level);
+            if (options.component) params.set('component', options.component);
+            if (options.tail) params.set('tail', String(options.tail));
+            if (options.since) params.set('since', String(options.since));
+            const query = params.toString();
+            const response = await axios.get(
+                `${this.baseUrl}/api/log/entries${query ? '?' + query : ''}`,
+                this.axiosOptions,
+            );
+            return response.data;
+        } catch (e: any) {
+            this.log.error(`Error fetching log entries from agent: ${e.message}`);
+            throw e;
+        }
+    }
+
+    async getContainerLogs(
+        containerId: string,
+        options: { tail: number; since: number; timestamps: boolean },
+    ) {
+        try {
+            const response = await axios.get(
+                `${this.baseUrl}/api/containers/${encodeURIComponent(containerId)}/logs?tail=${options.tail}&since=${options.since}&timestamps=${options.timestamps}`,
+                this.axiosOptions,
+            );
+            return response.data;
+        } catch (e: any) {
+            this.log.error(
+                `Error fetching container logs from agent: ${e.message}`,
+            );
+            throw e;
+        }
+    }
+
     async deleteContainer(containerId: string) {
         try {
             this.log.debug(`Deleting container ${containerId} on agent`);

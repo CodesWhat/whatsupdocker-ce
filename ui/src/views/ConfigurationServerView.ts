@@ -28,7 +28,7 @@ export default defineComponent({
       return {
         type: "logs",
         name: "configuration",
-        icon: "mdi-bug",
+        icon: "mdi-console",
         configuration: this.log,
       };
     },
