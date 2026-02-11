@@ -29,7 +29,7 @@ describe('ConfigurationStateView', () => {
   it('computes configurationItem correctly', () => {
     const item = wrapper.vm.configurationItem;
     expect(item.name).toBe('state');
-    expect(item.icon).toBe('mdi-content-save');
+    expect(item.icon).toBe('fas fa-floppy-disk');
     expect(item.configuration).toEqual({ path: '/data/store.json' });
   });
 

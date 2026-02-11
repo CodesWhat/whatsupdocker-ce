@@ -13,13 +13,13 @@
     </div>
     <v-toolbar flat class="ma-0 pa-0" color="primary">
       <v-app-bar-nav-icon class="drawer-toggle" @click.stop="mini = !mini">
-        <v-icon v-if="!mini">mdi-close</v-icon>
-        <v-icon v-else>mdi-menu</v-icon>
+        <v-icon v-if="!mini">fas fa-xmark</v-icon>
+        <v-icon v-else>fas fa-bars</v-icon>
       </v-app-bar-nav-icon>
     </v-toolbar>
     <v-list nav class="pt-0 pb-0">
       <v-fade-transition group hide-on-leave mode="in-out">
-        <v-list-item to="/" key="home" class="mb-0" prepend-icon="mdi-home">
+        <v-list-item to="/" key="home" class="mb-0" prepend-icon="fas fa-house">
           <v-list-item-title>Home</v-list-item-title>
         </v-list-item>
         <v-list-item
@@ -37,7 +37,7 @@
 
         <v-list-group v-if="!mini" key="configuration" color="white">
           <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-cogs">
+            <v-list-item v-bind="props" prepend-icon="fas fa-gears">
               <v-list-item-title>Configuration</v-list-item-title>
             </v-list-item>
           </template>
@@ -79,7 +79,7 @@
             @update:model-value="toggleDarkMode"
           >
             <template v-slot:label>
-              <v-icon>mdi-weather-night</v-icon>
+              <v-icon>fas fa-moon</v-icon>
             </template>
           </v-switch>
         </v-list-item>

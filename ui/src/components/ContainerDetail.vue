@@ -2,7 +2,7 @@
   <v-list density="compact">
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-identifier</v-icon>
+        <v-icon color="secondary">fas fa-fingerprint</v-icon>
       </template>
       <v-list-item-title>Id</v-list-item-title>
       <v-list-item-subtitle>
@@ -16,7 +16,7 @@
               v-bind="props"
               @click="copyToClipboard('container id', container.id)"
             >
-              <v-icon size="small">mdi-clipboard</v-icon>
+              <v-icon size="small">far fa-clipboard</v-icon>
             </v-btn>
           </template>
           <span class="text-caption">Copy to clipboard</span>
@@ -25,21 +25,21 @@
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-pencil</v-icon>
+        <v-icon color="secondary">fas fa-pen</v-icon>
       </template>
       <v-list-item-title>Name</v-list-item-title>
       <v-list-item-subtitle>{{ container.name }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-restart</v-icon>
+        <v-icon color="secondary">fas fa-rotate-right</v-icon>
       </template>
       <v-list-item-title>Status</v-list-item-title>
       <v-list-item-subtitle>{{ container.status }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-update</v-icon>
+        <v-icon color="secondary">fas fa-arrows-rotate</v-icon>
       </template>
       <v-list-item-title>Watcher</v-list-item-title>
       <v-list-item-subtitle>
@@ -50,7 +50,7 @@
     </v-list-item>
     <v-list-item v-if="container.includeTags">
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-tag</v-icon>
+        <v-icon color="secondary">fas fa-tag</v-icon>
       </template>
       <v-list-item-title>
         Include tags
@@ -63,7 +63,7 @@
               href="https://regex101.com"
               target="_blank"
             >
-              <v-icon>mdi-regex</v-icon>
+              <v-icon>fas fa-code</v-icon>
             </v-btn>
           </template>
           <span>Test on regex101.com</span>
@@ -73,7 +73,7 @@
     </v-list-item>
     <v-list-item v-if="container.excludeTags">
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-tag-off</v-icon>
+        <v-icon color="secondary">fas fa-tags</v-icon>
       </template>
       <v-list-item-title>
         Exclude tags
@@ -86,7 +86,7 @@
               href="https://regex101.com"
               target="_blank"
             >
-              <v-icon>mdi-regex</v-icon>
+              <v-icon>fas fa-code</v-icon>
             </v-btn>
           </template>
           <span>Test on regex101.com</span>
@@ -96,7 +96,7 @@
     </v-list-item>
     <v-list-item v-if="container.transformTags">
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-tag-arrow-right</v-icon>
+        <v-icon color="secondary">fas fa-right-left</v-icon>
       </template>
       <v-list-item-title>Transform tags</v-list-item-title>
       <v-list-item-subtitle>{{
@@ -105,7 +105,7 @@
     </v-list-item>
     <v-list-item v-if="container.linkTemplate">
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-file-replace</v-icon>
+        <v-icon color="secondary">fas fa-file-pen</v-icon>
       </template>
       <v-list-item-title>Link template</v-list-item-title>
       <v-list-item-subtitle>{{
@@ -114,7 +114,7 @@
     </v-list-item>
     <v-list-item v-if="container.link">
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-link</v-icon>
+        <v-icon color="secondary">fas fa-link</v-icon>
       </template>
       <v-list-item-title>Link</v-list-item-title>
       <v-list-item-subtitle

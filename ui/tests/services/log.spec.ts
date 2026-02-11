@@ -6,7 +6,7 @@ describe('Log Service', () => {
   });
 
   it('should return log icon', () => {
-    expect(getLogIcon()).toBe('mdi-console');
+    expect(getLogIcon()).toBe('fas fa-terminal');
   });
 
   it('should get log', async () => {

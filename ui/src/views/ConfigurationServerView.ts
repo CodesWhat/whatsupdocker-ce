@@ -20,7 +20,7 @@ export default defineComponent({
       return {
         type: "server",
         name: "configuration",
-        icon: "mdi-connection",
+        icon: "fas fa-server",
         configuration: this.server.configuration,
       };
     },
@@ -28,7 +28,7 @@ export default defineComponent({
       return {
         type: "logs",
         name: "configuration",
-        icon: "mdi-console",
+        icon: "fas fa-terminal",
         configuration: this.log,
       };
     },
@@ -36,7 +36,7 @@ export default defineComponent({
       return {
         type: "store",
         name: "configuration",
-        icon: "mdi-file-multiple",
+        icon: "fas fa-copy",
         configuration: this.store.configuration,
       };
     },

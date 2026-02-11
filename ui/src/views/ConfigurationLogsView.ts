@@ -19,7 +19,7 @@ export default defineComponent({
       return {
         type: "logs",
         name: "configuration",
-        icon: "mdi-console",
+        icon: "fas fa-terminal",
         configuration: {
           level: this.log.level,
         },

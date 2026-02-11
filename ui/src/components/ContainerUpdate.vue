@@ -3,7 +3,7 @@
     <v-list density="compact" v-if="updateAvailable">
       <v-list-item v-if="result.tag">
         <template v-slot:prepend>
-          <v-icon color="secondary">mdi-tag</v-icon>
+          <v-icon color="secondary">fas fa-tag</v-icon>
         </template>
         <v-list-item-title>
           Tag
@@ -22,7 +22,7 @@
                 v-bind="props"
                 @click="copyToClipboard('update tag', result.tag)"
               >
-                <v-icon size="small">mdi-clipboard</v-icon>
+                <v-icon size="small">far fa-clipboard</v-icon>
               </v-btn>
             </template>
             <span class="text-caption">Copy to clipboard</span>
@@ -31,7 +31,7 @@
       </v-list-item>
       <v-list-item v-if="result.link">
         <template v-slot:prepend>
-          <v-icon color="secondary">mdi-link</v-icon>
+          <v-icon color="secondary">fas fa-link</v-icon>
         </template>
         <v-list-item-title>Link</v-list-item-title>
         <v-list-item-subtitle
@@ -40,7 +40,7 @@
       </v-list-item>
       <v-list-item v-if="result.digest">
         <template v-slot:prepend>
-          <v-icon color="secondary">mdi-function-variant</v-icon>
+          <v-icon color="secondary">fas fa-hashtag</v-icon>
         </template>
         <v-list-item-title> Digest </v-list-item-title>
         <v-list-item-subtitle>
@@ -54,7 +54,7 @@
                 v-bind="props"
                 @click="copyToClipboard('update digest', result.digest)"
               >
-                <v-icon size="small">mdi-clipboard</v-icon>
+                <v-icon size="small">far fa-clipboard</v-icon>
               </v-btn>
             </template>
             <span class="text-caption">Copy to clipboard</span>
@@ -64,12 +64,12 @@
       <v-list-item>
         <template v-slot:prepend>
           <v-icon v-if="updateKind.semverDiff === 'patch'" color="success"
-            >mdi-information</v-icon
+            >fas fa-circle-info</v-icon
           >
           <v-icon v-else-if="updateKind.semverDiff === 'major'" color="error"
-            >mdi-alert-decagram</v-icon
+            >fas fa-circle-exclamation</v-icon
           >
-          <v-icon v-else color="warning">mdi-alert</v-icon>
+          <v-icon v-else color="warning">fas fa-triangle-exclamation</v-icon>
         </template>
         <v-list-item-title>Update kind</v-list-item-title>
         <v-list-item-subtitle>

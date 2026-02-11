@@ -16,7 +16,7 @@
         >
           {{ user.username }}
           &nbsp;
-          <v-icon size="small">mdi-account</v-icon>
+          <v-icon size="small">fas fa-user</v-icon>
         </v-btn>
       </template>
       <v-list density="compact">

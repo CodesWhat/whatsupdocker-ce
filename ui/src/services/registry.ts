@@ -3,7 +3,7 @@
  * @returns {string}
  */
 function getRegistryIcon() {
-  return "mdi-database-search";
+  return "fas fa-database";
 }
 
 /**

@@ -2,7 +2,7 @@
   <v-list density="compact">
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon color="secondary">mdi-tag</v-icon>
+        <v-icon color="secondary">fas fa-tag</v-icon>
       </template>
       <v-list-item-title>Error</v-list-item-title>
       <v-list-item-subtitle>

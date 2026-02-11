@@ -21,10 +21,10 @@ export default defineComponent({
       if (!this.icon) return '';
       return this.icon
         .replace('mdi:', 'mdi-')
-        .replace('fa:', 'fa-')
-        .replace('fab:', 'fab-')
-        .replace('far:', 'far-')
-        .replace('fas:', 'fas-')
+        .replace(/^fa:/, 'fa-')
+        .replace(/^fab:/, 'fab fa-')
+        .replace(/^far:/, 'far fa-')
+        .replace(/^fas:/, 'fas fa-')
         .replace('si:', 'si-');
     },
 

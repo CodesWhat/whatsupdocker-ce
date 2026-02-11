@@ -15,7 +15,7 @@ export default defineComponent({
     configurationItem() {
       return {
         name: "state",
-        icon: "mdi-content-save",
+        icon: "fas fa-floppy-disk",
         configuration: this.state.configuration,
       };
     },

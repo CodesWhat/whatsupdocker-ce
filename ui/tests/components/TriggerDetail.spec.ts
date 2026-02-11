@@ -13,7 +13,7 @@ vi.mock('@/services/trigger', () => ({
 const mockTrigger = {
   type: 'smtp',
   name: 'email-alert',
-  icon: 'mdi-email',
+  icon: 'fas fa-envelope',
   configuration: {
     threshold: 'all',
     host: 'smtp.example.com',

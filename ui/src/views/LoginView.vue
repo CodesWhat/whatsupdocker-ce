@@ -5,7 +5,7 @@
         <v-container>
           <v-row justify="center" class="ma-1">
             <v-avatar color="primary" size="80">
-              <v-icon color="white" size="x-large">mdi-account</v-icon>
+              <v-icon color="white" size="x-large">fas fa-user</v-icon>
             </v-avatar>
           </v-row>
           <v-row>

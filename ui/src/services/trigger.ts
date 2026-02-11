@@ -1,5 +1,5 @@
 function getTriggerIcon() {
-  return "mdi-bell-ring";
+  return "fas fa-bell";
 }
 
 async function getAllTriggers() {

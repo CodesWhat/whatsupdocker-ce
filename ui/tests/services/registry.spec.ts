@@ -10,7 +10,7 @@ describe('Registry Service', () => {
 
   describe('getRegistryIcon', () => {
     it('returns the registry icon', () => {
-      expect(getRegistryIcon()).toBe('mdi-database-search');
+      expect(getRegistryIcon()).toBe('fas fa-database');
     });
   });
 

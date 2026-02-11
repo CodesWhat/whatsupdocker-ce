@@ -25,14 +25,14 @@
         >
           <span v-if="smAndUp && container.agent">
             <v-chip label :color="agentStatusColor" variant="outlined" disabled>
-              <v-icon left>mdi-lan</v-icon>
+              <v-icon left>fas fa-network-wired</v-icon>
               {{ container.agent }}
             </v-chip>
             /
           </span>
           <span v-if="smAndUp">
             <v-chip label color="info" variant="outlined" disabled>
-              <v-icon left>mdi-update</v-icon>
+              <v-icon left>fas fa-arrows-rotate</v-icon>
               {{ container.watcher }}
             </v-chip>
             /
@@ -72,7 +72,7 @@
         
         <div class="d-flex align-center" style="gap: 8px">
           <span v-if="smAndUp && container.updateAvailable" class="d-flex align-center" style="gap: 4px">
-            <v-icon>mdi-arrow-right</v-icon>
+            <v-icon>fas fa-arrow-right</v-icon>
             <v-tooltip bottom>
               <template v-slot:activator="{ props }">
                 <v-chip
@@ -86,7 +86,7 @@
                   "
                 >
                   {{ newVersion }}
-                  <v-icon end size="small">mdi-clipboard-outline</v-icon>
+                  <v-icon end size="small">far fa-clipboard</v-icon>
                 </v-chip>
               </template>
               <span class="text-caption">Copy to clipboard</span>
@@ -101,7 +101,7 @@
                   color="warning"
                   v-bind="props"
                 >
-                  <v-icon start size="small">mdi-bell-off</v-icon>
+                  <v-icon start size="small">fas fa-bell-slash</v-icon>
                   {{ updatePolicyChipLabel }}
                 </v-chip>
               </template>
@@ -117,7 +117,7 @@
           </span>
 
           <v-icon>{{
-            showDetail ? "mdi-chevron-up" : "mdi-chevron-down"
+            showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down"
           }}</v-icon>
         </div>
       </v-card-title>
@@ -131,15 +131,15 @@
           >
             <v-tab v-if="container.result">
               <span v-if="smAndUp">Update</span>
-              <v-icon>mdi-package-down</v-icon>
+              <v-icon>fas fa-box-archive</v-icon>
             </v-tab>
             <v-tab>
               <span v-if="smAndUp">Triggers</span>
-              <v-icon>mdi-bell-ring</v-icon>
+              <v-icon>fas fa-bell</v-icon>
             </v-tab>
             <v-tab>
               <span v-if="smAndUp">Image</span>
-              <v-icon>mdi-package-variant-closed</v-icon>
+              <v-icon>fas fa-cube</v-icon>
             </v-tab>
             <v-tab>
               <span v-if="smAndUp">Container</span>
@@ -151,11 +151,11 @@
             </v-tab>
             <v-tab>
               <span v-if="smAndUp">Logs</span>
-              <v-icon>mdi-text-box</v-icon>
+              <v-icon>fas fa-file-lines</v-icon>
             </v-tab>
             <v-tab v-if="container.error">
               <span v-if="smAndUp">Error</span>
-              <v-icon>mdi-alert</v-icon>
+              <v-icon>fas fa-triangle-exclamation</v-icon>
             </v-tab>
           </v-tabs>
 
@@ -197,7 +197,7 @@
                   @click="updateContainerNow"
                 >
                   Update now
-                  <v-icon right>mdi-rocket-launch</v-icon>
+                  <v-icon right>fas fa-rocket</v-icon>
                 </v-btn>
               </v-col>
               <v-col class="text-center">
@@ -210,7 +210,7 @@
                       v-bind="props"
                     >
                       Policy
-                      <v-icon right>mdi-bell-cog</v-icon>
+                      <v-icon right>fas fa-sliders</v-icon>
                     </v-btn>
                   </template>
                   <v-list density="compact">
@@ -259,7 +259,7 @@
                       v-bind="props"
                     >
                       Delete
-                      <v-icon right>mdi-delete</v-icon>
+                      <v-icon right>fas fa-trash</v-icon>
                     </v-btn>
                   </template>
 

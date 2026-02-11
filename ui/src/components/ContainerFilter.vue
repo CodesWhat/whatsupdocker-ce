@@ -8,7 +8,7 @@
           :items="agents"
           @update:modelValue="emitAgentChanged"
           :clearable="true"
-          clear-icon="mdi-close"
+          clear-icon="fas fa-xmark"
           label="Agent"
           variant="outlined"
           density="compact"
@@ -21,7 +21,7 @@
           :items="watchers"
           @update:modelValue="emitWatcherChanged"
           :clearable="true"
-          clear-icon="mdi-close"
+          clear-icon="fas fa-xmark"
           label="Watcher"
           variant="outlined"
           density="compact"
@@ -34,7 +34,7 @@
           :items="registries"
           @update:modelValue="emitRegistryChanged"
           :clearable="true"
-          clear-icon="mdi-close"
+          clear-icon="fas fa-xmark"
           label="Registry"
           variant="outlined"
           density="compact"
@@ -47,7 +47,7 @@
           :items="updateKinds"
           @update:modelValue="emitUpdateKindChanged"
           :clearable="true"
-          clear-icon="mdi-close"
+          clear-icon="fas fa-xmark"
           label="Update kind"
           variant="outlined"
           density="compact"
@@ -61,7 +61,7 @@
           v-model="groupByLabelLocal"
           @update:modelValue="emitGroupByLabelChanged"
           clearable
-          clear-icon="mdi-close"
+          clear-icon="fas fa-xmark"
           variant="outlined"
           density="compact"
         >
@@ -94,7 +94,7 @@
           :loading="isRefreshing"
         >
           Check updates
-          <v-icon> mdi-refresh</v-icon>
+          <v-icon>fas fa-arrows-rotate</v-icon>
         </v-btn>
         <br />
       </v-col>

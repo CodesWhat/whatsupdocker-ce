@@ -9,7 +9,7 @@ describe('Trigger Service', () => {
 
   describe('getTriggerIcon', () => {
     it('returns the trigger icon', () => {
-      expect(getTriggerIcon()).toBe('mdi-bell-ring');
+      expect(getTriggerIcon()).toBe('fas fa-bell');
     });
   });
 

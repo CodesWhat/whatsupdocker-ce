@@ -26,7 +26,7 @@ describe('ConfigurationAgentsView', () => {
           name: 'agent1',
           agent: 'agent1',
           connected: true,
-          icon: 'mdi-lan-connect',
+          icon: 'fas fa-network-wired',
           configuration: { host: '192.168.1.1', port: 3000, status: 'Connected' },
         },
         {
@@ -34,7 +34,7 @@ describe('ConfigurationAgentsView', () => {
           name: 'agent2',
           agent: 'agent2',
           connected: false,
-          icon: 'mdi-lan-disconnect',
+          icon: 'fas fa-plug-circle-xmark',
           configuration: { host: '192.168.1.2', port: 3001, status: 'Disconnected' },
         },
       ],
@@ -72,8 +72,8 @@ describe('ConfigurationAgentsView Route Hook', () => {
 
     expect(vm.agents).toHaveLength(2);
     expect(vm.agents[0].name).toBe('agent1');
-    expect(vm.agents[0].icon).toBe('mdi-lan-connect');
-    expect(vm.agents[1].icon).toBe('mdi-lan-disconnect');
+    expect(vm.agents[0].icon).toBe('fas fa-network-wired');
+    expect(vm.agents[1].icon).toBe('fas fa-plug-circle-xmark');
     expect(vm.rawAgents).toHaveLength(2);
   });
 

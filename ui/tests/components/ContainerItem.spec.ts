@@ -5,7 +5,7 @@ const mockContainer = {
   id: 'test-container-id',
   name: 'test-container',
   displayName: 'Test Container',
-  displayIcon: 'mdi-docker',
+  displayIcon: 'fab fa-docker',
   watcher: 'local',
   image: {
     registry: { name: 'hub' },
@@ -117,7 +117,7 @@ describe('ContainerItem', () => {
   });
 
   it('computes correct OS icon for linux', () => {
-    expect(wrapper.vm.osIcon).toBe('mdi-linux');
+    expect(wrapper.vm.osIcon).toBe('fab fa-linux');
   });
 
   it('computes correct OS icon for windows', async () => {
@@ -127,7 +127,7 @@ describe('ContainerItem', () => {
         image: { ...mockContainer.image, os: 'windows' }
       }
     });
-    expect(wrapper.vm.osIcon).toBe('mdi-microsoft-windows');
+    expect(wrapper.vm.osIcon).toBe('fab fa-windows');
   });
 
   it('formats digest version correctly', async () => {

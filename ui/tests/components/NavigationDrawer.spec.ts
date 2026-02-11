@@ -2,14 +2,14 @@ import { mount } from '@vue/test-utils';
 import NavigationDrawer from '@/components/NavigationDrawer';
 
 // Mock all icon services
-vi.mock('@/services/container', () => ({ getContainerIcon: vi.fn(() => 'mdi-docker') }));
-vi.mock('@/services/registry', () => ({ getRegistryIcon: vi.fn(() => 'mdi-database-search') }));
-vi.mock('@/services/trigger', () => ({ getTriggerIcon: vi.fn(() => 'mdi-bell-ring') }));
-vi.mock('@/services/server', () => ({ getServerIcon: vi.fn(() => 'mdi-connection') }));
-vi.mock('@/services/watcher', () => ({ getWatcherIcon: vi.fn(() => 'mdi-update') }));
-vi.mock('@/services/authentication', () => ({ getAuthenticationIcon: vi.fn(() => 'mdi-lock') }));
-vi.mock('@/services/agent', () => ({ getAgentIcon: vi.fn(() => 'mdi-lan') }));
-vi.mock('@/services/log', () => ({ getLogIcon: vi.fn(() => 'mdi-math-log') }));
+vi.mock('@/services/container', () => ({ getContainerIcon: vi.fn(() => 'fab fa-docker') }));
+vi.mock('@/services/registry', () => ({ getRegistryIcon: vi.fn(() => 'fas fa-database') }));
+vi.mock('@/services/trigger', () => ({ getTriggerIcon: vi.fn(() => 'fas fa-bell') }));
+vi.mock('@/services/server', () => ({ getServerIcon: vi.fn(() => 'fas fa-server') }));
+vi.mock('@/services/watcher', () => ({ getWatcherIcon: vi.fn(() => 'fas fa-arrows-rotate') }));
+vi.mock('@/services/authentication', () => ({ getAuthenticationIcon: vi.fn(() => 'fas fa-lock') }));
+vi.mock('@/services/agent', () => ({ getAgentIcon: vi.fn(() => 'fas fa-network-wired') }));
+vi.mock('@/services/log', () => ({ getLogIcon: vi.fn(() => 'fas fa-terminal') }));
 
 // Mock vuetify useTheme
 vi.mock('vuetify', async () => {
@@ -58,7 +58,7 @@ describe('NavigationDrawer', () => {
   });
 
   it('has correct container icon', () => {
-    expect(wrapper.vm.containerIcon).toBe('mdi-docker');
+    expect(wrapper.vm.containerIcon).toBe('fab fa-docker');
   });
 
   it('contains configuration items with correct routes', () => {

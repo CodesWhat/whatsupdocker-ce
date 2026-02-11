@@ -2,7 +2,7 @@
   <v-card variant="outlined">
     <v-list-item>
       <template v-slot:prepend>
-        <v-icon>mdi-bell-ring</v-icon>
+        <v-icon>fas fa-bell</v-icon>
       </template>
       <v-list-item-title class="text-capitalize">
         <router-link to="/configuration/triggers">
@@ -21,7 +21,7 @@
           :loading="isTriggering"
         >
           Run
-          <v-icon end>mdi-gesture-tap</v-icon>
+          <v-icon end>fas fa-hand-pointer</v-icon>
         </v-btn>
       </template>
     </v-list-item>

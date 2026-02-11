@@ -6,7 +6,7 @@ describe('Watcher Service', () => {
   });
 
   it('should return watcher icon', () => {
-    expect(getWatcherIcon()).toBe('mdi-update');
+    expect(getWatcherIcon()).toBe('fas fa-arrows-rotate');
   });
 
   it('should get all watchers', async () => {

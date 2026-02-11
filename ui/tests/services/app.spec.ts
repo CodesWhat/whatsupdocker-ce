@@ -30,7 +30,7 @@ describe('Server Service', () => {
   });
 
   it('should return server icon', () => {
-    expect(getServerIcon()).toBe('mdi-connection');
+    expect(getServerIcon()).toBe('fas fa-server');
   });
 
   it('should get server data', async () => {
@@ -52,7 +52,7 @@ describe('Store Service', () => {
   });
 
   it('should return store icon', () => {
-    expect(getStoreIcon()).toBe('mdi-file-multiple');
+    expect(getStoreIcon()).toBe('fas fa-copy');
   });
 
   it('should get store data', async () => {

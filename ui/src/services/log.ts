@@ -1,5 +1,5 @@
 function getLogIcon() {
-  return "mdi-console";
+  return "fas fa-terminal";
 }
 
 async function getLog() {

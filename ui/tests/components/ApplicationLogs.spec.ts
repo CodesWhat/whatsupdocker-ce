@@ -9,7 +9,7 @@ const { mockGetLogEntries, mockGetAgents } = vi.hoisted(() => ({
 vi.mock('@/services/log', () => ({
   getLogEntries: mockGetLogEntries,
   getLog: vi.fn(),
-  getLogIcon: vi.fn(() => 'mdi-console'),
+  getLogIcon: vi.fn(() => 'fas fa-terminal'),
 }));
 
 vi.mock('@/services/agent', () => ({

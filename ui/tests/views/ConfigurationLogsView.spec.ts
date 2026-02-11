@@ -26,7 +26,7 @@ describe('ConfigurationLogsView', () => {
     const item = wrapper.vm.configurationItem;
     expect(item.type).toBe('logs');
     expect(item.name).toBe('configuration');
-    expect(item.icon).toBe('mdi-console');
+    expect(item.icon).toBe('fas fa-terminal');
     expect(item.configuration.level).toBe('info');
   });
 

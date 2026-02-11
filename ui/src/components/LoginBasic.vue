@@ -4,7 +4,7 @@
       <v-text-field
         label="Username"
         v-model="username"
-        append-icon="mdi-account"
+        append-icon="fas fa-user"
         :rules="[rules.required]"
         autocomplete="username"
         variant="outlined"
@@ -14,7 +14,7 @@
         label="Password"
         type="password"
         v-model="password"
-        append-icon="mdi-lock"
+        append-icon="fas fa-lock"
         :rules="[rules.required]"
         autocomplete="current-password"
         variant="outlined"

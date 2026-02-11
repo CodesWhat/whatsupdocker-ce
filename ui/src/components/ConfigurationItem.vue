@@ -8,7 +8,7 @@
       <div class="text-body-3">
         <span v-if="smAndUp && item.agent">
           <v-chip label :color="agentStatusColor" variant="outlined">
-            <v-icon left>mdi-lan</v-icon>
+            <v-icon left>fas fa-network-wired</v-icon>
             {{ item.agent }}
           </v-chip>
           /
@@ -19,7 +19,7 @@
       </div>
       <v-spacer />
       <IconRenderer :icon="item.icon" :size="24" :margin-right="8" />
-      <v-icon>{{ showDetail ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
+      <v-icon>{{ showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down" }}</v-icon>
     </v-card-title>
     <transition name="expand-transition">
       <v-card-text v-show="showDetail">

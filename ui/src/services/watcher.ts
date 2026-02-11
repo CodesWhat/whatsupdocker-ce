@@ -1,5 +1,5 @@
 function getWatcherIcon() {
-  return "mdi-update";
+  return "fas fa-arrows-rotate";
 }
 
 async function getAllWatchers() {

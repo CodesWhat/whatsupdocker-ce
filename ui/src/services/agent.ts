@@ -1,7 +1,7 @@
 const BASE_URL = '/api/agents';
 
 export function getAgentIcon() {
-  return 'mdi-lan';
+  return 'fas fa-network-wired';
 }
 
 export async function getAgents() {

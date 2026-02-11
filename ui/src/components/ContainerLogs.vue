@@ -15,7 +15,7 @@
         variant="text"
         @click="fetchLogs"
       >
-        <v-icon>mdi-refresh</v-icon>
+        <v-icon>fas fa-arrows-rotate</v-icon>
       </v-btn>
     </div>
 

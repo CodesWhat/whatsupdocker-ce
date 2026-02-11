@@ -4,7 +4,7 @@ import App from '@/App';
 // Mock services
 vi.mock('@/services/server', () => ({
   getServer: vi.fn(() => Promise.resolve({ configuration: { feature: { delete: true } } })),
-  getServerIcon: vi.fn(() => 'mdi-connection'),
+  getServerIcon: vi.fn(() => 'fas fa-server'),
 }));
 
 vi.mock('vue-router', () => ({

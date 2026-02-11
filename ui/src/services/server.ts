@@ -1,5 +1,5 @@
 function getServerIcon() {
-  return "mdi-connection";
+  return "fas fa-server";
 }
 
 async function getServer() {

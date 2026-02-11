@@ -1,5 +1,5 @@
 function getStoreIcon() {
-  return "mdi-file-multiple";
+  return "fas fa-copy";
 }
 
 async function getStore() {

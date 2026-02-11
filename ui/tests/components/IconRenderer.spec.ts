@@ -89,9 +89,9 @@ describe('IconRenderer', () => {
     const testCases = [
       { input: 'mdi:docker', expected: 'mdi-docker' },
       { input: 'fa:docker', expected: 'fa-docker' },
-      { input: 'fab:docker', expected: 'fab-docker' },
-      { input: 'far:docker', expected: 'far-docker' },
-      { input: 'fas:docker', expected: 'fas-docker' },
+      { input: 'fab:docker', expected: 'fab fa-docker' },
+      { input: 'far:docker', expected: 'far fa-docker' },
+      { input: 'fas:docker', expected: 'fas fa-docker' },
       { input: 'si:docker', expected: 'si-docker' },
     ];
 

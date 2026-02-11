@@ -1,5 +1,5 @@
 function getAuthenticationIcon() {
-  return "mdi-lock";
+  return "fas fa-lock";
 }
 
 async function getAllAuthentications() {

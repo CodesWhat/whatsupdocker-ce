@@ -79,13 +79,13 @@ export default defineComponent({
     },
 
     osIcon() {
-      let icon = 'mdi-help';
+      let icon = 'fas fa-circle-question';
       switch (this.container.image.os) {
         case 'linux':
-          icon = 'mdi-linux';
+          icon = 'fab fa-linux';
           break;
         case 'windows':
-          icon = 'mdi-microsoft-windows';
+          icon = 'fab fa-windows';
           break;
       }
       return icon;

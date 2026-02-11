@@ -3,22 +3,22 @@ import HomeView from '@/views/HomeView';
 
 // Mock services
 vi.mock('@/services/container', () => ({
-  getContainerIcon: vi.fn(() => 'mdi-docker'),
+  getContainerIcon: vi.fn(() => 'fab fa-docker'),
   getAllContainers: vi.fn(() => Promise.resolve([
     { id: 1, updateAvailable: true },
     { id: 2, updateAvailable: false }
   ]))
 }));
 vi.mock('@/services/registry', () => ({
-  getRegistryIcon: vi.fn(() => 'mdi-database'),
+  getRegistryIcon: vi.fn(() => 'fas fa-database'),
   getAllRegistries: vi.fn(() => Promise.resolve([{}, {}, {}]))
 }));
 vi.mock('@/services/trigger', () => ({
-  getTriggerIcon: vi.fn(() => 'mdi-bell'),
+  getTriggerIcon: vi.fn(() => 'fas fa-bell'),
   getAllTriggers: vi.fn(() => Promise.resolve([{}]))
 }));
 vi.mock('@/services/watcher', () => ({
-  getWatcherIcon: vi.fn(() => 'mdi-eye'),
+  getWatcherIcon: vi.fn(() => 'fas fa-arrows-rotate'),
   getAllWatchers: vi.fn(() => Promise.resolve([{}, {}]))
 }));
 

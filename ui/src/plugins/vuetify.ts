@@ -1,13 +1,11 @@
 // Google fonts
 import "@fontsource/roboto";
 
-// Material design icons
-import "@mdi/font/css/materialdesignicons.css";
-
 // Font-awesome
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createVuetify as createVuetifyInstance } from "vuetify";
+import { aliases, fa } from "vuetify/iconsets/fa";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import "vuetify/styles";
@@ -20,6 +18,11 @@ export function createVuetify() {
       VCard: {
         loader: false,
       },
+    },
+    icons: {
+      defaultSet: "fa",
+      aliases,
+      sets: { fa },
     },
     theme: {
       defaultTheme: "light",

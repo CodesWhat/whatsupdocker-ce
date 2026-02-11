@@ -42,7 +42,7 @@ describe('ConfigurationServerView', () => {
     const config = wrapper.vm.serverConfiguration;
     expect(config.type).toBe('server');
     expect(config.name).toBe('configuration');
-    expect(config.icon).toBe('mdi-connection');
+    expect(config.icon).toBe('fas fa-server');
     expect(config.configuration).toEqual({ port: 3000, host: '0.0.0.0' });
   });
 
@@ -50,7 +50,7 @@ describe('ConfigurationServerView', () => {
     const config = wrapper.vm.logConfiguration;
     expect(config.type).toBe('logs');
     expect(config.name).toBe('configuration');
-    expect(config.icon).toBe('mdi-console');
+    expect(config.icon).toBe('fas fa-terminal');
     expect(config.configuration).toEqual({ level: 'info' });
   });
 
@@ -58,7 +58,7 @@ describe('ConfigurationServerView', () => {
     const config = wrapper.vm.storeConfiguration;
     expect(config.type).toBe('store');
     expect(config.name).toBe('configuration');
-    expect(config.icon).toBe('mdi-file-multiple');
+    expect(config.icon).toBe('fas fa-copy');
     expect(config.configuration).toEqual({ path: '/store' });
   });
 });

@@ -21,7 +21,7 @@ export default defineComponent({
           name: agent.name,
           agent: agent.name,
           connected: agent.connected,
-          icon: agent.connected ? 'mdi-lan-connect' : 'mdi-lan-disconnect',
+          icon: agent.connected ? 'fas fa-network-wired' : 'fas fa-plug-circle-xmark',
           configuration: {
               host: agent.host,
               port: agent.port,

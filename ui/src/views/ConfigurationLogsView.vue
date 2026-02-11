@@ -9,7 +9,7 @@
       <v-col :cols="12" class="pt-2 pb-2">
         <v-card>
           <v-card-title>
-            <v-icon class="mr-2">mdi-text-box-outline</v-icon>
+            <v-icon class="mr-2">fas fa-file-lines</v-icon>
             Application Logs
           </v-card-title>
           <v-card-text class="pa-0">

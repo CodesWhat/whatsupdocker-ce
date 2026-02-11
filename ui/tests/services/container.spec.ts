@@ -20,7 +20,7 @@ describe('Container Service', () => {
 
   describe('getContainerIcon', () => {
     it('returns the docker icon', () => {
-      expect(getContainerIcon()).toBe('mdi-docker');
+      expect(getContainerIcon()).toBe('fab fa-docker');
     });
   });
 

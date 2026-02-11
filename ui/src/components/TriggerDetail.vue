@@ -12,7 +12,7 @@
       </div>
       <v-spacer />
       <v-icon>{{ trigger.icon }}</v-icon>
-      <v-icon>{{ showDetail ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
+      <v-icon>{{ showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down" }}</v-icon>
     </v-card-title>
     <transition name="expand-transition">
       <v-card-text v-show="showDetail">
@@ -36,7 +36,7 @@
           <v-col cols="4" class="text-right">
             <v-btn variant="outlined" size="small" color="accent" @click="openTestForm">
               Test
-              <v-icon right>mdi-test-tube</v-icon>
+              <v-icon right>fas fa-flask</v-icon>
             </v-btn>
 
             <v-navigation-drawer
@@ -48,7 +48,7 @@
             >
               <div class="pa-3">
                 <div class="text-subtitle-2 mb-2">
-                  <v-icon size="small">mdi-test-tube</v-icon>
+                  <v-icon size="small">fas fa-flask</v-icon>
                   Test trigger
                 </div>
                 <v-select

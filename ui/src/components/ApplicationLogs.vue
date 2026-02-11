@@ -24,7 +24,7 @@
       />
       <v-tooltip v-if="configuredLevel" location="bottom">
         <template v-slot:activator="{ props }">
-          <v-icon v-bind="props" size="small" color="grey">mdi-information-outline</v-icon>
+          <v-icon v-bind="props" size="small" color="grey">fas fa-circle-info</v-icon>
         </template>
         Your server log level is set to "{{ configuredLevel.toUpperCase() }}". Logs below this level won't appear here.
       </v-tooltip>
@@ -44,7 +44,7 @@
         :loading="loading"
         @click="fetchEntries"
       >
-        <v-icon>mdi-refresh</v-icon>
+        <v-icon>fas fa-arrows-rotate</v-icon>
       </v-btn>
     </div>
 
@@ -65,7 +65,7 @@
 </span></pre></section>
 
     <div v-else class="app-logs__empty text-center pa-6 text-medium-emphasis">
-      <v-icon size="32" class="mb-2" color="grey">mdi-text-box-remove-outline</v-icon>
+      <v-icon size="32" class="mb-2" color="grey">fas fa-file-circle-xmark</v-icon>
       <div>No log entries</div>
     </div>
   </div>
