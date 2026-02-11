@@ -13,6 +13,7 @@ import * as storeRouter from './store.js';
 import * as serverRouter from './server.js';
 import { requireAuthentication } from './auth.js';
 import * as agentRouter from './agent.js';
+import * as backupRouter from './backup.js';
 import * as previewRouter from './preview.js';
 
 /**
@@ -45,6 +46,9 @@ export function init() {
 
     // Mount preview router (container preview/dry-run)
     router.use('/containers', previewRouter.init());
+
+    // Mount backup router (image backup/rollback)
+    router.use('/containers', backupRouter.init());
 
     // Mount trigger router
     router.use('/triggers', triggerRouter.init());

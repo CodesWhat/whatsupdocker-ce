@@ -51,6 +51,7 @@ const {
         vi.doMock('../configuration', () => createConfigMock(overrides.config ?? STORE_CONFIG));
         vi.doMock('./app', createCollectionsMock);
         vi.doMock('./audit', createCollectionsMock);
+        vi.doMock('./backup', createCollectionsMock);
         vi.doMock('./container', createCollectionsMock);
         vi.doMock('../log', createLogMock);
     }
@@ -73,6 +74,7 @@ vi.mock('node:fs', () => createFsMock());
 vi.mock('../configuration', () => createConfigMock());
 vi.mock('./app', createCollectionsMock);
 vi.mock('./audit', createCollectionsMock);
+vi.mock('./backup', createCollectionsMock);
 vi.mock('./container', createCollectionsMock);
 vi.mock('../log', createLogMock);
 

@@ -8,6 +8,7 @@ import { getStoreConfiguration } from '../configuration/index.js';
 
 import * as app from './app.js';
 import * as audit from './audit.js';
+import * as backup from './backup.js';
 import * as container from './container.js';
 
 // Store Configuration Schema
@@ -31,6 +32,7 @@ let db;
 function createCollections() {
     app.createCollections(db);
     audit.createCollections(db);
+    backup.createCollections(db);
     container.createCollections(db);
 }
 

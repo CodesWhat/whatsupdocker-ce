@@ -12,6 +12,7 @@ const configurationValid = {
     auto: true,
     order: 100,
     autoremovetimeout: 10000,
+    backupcount: 3,
     simpletitle:
         'New ${container.updateKind.kind} found for container ${container.name}',
     simplebody:
@@ -23,6 +24,11 @@ const configurationValid = {
 const docker = new Docker();
 docker.configuration = configurationValid;
 docker.log = log;
+
+vi.mock('../../../store/backup', () => ({
+    insertBackup: vi.fn(),
+    pruneOldBackups: vi.fn(),
+}));
 
 vi.mock('../../../registry', () => ({
     getState() {
@@ -564,6 +570,7 @@ test('trigger should not throw when all is ok', async () => {
             image: {
                 name: 'test/test',
                 registry: { name: 'hub', url: 'my-registry' },
+                tag: { value: '1.0.0' },
             },
             updateKind: { remoteValue: '4.5.6' },
         }),

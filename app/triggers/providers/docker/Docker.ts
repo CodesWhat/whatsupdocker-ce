@@ -1,9 +1,11 @@
 // @ts-nocheck
+import crypto from 'node:crypto';
 import parse from 'parse-docker-image-name';
 import Trigger from '../Trigger.js';
 import { getState } from '../../../registry/index.js';
 import { fullName } from '../../../model/container.js';
 import { emitContainerUpdateApplied } from '../../../event/index.js';
+import * as backupStore from '../../../store/backup.js';
 
 const PULL_PROGRESS_LOG_INTERVAL_MS = 2000;
 
@@ -58,6 +60,7 @@ class Docker extends Trigger {
             prune: this.joi.boolean().default(false),
             dryrun: this.joi.boolean().default(false),
             autoremovetimeout: this.joi.number().default(10_000),
+            backupcount: this.joi.number().default(3),
         });
     }
 
@@ -740,6 +743,18 @@ class Docker extends Trigger {
             );
         }
 
+        // Save a backup of the current image before updating
+        backupStore.insertBackup({
+            id: crypto.randomUUID(),
+            containerId: container.id,
+            containerName: container.name,
+            imageName: `${container.image.registry.name}/${container.image.name}`,
+            imageTag: container.image.tag.value,
+            imageDigest: container.image.digest?.repo,
+            timestamp: new Date().toISOString(),
+            triggerName: this.getId(),
+        });
+
         // Pull new image ahead of time
         await this.pullImage(dockerApi, auth, newImage, logContainer);
 
@@ -776,6 +791,9 @@ class Docker extends Trigger {
         // Notify that this container has been updated so notification
         // triggers can dismiss previously sent messages.
         await emitContainerUpdateApplied(fullName(container));
+
+        // Prune old backups, keeping only the configured number
+        backupStore.pruneOldBackups(container.id, this.configuration.backupcount);
     }
 
     /**
