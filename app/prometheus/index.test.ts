@@ -8,8 +8,10 @@ vi.mock('../configuration', () => ({
 // Mock prom-client
 vi.mock('prom-client', () => ({
   collectDefaultMetrics: vi.fn(),
+  Counter: vi.fn(() => ({ inc: vi.fn(), name: 'mock_counter' })),
   register: {
     metrics: vi.fn(() => 'mocked_metrics_output'),
+    removeSingleMetric: vi.fn(),
   },
 }));
 
@@ -38,6 +40,10 @@ vi.mock('./container-actions', () => ({
   init: vi.fn(),
 }));
 
+vi.mock('./webhook', () => ({
+  init: vi.fn(),
+}));
+
 vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
 
 describe('Prometheus Module', () => {
@@ -55,6 +61,7 @@ describe('Prometheus Module', () => {
     const registry = await import('./registry.js');
     const audit = await import('./audit.js');
     const containerActions = await import('./container-actions.js');
+    const webhook = await import('./webhook.js');
 
     prometheus.init();
 
@@ -65,6 +72,7 @@ describe('Prometheus Module', () => {
     expect(watcher.init).toHaveBeenCalled();
     expect(audit.init).toHaveBeenCalled();
     expect(containerActions.init).toHaveBeenCalled();
+    expect(webhook.init).toHaveBeenCalled();
   });
 
   test('should NOT initialize metrics when disabled', async () => {
@@ -78,6 +86,7 @@ describe('Prometheus Module', () => {
     const registry = await import('./registry.js');
     const audit = await import('./audit.js');
     const containerActions = await import('./container-actions.js');
+    const webhook = await import('./webhook.js');
 
     prometheus.init();
 
@@ -88,6 +97,7 @@ describe('Prometheus Module', () => {
     expect(watcher.init).not.toHaveBeenCalled();
     expect(audit.init).not.toHaveBeenCalled();
     expect(containerActions.init).not.toHaveBeenCalled();
+    expect(webhook.init).not.toHaveBeenCalled();
   });
 
   test('should return metrics output', async () => {

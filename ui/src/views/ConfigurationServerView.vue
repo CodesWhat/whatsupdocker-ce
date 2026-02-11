@@ -3,6 +3,7 @@
     <div class="mb-2">
       <configuration-item :item="serverConfiguration" />
     </div>
+    <webhook-info :enabled="webhookEnabled" :base-url="webhookBaseUrl" />
     <div class="mb-2">
       <configuration-item :item="logConfiguration" />
     </div>

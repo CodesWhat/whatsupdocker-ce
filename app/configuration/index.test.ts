@@ -115,6 +115,7 @@ test('getServerConfiguration should return configured api (new vars)', async () 
     feature: {
       delete: true,
       containeractions: true,
+      webhook: true,
     },
     metrics: {},
     port: 4000,
@@ -131,6 +132,7 @@ test('getServerConfiguration should allow disabling metrics auth', async () => {
     feature: {
       delete: true,
       containeractions: true,
+      webhook: true,
     },
     metrics: {
       auth: false,

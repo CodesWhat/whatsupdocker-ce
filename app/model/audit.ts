@@ -11,7 +11,10 @@ export interface AuditEntry {
     | 'preview'
     | 'container-start'
     | 'container-stop'
-    | 'container-restart';
+    | 'container-restart'
+    | 'webhook-watch'
+    | 'webhook-watch-container'
+    | 'webhook-update';
   containerName: string;
   containerImage?: string;
   fromVersion?: string;

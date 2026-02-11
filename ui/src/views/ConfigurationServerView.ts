@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue';
 import ConfigurationItem from '@/components/ConfigurationItem.vue';
+import WebhookInfo from '@/components/WebhookInfo.vue';
 import { getLog } from '@/services/log';
 import { getServer } from '@/services/server';
 import { getStore } from '@/services/store';
@@ -7,6 +8,7 @@ import { getStore } from '@/services/store';
 export default defineComponent({
   components: {
     ConfigurationItem,
+    WebhookInfo,
   },
   data() {
     return {
@@ -39,6 +41,12 @@ export default defineComponent({
         icon: 'fas fa-copy',
         configuration: this.store.configuration,
       };
+    },
+    webhookEnabled() {
+      return this.server?.configuration?.webhook?.enabled === true;
+    },
+    webhookBaseUrl() {
+      return window.location.origin;
     },
   },
 

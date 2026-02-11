@@ -16,6 +16,7 @@ import * as serverRouter from './server.js';
 import * as storeRouter from './store.js';
 import * as triggerRouter from './trigger.js';
 import * as watcherRouter from './watcher.js';
+import * as webhookRouter from './webhook.js';
 
 /**
  * Init the API router.
@@ -34,6 +35,9 @@ export function init() {
 
   // Mount app router
   router.use('/app', appRouter.init());
+
+  // Mount webhook router (uses its own bearer token auth)
+  router.use('/webhook', webhookRouter.init());
 
   // Routes to protect after this line
   router.use(requireAuthentication);

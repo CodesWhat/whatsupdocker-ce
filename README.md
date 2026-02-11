@@ -163,6 +163,10 @@ Automatic pre-update image backup with configurable retention and one-click roll
 <h3>Container Actions</h3>
 Start, stop, and restart containers from the UI or API with feature-flag control
 </td>
+<td align="center" width="33%">
+<h3>Webhook API</h3>
+Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles and updates
+</td>
 </tr>
 </table>
 
@@ -203,6 +207,7 @@ Start, stop, and restart containers from the UI or API with feature-flag control
 | **Grafana dashboard** | Importable JSON template for Prometheus metrics overview |
 | **Font Awesome 6 icons** | Migrated from MDI to FA6 with support for `fab:`/`far:`/`fas:` prefix syntax |
 | **Container actions** | Start/stop/restart containers via API and UI, gated by `DD_SERVER_FEATURE_CONTAINERACTIONS` |
+| **Webhook API** | Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles and updates, gated by `DD_SERVER_WEBHOOK_ENABLED` and `DD_SERVER_WEBHOOK_TOKEN` |
 
 ### Bug Fixes (not in WUD)
 

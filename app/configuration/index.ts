@@ -147,10 +147,12 @@ export function getServerConfiguration() {
       .object({
         delete: joi.boolean().default(true),
         containeractions: joi.boolean().default(true),
+        webhook: joi.boolean().default(true),
       })
       .default({
         delete: true,
         containeractions: true,
+        webhook: true,
       }),
     metrics: joi
       .object({
@@ -176,6 +178,26 @@ export function getPrometheusConfiguration() {
     enabled: joi.boolean().default(true),
   });
 
+  const configurationToValidate = configurationSchema.validate(configurationFromEnv || {});
+  if (configurationToValidate.error) {
+    throw configurationToValidate.error;
+  }
+  return configurationToValidate.value;
+}
+
+/**
+ * Get Webhook configurations.
+ */
+export function getWebhookConfiguration() {
+  const configurationFromEnv = get('dd.server.webhook', ddEnvVars);
+  const configurationSchema = joi.object().keys({
+    enabled: joi.boolean().default(false),
+    token: joi.string().when('enabled', {
+      is: true,
+      then: joi.string().min(1).required(),
+      otherwise: joi.string().allow('').default(''),
+    }),
+  });
   const configurationToValidate = configurationSchema.validate(configurationFromEnv || {});
   if (configurationToValidate.error) {
     throw configurationToValidate.error;

@@ -12,6 +12,7 @@ import * as containerActions from './container-actions.js';
 import * as registry from './registry.js';
 import * as trigger from './trigger.js';
 import * as watcher from './watcher.js';
+import * as webhook from './webhook.js';
 
 /**
  * Start the Prometheus registry.
@@ -30,6 +31,7 @@ export function init() {
   watcher.init();
   audit.init();
   containerActions.init();
+  webhook.init();
 }
 
 /**

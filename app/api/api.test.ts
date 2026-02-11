@@ -4,7 +4,7 @@ const { mockInit } = vi.hoisted(() => ({
 }));
 
 vi.mock('express', () => ({
-  default: { Router: vi.fn(() => ({ use: vi.fn(), get: vi.fn() })) },
+  default: { Router: vi.fn(() => ({ use: vi.fn(), get: vi.fn(), post: vi.fn() })) },
 }));
 
 vi.mock('./app', mockInit);
@@ -21,6 +21,7 @@ vi.mock('./preview', mockInit);
 vi.mock('./backup', mockInit);
 vi.mock('./container-actions', mockInit);
 vi.mock('./audit', mockInit);
+vi.mock('./webhook', mockInit);
 vi.mock('./auth', () => ({
   requireAuthentication: vi.fn((req, res, next) => next()),
 }));
@@ -54,6 +55,7 @@ describe('API Router', () => {
     const backupRouter = await import('./backup.js');
     const containerActionsRouter = await import('./container-actions.js');
     const auditRouter = await import('./audit.js');
+    const webhookRouter = await import('./webhook.js');
 
     expect(appRouter.init).toHaveBeenCalled();
     expect(containerRouter.init).toHaveBeenCalled();
@@ -69,6 +71,7 @@ describe('API Router', () => {
     expect(backupRouter.init).toHaveBeenCalled();
     expect(containerActionsRouter.init).toHaveBeenCalled();
     expect(auditRouter.init).toHaveBeenCalled();
+    expect(webhookRouter.init).toHaveBeenCalled();
   });
 
   test('should use requireAuthentication middleware', async () => {

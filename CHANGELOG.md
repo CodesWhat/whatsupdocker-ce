@@ -21,6 +21,7 @@ This changelog covers all changes in **drydock** since forking from [getwud/wud]
 - **Dashboard second row** — Added Recent Activity and stats cards as a second row on the dashboard.
 - **UI modernization** — Consistent `pa-4` padding, outlined/rounded cards, tonal chips, styled empty states, and Font Awesome icons across all views and components.
 - **Container actions (start/stop/restart)** — New API endpoints and UI buttons to start, stop, and restart Docker containers directly from the dashboard. Gated by `DD_SERVER_FEATURE_CONTAINERACTIONS` (default: enabled). Includes audit logging, Prometheus counter (`dd_container_actions_total`), desktop toolbar buttons with disabled-state awareness, and mobile overflow menu integration.
+- **Webhook API for on-demand triggers** — Token-authenticated HTTP endpoints (`POST /api/webhook/watch`, `/watch/:name`, `/update/:name`) for CI/CD integration. Gated by `DD_SERVER_WEBHOOK_ENABLED` and `DD_SERVER_WEBHOOK_TOKEN`. Includes rate limiting (30 req/15min), audit logging, Prometheus counter (`dd_webhook_total`), and a configuration info panel on the Server settings page.
 
 ### Bug Fixes
 
