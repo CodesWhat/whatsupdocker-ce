@@ -24,7 +24,7 @@ class Smtp extends Trigger {
           const match = /^("?(?<displayName>[^"]*)"? <)?(?<emailAddress>[^ <]+@[^ >]+)>?$/.exec(
             value,
           );
-          if (!match || !match.groups || !match.groups.emailAddress) {
+          if (!match?.groups?.emailAddress) {
             return helpers.error('string.email');
           }
 
@@ -51,10 +51,18 @@ class Smtp extends Trigger {
       to: this.joi
         .string()
         .required()
-        .when('allowcustomtld', {
-          is: true,
-          then: this.joi.string().email({ tlds: { allow: false } }),
-          otherwise: this.joi.string().email(),
+        .custom((value, helpers) => {
+          const allowCustomTld = !!helpers.state.ancestors[0].allowcustomtld;
+          const emailValidationResult = this.joi
+            .string()
+            .email({ tlds: { allow: !allowCustomTld } })
+            .validate(value);
+
+          if (emailValidationResult.error) {
+            return helpers.error('string.email');
+          }
+
+          return value;
         }),
       tls: this.joi
         .object({
@@ -91,9 +99,9 @@ class Smtp extends Trigger {
       host: this.configuration.host,
       port: this.configuration.port,
       auth,
-      secure: this.configuration.tls && this.configuration.tls.enabled,
+      secure: this.configuration.tls?.enabled,
       tls: {
-        rejectUnauthorized: this.configuration.tls ? this.configuration.tls.verify : true,
+        rejectUnauthorized: this.configuration.tls?.verify ?? true,
       },
     });
   }

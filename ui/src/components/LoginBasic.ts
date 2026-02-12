@@ -32,8 +32,8 @@ export default defineComponent({
         try {
           await loginBasic(this.username, this.password);
           this.$emit('authentication-success');
-        } catch (e) {
-          (this as any).$eventBus.emit('notify', 'Username or password error', 'error');
+        } catch (e: any) {
+          this.$eventBus.emit('notify', e?.message || 'Username or password error', 'error');
         }
       }
     },

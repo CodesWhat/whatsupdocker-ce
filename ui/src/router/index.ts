@@ -105,25 +105,25 @@ function createLoginRedirect(to) {
 async function applyAuthNavigationGuard(to) {
   if (to.name === 'login') {
     return true;
-  } else {
-    // Get current user
-    const user = await getUser();
-
-    // User is authenticated => go to route
-    if (user !== undefined) {
-      // Emit authenticated event after navigation
-      nextTick(() => {
-        if ((router as any).app?.config?.globalProperties?.$eventBus) {
-          (router as any).app.config.globalProperties.$eventBus.emit('authenticated', user);
-        }
-      });
-
-      return validateAndGetNextRoute(to);
-    } else {
-      // User is not authenticated => save destination as next & go to login
-      return createLoginRedirect(to);
-    }
   }
+
+  // Get current user
+  const user = await getUser();
+
+  // User is authenticated => go to route
+  if (user !== undefined) {
+    // Emit authenticated event after navigation
+    nextTick(() => {
+      if ((router as any).app?.config?.globalProperties?.$eventBus) {
+        (router as any).app.config.globalProperties.$eventBus.emit('authenticated', user);
+      }
+    });
+
+    return validateAndGetNextRoute(to);
+  }
+
+  // User is not authenticated => save destination as next & go to login
+  return createLoginRedirect(to);
 }
 
 /**

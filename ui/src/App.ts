@@ -29,7 +29,7 @@ function setupAuthStateManagement(user: any, onAuthenticated: (userData: any) =>
         });
         if (response.ok) {
           const currentUser = await response.json();
-          if (currentUser && currentUser.username) {
+          if (currentUser?.username) {
             onAuthenticated(currentUser);
           }
         }
@@ -86,7 +86,7 @@ export default defineComponent({
         .replace('/', '')
         .split('/')
         .map((item) => ({
-          text: item ? item : 'Home',
+          text: item || 'Home',
           disabled: false,
           href: '',
         }));

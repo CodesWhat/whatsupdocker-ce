@@ -31,7 +31,8 @@ async function getUser() {
       user = undefined;
       return undefined;
     }
-  } catch (e) {
+  } catch (e: any) {
+    console.debug(`Unable to fetch current user: ${e?.message || e}`);
     user = undefined;
     return undefined;
   }

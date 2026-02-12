@@ -77,7 +77,8 @@ export default defineComponent({
   },
   computed: {
     agentStatusColor() {
-      const agent = (this.agents as any[]).find((a) => a.name === this.container.agent);
+      const agents = Array.isArray(this.agents) ? this.agents : [];
+      const agent = agents.find((a) => a.name === this.container.agent);
       if (agent) {
         return agent.connected ? 'success' : 'error';
       }
@@ -107,30 +108,25 @@ export default defineComponent({
 
     newVersion() {
       let newVersion = 'unknown';
-      if (
-        this.container.result.created &&
-        this.container.image.created !== this.container.result.created
-      ) {
-        newVersion = (this as any).$filters.dateTime(this.container.result.created);
+      const resultCreated = this.container.result?.created;
+      if (resultCreated && this.container.image.created !== resultCreated) {
+        newVersion = this.$filters.dateTime(resultCreated);
       }
-      if (this.container.updateKind) {
+      if (this.container.updateKind?.remoteValue) {
         newVersion = this.container.updateKind.remoteValue;
       }
-      if (this.container.updateKind.kind === 'digest') {
-        newVersion = (this as any).$filters.short(newVersion, 15);
+      if (this.container.updateKind?.kind === 'digest') {
+        newVersion = this.$filters.short(newVersion, 15);
       }
       return newVersion;
     },
 
     newVersionClass() {
       let color = 'warning';
-      if (this.container.updateKind && this.container.updateKind.kind === 'tag') {
+      if (this.container.updateKind?.kind === 'tag') {
         switch (this.container.updateKind.semverDiff) {
           case 'major':
             color = 'error';
-            break;
-          case 'minor':
-            color = 'warning';
             break;
           case 'patch':
             color = 'success';
@@ -219,9 +215,9 @@ export default defineComponent({
       try {
         const containerUpdated = await updateContainerPolicy(this.container.id, action, payload);
         this.$emit('container-refreshed', containerUpdated);
-        (this as any).$eventBus.emit('notify', successMessage);
+        this.$eventBus.emit('notify', successMessage);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to update policy (${e.message})`,
           'error',
@@ -258,16 +254,16 @@ export default defineComponent({
       try {
         const containerRefreshed = await refreshContainer(this.container.id);
         if (!containerRefreshed) {
-          (this as any).$eventBus.emit('notify', 'Container no longer found in Docker', 'warning');
+          this.$eventBus.emit('notify', 'Container no longer found in Docker', 'warning');
           this.$emit('container-missing', this.container.id);
           return;
         }
         this.$emit('container-refreshed', containerRefreshed);
         if (notifyOnSuccess) {
-          (this as any).$eventBus.emit('notify', 'Container refreshed');
+          this.$eventBus.emit('notify', 'Container refreshed');
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to refresh container (${e.message})`,
           'error',
@@ -282,7 +278,7 @@ export default defineComponent({
       try {
         const triggers = await getContainerTriggers(this.container.id);
         if (!Array.isArray(triggers) || triggers.length === 0) {
-          (this as any).$eventBus.emit(
+          this.$eventBus.emit(
             'notify',
             'No triggers associated to this container',
             'warning',
@@ -307,13 +303,13 @@ export default defineComponent({
           throw new Error(`some triggers failed (${triggerErrors.join(', ')})`);
         }
 
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Update triggered (${triggers.length} trigger${triggers.length > 1 ? 's' : ''})`,
         );
         await this.refreshContainerNow(false);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to update container (${e.message})`,
           'error',
@@ -324,7 +320,7 @@ export default defineComponent({
     },
 
     async onRollbackSuccess() {
-      (this as any).$eventBus.emit('notify', 'Container rolled back successfully');
+      this.$eventBus.emit('notify', 'Container rolled back successfully');
       await this.refreshContainerNow(false);
     },
 
@@ -332,12 +328,12 @@ export default defineComponent({
       this.isStarting = true;
       try {
         const result = await startContainer(this.container.id);
-        (this as any).$eventBus.emit('notify', 'Container started');
+        this.$eventBus.emit('notify', 'Container started');
         if (result.container) {
           this.$emit('container-refreshed', result.container);
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit('notify', `Error starting container (${e.message})`, 'error');
+        this.$eventBus.emit('notify', `Error starting container (${e.message})`, 'error');
       } finally {
         this.isStarting = false;
       }
@@ -347,12 +343,12 @@ export default defineComponent({
       this.isStopping = true;
       try {
         const result = await stopContainer(this.container.id);
-        (this as any).$eventBus.emit('notify', 'Container stopped');
+        this.$eventBus.emit('notify', 'Container stopped');
         if (result.container) {
           this.$emit('container-refreshed', result.container);
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit('notify', `Error stopping container (${e.message})`, 'error');
+        this.$eventBus.emit('notify', `Error stopping container (${e.message})`, 'error');
       } finally {
         this.isStopping = false;
       }
@@ -362,12 +358,12 @@ export default defineComponent({
       this.isRestarting = true;
       try {
         const result = await restartContainer(this.container.id);
-        (this as any).$eventBus.emit('notify', 'Container restarted');
+        this.$eventBus.emit('notify', 'Container restarted');
         if (result.container) {
           this.$emit('container-refreshed', result.container);
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error restarting container (${e.message})`,
           'error',
@@ -379,28 +375,30 @@ export default defineComponent({
 
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit('notify', `${kind} copied to clipboard`);
+      this.$eventBus.emit('notify', `${kind} copied to clipboard`);
     },
 
     collapseDetail() {
       // Prevent collapse when selecting text only
-      if (window.getSelection()?.type !== 'Range') {
+      if (globalThis.getSelection()?.type !== 'Range') {
         this.showDetail = !this.showDetail;
       }
 
       // Hack because of a render bug on tabs inside a collapsible element
-      if ((this.$refs.tabs as any) && (this.$refs.tabs as any).onResize) {
-        (this.$refs.tabs as any).onResize();
+      const tabs = this.$refs.tabs as { onResize?: () => void } | undefined;
+      if (tabs?.onResize) {
+        tabs.onResize();
       }
     },
 
     normalizeFontawesome(iconString: string, prefix: string) {
-      return `${prefix} fa-${iconString.replace(`${prefix}:`, '')}`;
+      const prefixToStrip = `${prefix}:`;
+      return `${prefix} fa-${iconString.replace(prefixToStrip, '')}`;
     },
   },
 
   mounted() {
-    this.deleteEnabled = (this as any).$serverConfig?.feature?.delete || false;
-    this.containerActionsEnabled = (this as any).$serverConfig?.feature?.containeractions ?? true;
+    this.deleteEnabled = this.$serverConfig?.feature?.delete || false;
+    this.containerActionsEnabled = this.$serverConfig?.feature?.containeractions ?? true;
   },
 });

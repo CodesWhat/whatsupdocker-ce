@@ -300,8 +300,10 @@ export class AgentClient {
       if (options.tail) params.set('tail', String(options.tail));
       if (options.since) params.set('since', String(options.since));
       const query = params.toString();
+      const logEntriesUrl = `${this.baseUrl}/api/log/entries`;
+      const requestUrl = query ? `${logEntriesUrl}?${query}` : logEntriesUrl;
       const response = await axios.get(
-        `${this.baseUrl}/api/log/entries${query ? `?${query}` : ''}`,
+        requestUrl,
         this.axiosOptions,
       );
       return response.data;

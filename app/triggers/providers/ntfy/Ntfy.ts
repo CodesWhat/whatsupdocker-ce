@@ -79,6 +79,7 @@ class Ntfy extends Trigger {
    * @returns {Promise<*>}
    */
   async sendHttpRequest(body) {
+    const auth = this.configuration.auth;
     const options = {
       method: 'POST',
       url: this.configuration.url,
@@ -87,18 +88,14 @@ class Ntfy extends Trigger {
       },
       data: body,
     };
-    if (
-      this.configuration.auth &&
-      this.configuration.auth.user &&
-      this.configuration.auth.password
-    ) {
+    if (auth?.user && auth?.password) {
       options.auth = {
-        username: this.configuration.auth.user,
-        password: this.configuration.auth.password,
+        username: auth.user,
+        password: auth.password,
       };
     }
-    if (this.configuration.auth && this.configuration.auth.token) {
-      options.headers.Authorization = `Bearer ${this.configuration.auth.token}`;
+    if (auth?.token) {
+      options.headers.Authorization = `Bearer ${auth.token}`;
     }
     const response = await axios(options);
     return response.data;

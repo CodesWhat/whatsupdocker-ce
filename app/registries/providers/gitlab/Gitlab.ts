@@ -32,7 +32,7 @@ class Gitlab extends BaseRegistry {
    * @returns {boolean}
    */
   match(image) {
-    return this.configuration.url.indexOf(image.registry.url) !== -1;
+    return this.configuration.url.includes(image.registry.url);
   }
 
   /**

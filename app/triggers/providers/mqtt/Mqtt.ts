@@ -16,7 +16,7 @@ const hassDefaultPrefix = 'homeassistant';
  * @return {string}
  */
 function getContainerTopic({ baseTopic, container }) {
-  const containerName = container.name.replace(/\./g, '-');
+  const containerName = container.name.replaceAll('.', '-');
   return `${baseTopic}/${container.watcher}/${containerName}`;
 }
 
@@ -24,6 +24,13 @@ function getContainerTopic({ baseTopic, container }) {
  * MQTT Trigger implementation
  */
 class Mqtt extends Trigger {
+  handleContainerEvent(container) {
+    void this.trigger(container).catch((error) => {
+      this.log.warn(`Error (${error.message})`);
+      this.log.debug(error);
+    });
+  }
+
   /**
    * Get the Trigger configuration schema.
    * @returns {*}
@@ -44,10 +51,9 @@ class Mqtt extends Trigger {
         .object({
           enabled: this.joi.boolean().default(false),
           prefix: this.joi.string().default(hassDefaultPrefix),
-          discovery: this.joi.boolean().when('enabled', {
-            is: true,
-            then: this.joi.boolean().default(true),
-          }),
+          discovery: this.joi
+            .boolean()
+            .default((parent) => !!parent?.enabled),
         })
         .default({
           enabled: false,
@@ -111,8 +117,8 @@ class Mqtt extends Trigger {
         log: this.log,
       });
     }
-    registerContainerAdded((container) => this.trigger(container));
-    registerContainerUpdated((container) => this.trigger(container));
+    registerContainerAdded((container) => this.handleContainerEvent(container));
+    registerContainerUpdated((container) => this.handleContainerEvent(container));
   }
 
   /**

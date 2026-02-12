@@ -40,7 +40,7 @@ export async function runHook(command: string, options: HookRunnerOptions): Prom
       },
       (error, stdout, stderr) => {
         const timedOut = error !== null && 'killed' in error && error.killed === true;
-        const exitCode = timedOut ? 1 : (error as any)?.code ?? child.exitCode ?? 0;
+        const exitCode = timedOut ? 1 : error?.code ?? child.exitCode ?? 0;
 
         const result: HookResult = {
           exitCode: typeof exitCode === 'number' ? exitCode : 1,
@@ -51,12 +51,12 @@ export async function runHook(command: string, options: HookRunnerOptions): Prom
 
         if (timedOut) {
           hookLog.warn(`Hook ${options.label} timed out after ${timeout}ms`);
-        } else if (result.exitCode !== 0) {
+        } else if (result.exitCode === 0) {
+          hookLog.info(`Hook ${options.label} completed successfully`);
+        } else {
           hookLog.warn(
             `Hook ${options.label} failed with exit code ${result.exitCode}: ${result.stderr}`,
           );
-        } else {
-          hookLog.info(`Hook ${options.label} completed successfully`);
         }
 
         resolve(result);

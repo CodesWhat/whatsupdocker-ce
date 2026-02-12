@@ -774,6 +774,23 @@ describe('Dockercompose Trigger', () => {
     );
   });
 
+  test('runServicePostStartHooks should JSON-stringify object environment values', async () => {
+    trigger.configuration.dryrun = false;
+    const container = { name: 'netbox', watcher: 'local' };
+    const { recreatedContainer } = makeExecMocks();
+    mockDockerApi.getContainer.mockReturnValue(recreatedContainer);
+
+    await trigger.runServicePostStartHooks(container, 'netbox', {
+      post_start: [{ command: 'echo hello', environment: { KEY: { nested: 'value' } } }],
+    });
+
+    expect(recreatedContainer.exec).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Env: ['KEY={"nested":"value"}'],
+      }),
+    );
+  });
+
   // -----------------------------------------------------------------------
   // File operations & misc
   // -----------------------------------------------------------------------

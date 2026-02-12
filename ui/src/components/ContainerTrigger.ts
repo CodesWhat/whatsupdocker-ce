@@ -33,11 +33,11 @@ export default defineComponent({
           triggerName: this.trigger.name,
           triggerAgent: this.trigger.agent,
         });
-        (this as any).$eventBus.emit('notify', 'Trigger executed with success');
+        this.$eventBus.emit('notify', 'Trigger executed with success');
       } catch (err: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
-          `Trigger executed with error (${err.message}})`,
+          `Trigger executed with error (${err.message})`,
           'error',
         );
       } finally {

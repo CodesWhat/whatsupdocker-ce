@@ -93,7 +93,8 @@ async function updateContainerPolicy(containerId, action, payload = {}) {
     try {
       const body = await response.json();
       details = body?.error ? ` (${body.error})` : '';
-    } catch (e) {
+    } catch (e: any) {
+      console.debug(`Unable to parse policy update response payload: ${e?.message || e}`);
       // Ignore parsing error and fallback to status text.
     }
     throw new Error(

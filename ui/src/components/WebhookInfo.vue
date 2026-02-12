@@ -30,8 +30,8 @@
           <v-table density="compact">
             <thead>
               <tr>
-                <th>Endpoint</th>
-                <th>Description</th>
+                <th id="webhook-endpoint-col" scope="col">Endpoint</th>
+                <th id="webhook-description-col" scope="col">Description</th>
               </tr>
             </thead>
             <tbody>

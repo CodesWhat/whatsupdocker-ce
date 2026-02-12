@@ -24,9 +24,3 @@
 </template>
 
 <script lang="ts" src="./App.ts"></script>
-
-<style scoped>
-.main-background {
-  /* background-color: #f5f5f5; */
-}
-</style>

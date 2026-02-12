@@ -8,7 +8,7 @@ import Trigger from '../Trigger.js';
  * @returns
  */
 function escapeMarkdown(text) {
-  return text.replace(/([\\_*`|!.[\](){}>+#=~-])/gm, '\\$1');
+  return text.replaceAll(/([\\_*`|!.[\](){}>+#=~-])/gm, String.raw`\$1`);
 }
 
 /**
@@ -18,11 +18,11 @@ function escapeMarkdown(text) {
  */
 function escapeHtml(text) {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 /**
@@ -54,9 +54,9 @@ class Telegram extends Trigger {
 
   /**
    * Init trigger (prepare telegram endpoint).
-   * @returns {Promise<void>}
+   * @returns {void}
    */
-  async initTrigger() {
+  initTrigger() {
     this.apiUrl = `https://api.telegram.org/bot${this.configuration.bottoken}`;
   }
 

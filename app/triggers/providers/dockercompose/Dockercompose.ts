@@ -61,6 +61,20 @@ function normalizePostStartCommand(command) {
   return ['sh', '-c', `${command}`];
 }
 
+function normalizePostStartEnvironmentValue(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '';
+    }
+  }
+  return `${value}`;
+}
+
 function normalizePostStartEnvironment(environment) {
   if (!environment) {
     return undefined;
@@ -68,7 +82,9 @@ function normalizePostStartEnvironment(environment) {
   if (Array.isArray(environment)) {
     return environment.map((value) => `${value}`);
   }
-  return Object.entries(environment).map(([key, value]) => `${key}=${value ?? ''}`);
+  return Object.entries(environment).map(
+    ([key, value]) => `${key}=${normalizePostStartEnvironmentValue(value)}`,
+  );
 }
 
 /**
@@ -151,7 +167,7 @@ class Dockercompose extends Docker {
    * @returns {Promise<void>}
    */
   async trigger(container) {
-    return this.triggerBatch([container]);
+    await this.triggerBatch([container]);
   }
 
   /**

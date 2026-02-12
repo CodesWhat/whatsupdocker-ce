@@ -165,19 +165,17 @@ class Registry extends Component {
     let hasNext = true;
     let link: string | undefined = undefined;
     while (hasNext) {
-      const lastItem =
-        page && page.data && page.data.tags ? page.data.tags[page.data.tags.length - 1] : undefined;
+      const lastItem = page?.data?.tags?.slice(-1)?.[0];
 
       page = await this.getTagsPage(image, lastItem, link);
-      const pageTags = page && page.data && page.data.tags ? page.data.tags : [];
-      link = page && page.headers ? page.headers.link : undefined;
-      hasNext = page && page.headers && page.headers.link !== undefined;
+      const pageTags = page?.data?.tags ?? [];
+      link = page?.headers?.link;
+      hasNext = page?.headers?.link !== undefined;
       tags.push(...pageTags);
     }
 
-    // Sort alpha then reverse to get higher values first
-    tags.sort();
-    tags.reverse();
+    // Sort tags alphabetically, highest first
+    tags.sort((left, right) => right.localeCompare(left));
     return tags;
   }
 
@@ -276,7 +274,7 @@ class Registry extends Component {
     }
 
     if (manifestDigest && isSingleManifest(manifestMediaType)) {
-      return this.fetchManifestDigestFromHead(image, manifestDigest, manifestMediaType!);
+      return this.fetchManifestDigestFromHead(image, manifestDigest, manifestMediaType);
     }
     if (manifestDigest && isLegacyImageConfig(manifestMediaType)) {
       const result = { digest: manifestDigest, version: 1 };
@@ -356,7 +354,7 @@ class Registry extends Component {
     const axiosOptionsWithAuth = await this.authenticate(image, axiosOptions);
 
     try {
-      const response = (await axios(axiosOptionsWithAuth)) as AxiosResponse<T>;
+      const response = await axios<T>(axiosOptionsWithAuth);
       const end = Date.now();
       getSummaryTags()?.observe({ type: this.type, name: this.name }, (end - start) / 1000);
       return resolveWithFullResponse ? response : response.data;
@@ -369,8 +367,9 @@ class Registry extends Component {
 
   getImageFullName(image: ContainerImage, tagOrDigest: string) {
     // digests are separated with @ whereas tags are separated with :
-    const tagOrDigestWithSeparator =
-      tagOrDigest.indexOf(':') !== -1 ? `@${tagOrDigest}` : `:${tagOrDigest}`;
+    const tagOrDigestWithSeparator = tagOrDigest.includes(':')
+      ? `@${tagOrDigest}`
+      : `:${tagOrDigest}`;
     let fullName = `${image.registry.url}/${image.name}${tagOrDigestWithSeparator}`;
 
     fullName = fullName.replace(/https?:\/\//, '');

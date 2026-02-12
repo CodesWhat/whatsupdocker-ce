@@ -6,28 +6,21 @@ import Forgejo from '../forgejo/Forgejo.js';
  */
 class Codeberg extends Forgejo {
   getConfigurationSchema() {
-    return this.joi.alternatives([
-      this.joi.string().allow(''),
-      this.joi.object().keys({
-        login: this.joi.alternatives().conditional('password', {
-          not: undefined,
-          then: this.joi.string().required(),
-          otherwise: this.joi.any().forbidden(),
-        }),
-        password: this.joi.alternatives().conditional('login', {
-          not: undefined,
-          then: this.joi.string().required(),
-          otherwise: this.joi.any().forbidden(),
-        }),
-        auth: this.joi.alternatives().conditional('login', {
-          not: undefined,
-          then: this.joi.any().forbidden(),
-          otherwise: this.joi
-            .alternatives()
-            .try(this.joi.string().base64(), this.joi.string().valid('')),
-        }),
-      }),
-    ]);
+    const authSchema = this.joi
+      .alternatives()
+      .try(this.joi.string().base64(), this.joi.string().valid(''));
+
+    const credentialsSchema = this.joi
+      .object()
+      .keys({
+        login: this.joi.string(),
+        password: this.joi.string(),
+        auth: authSchema,
+      })
+      .and('login', 'password')
+      .without('login', 'auth');
+
+    return this.joi.alternatives().try(this.joi.string().allow(''), credentialsSchema);
   }
 
   init() {

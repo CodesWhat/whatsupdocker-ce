@@ -28,7 +28,6 @@ export function startHealthMonitor(options: HealthMonitorOptions): AbortControll
     containerId,
     containerName,
     backupImageTag,
-    backupImageDigest,
     window: monitorWindow,
     interval,
     triggerInstance,

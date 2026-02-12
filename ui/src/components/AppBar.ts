@@ -37,7 +37,7 @@ export default defineComponent({
     const applyTheme = () => {
       let isDark: boolean;
       if (themeMode.value === 'system') {
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        isDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
       } else {
         isDark = themeMode.value === 'dark';
       }
@@ -91,7 +91,7 @@ export default defineComponent({
 
     onMounted(() => {
       applyTheme();
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (themeMode.value === 'system') {
           applyTheme();
         }
@@ -102,7 +102,7 @@ export default defineComponent({
       try {
         const logoutResult = await logout();
         if (logoutResult.logoutUrl) {
-          window.location = logoutResult.logoutUrl;
+          globalThis.location = logoutResult.logoutUrl;
         } else {
           await router.push({
             name: 'login',

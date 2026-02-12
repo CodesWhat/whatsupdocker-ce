@@ -24,7 +24,7 @@ function getTriggers() {
  */
 function findDockerTrigger(container) {
   const triggers = getTriggers();
-  for (const [id, trigger] of Object.entries(triggers)) {
+  for (const trigger of Object.values(triggers)) {
     if (trigger.type !== 'docker') {
       continue;
     }

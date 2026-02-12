@@ -1,10 +1,31 @@
 // @ts-nocheck
-import { fc, test } from '@fast-check/vitest';
-import { describe, expect } from 'vitest';
+import { fc, test as fcTest } from '@fast-check/vitest';
+import { describe, expect, it } from 'vitest';
 import { get } from './index.js';
 
 describe('configuration/index fuzz tests', () => {
-  test.prop([fc.string({ minLength: 1, maxLength: 50 })])(
+  it('returns empty object when no env var matches the prefix', () => {
+    const result = get('dd.trigger', {
+      DD_WATCHER_MAIN_NAME: 'main',
+    });
+    expect(result).toStrictEqual({});
+  });
+
+  it('maps matching env vars to nested object paths', () => {
+    const result = get('dd.watcher', {
+      DD_WATCHER_MAIN_NAME: 'main',
+      DD_WATCHER_MAIN_INTERVAL: '60',
+      DD_TRIGGER_HOOK_ENABLED: 'true',
+    });
+    expect(result).toStrictEqual({
+      main: {
+        name: 'main',
+        interval: '60',
+      },
+    });
+  });
+
+  fcTest.prop([fc.string({ minLength: 1, maxLength: 50 })])(
     'get never throws on arbitrary property paths with empty env',
     (prop) => {
       const result = get(prop, {});
@@ -12,7 +33,7 @@ describe('configuration/index fuzz tests', () => {
     },
   );
 
-  test.prop([
+  fcTest.prop([
     fc.string({ minLength: 1, maxLength: 30 }),
     fc.dictionary(fc.string({ minLength: 1, maxLength: 40 }), fc.string({ maxLength: 100 }), {
       minKeys: 0,
@@ -23,7 +44,7 @@ describe('configuration/index fuzz tests', () => {
     expect(typeof result).toBe('object');
   });
 
-  test.prop([
+  fcTest.prop([
     fc.constantFrom('dd.watcher', 'dd.trigger', 'dd.registry', 'dd.auth', 'dd.agent'),
     fc.dictionary(fc.stringMatching(/^DD_[A-Z_]{1,30}$/), fc.string({ maxLength: 100 }), {
       minKeys: 0,
@@ -34,7 +55,7 @@ describe('configuration/index fuzz tests', () => {
     expect(typeof result).toBe('object');
   });
 
-  test.prop([
+  fcTest.prop([
     fc.string({ minLength: 1, maxLength: 20 }),
     fc.dictionary(
       fc.string({ minLength: 1, maxLength: 50 }),

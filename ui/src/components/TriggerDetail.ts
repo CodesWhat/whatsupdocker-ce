@@ -48,7 +48,7 @@ export default defineComponent({
           this.selectedContainerId = this.testContainers[0].id;
         }
       } catch (err: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Failed to load containers for trigger test (${err.message})`,
           'error',
@@ -70,11 +70,11 @@ export default defineComponent({
           triggerName: this.trigger.name,
           container,
         });
-        (this as any).$eventBus.emit('notify', 'Trigger executed with success');
+        this.$eventBus.emit('notify', 'Trigger executed with success');
       } catch (err: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
-          `Trigger executed with error (${err.message}})`,
+          `Trigger executed with error (${err.message})`,
           'error',
         );
       } finally {

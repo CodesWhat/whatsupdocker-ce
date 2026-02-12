@@ -1,9 +1,10 @@
 <template>
-  <v-form @keyup.enter="login">
+  <v-form autocomplete="on" @keyup.enter="login">
     <v-card-text>
       <v-text-field
         label="Username"
         v-model="username"
+        name="username"
         append-icon="fas fa-user"
         :rules="[rules.required]"
         autocomplete="username"
@@ -14,6 +15,7 @@
         label="Password"
         type="password"
         v-model="password"
+        name="password"
         append-icon="fas fa-lock"
         :rules="[rules.required]"
         autocomplete="current-password"

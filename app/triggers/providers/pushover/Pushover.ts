@@ -11,52 +11,65 @@ class Pushover extends Trigger {
    * @returns {*}
    */
   getConfigurationSchema() {
-    return this.joi.object().keys({
-      user: this.joi.string().required(),
-      token: this.joi.string().required(),
-      device: this.joi.string(),
-      html: this.joi.number().valid(0, 1).default(0),
-      sound: this.joi
-        .string()
-        .allow(
-          'alien',
-          'bike',
-          'bugle',
-          'cashregister',
-          'classical',
-          'climb',
-          'cosmic',
-          'echo',
-          'falling',
-          'gamelan',
-          'incoming',
-          'intermission',
-          'magic',
-          'mechanical',
-          'none',
-          'persistent',
-          'pianobar',
-          'pushover',
-          'siren',
-          'spacealarm',
-          'tugboat',
-          'updown',
-          'vibrate',
-        )
-        .default('pushover'),
-      priority: this.joi.number().integer().min(-2).max(2).default(0),
-      retry: this.joi.number().integer().min(30).when('priority', {
-        is: 2,
-        then: this.joi.required(),
-        otherwise: this.joi.optional(),
-      }),
-      ttl: this.joi.number().integer().min(0),
-      expire: this.joi.number().integer().min(1).max(10800).when('priority', {
-        is: 2,
-        then: this.joi.required(),
-        otherwise: this.joi.optional(),
-      }),
-    });
+    return this.joi
+      .object()
+      .keys({
+        user: this.joi.string().required(),
+        token: this.joi.string().required(),
+        device: this.joi.string(),
+        html: this.joi.number().valid(0, 1).default(0),
+        sound: this.joi
+          .string()
+          .allow(
+            'alien',
+            'bike',
+            'bugle',
+            'cashregister',
+            'classical',
+            'climb',
+            'cosmic',
+            'echo',
+            'falling',
+            'gamelan',
+            'incoming',
+            'intermission',
+            'magic',
+            'mechanical',
+            'none',
+            'persistent',
+            'pianobar',
+            'pushover',
+            'siren',
+            'spacealarm',
+            'tugboat',
+            'updown',
+            'vibrate',
+          )
+          .default('pushover'),
+        priority: this.joi.number().integer().min(-2).max(2).default(0),
+        retry: this.joi.number().integer().min(30),
+        ttl: this.joi.number().integer().min(0),
+        expire: this.joi.number().integer().min(1).max(10800),
+      })
+      .custom((configuration, helpers) => {
+        if (configuration.priority !== 2) {
+          return configuration;
+        }
+        if (configuration.retry == null) {
+          return helpers.error('any.custom', {
+            message: '"retry" is required when priority is 2',
+          });
+        }
+        if (configuration.expire == null) {
+          return helpers.error('any.custom', {
+            message: '"expire" is required when priority is 2',
+          });
+        }
+        return configuration;
+      })
+      .messages({
+        'any.custom': '{{#message}}',
+      });
   }
 
   /**

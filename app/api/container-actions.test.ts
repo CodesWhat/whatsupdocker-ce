@@ -70,7 +70,6 @@ function createDockerTrigger(overrides = {}) {
     stop: vi.fn().mockResolvedValue(undefined),
     restart: vi.fn().mockResolvedValue(undefined),
     inspect: vi.fn().mockResolvedValue({ State: { Status: 'running' } }),
-    inspect: vi.fn().mockResolvedValue({ State: { Status: 'running' } }),
   };
   return {
     trigger: {

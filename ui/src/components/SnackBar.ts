@@ -35,7 +35,7 @@ export default defineComponent({
 
   methods: {
     closeSnackbar() {
-      (this as any).$eventBus.emit('notify:close');
+      this.$eventBus.emit('notify:close');
     },
   },
 });

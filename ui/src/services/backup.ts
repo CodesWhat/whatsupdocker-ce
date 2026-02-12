@@ -23,8 +23,9 @@ async function rollback(containerId: string, backupId?: string) {
     try {
       const body = await response.json();
       details = body?.error ? ` (${body.error})` : '';
-    } catch (e) {
-      // Ignore parsing error and fallback to status text.
+    } catch (e: unknown) {
+      const parseErrorMessage = e instanceof Error ? e.message : 'Unknown parsing error';
+      details = ` (unable to parse error response: ${parseErrorMessage})`;
     }
     throw new Error(`Rollback failed: ${response.statusText}${details}`);
   }

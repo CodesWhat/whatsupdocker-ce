@@ -88,7 +88,7 @@ async function runRemoteTrigger(req, res) {
     return;
   }
 
-  if (!containerToTrigger || !containerToTrigger.id) {
+  if (!containerToTrigger?.id) {
     res.status(400).json({
       error: 'Container with ID is required in body',
     });

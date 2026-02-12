@@ -5,14 +5,14 @@ class Authentication extends Component {
   /**
    * Init the Trigger.
    */
-  async init() {
-    await this.initAuthentication();
+  async init(): Promise<void> {
+    return this.initAuthentication();
   }
 
   /**
    * Init Trigger. Can be overridden in trigger implementation class.
    */
-  initAuthentication() {
+  initAuthentication(): void | Promise<void> {
     // do nothing by default
   }
 

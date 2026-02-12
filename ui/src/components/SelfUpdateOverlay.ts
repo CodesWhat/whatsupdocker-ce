@@ -24,8 +24,8 @@ export default defineComponent({
     function animate() {
       if (!active.value) return;
 
-      const maxX = window.innerWidth - logoSize;
-      const maxY = window.innerHeight - logoSize;
+      const maxX = globalThis.innerWidth - logoSize;
+      const maxY = globalThis.innerHeight - logoSize;
 
       x.value += dx.value;
       y.value += dy.value;
@@ -45,8 +45,8 @@ export default defineComponent({
     }
 
     function startBounce() {
-      x.value = Math.random() * (window.innerWidth - logoSize);
-      y.value = Math.random() * (window.innerHeight - logoSize);
+      x.value = Math.random() * (globalThis.innerWidth - logoSize);
+      y.value = Math.random() * (globalThis.innerHeight - logoSize);
       const speed = 1.5 + Math.random();
       const angle = Math.random() * Math.PI * 2;
       dx.value = Math.cos(angle) * speed;
@@ -87,7 +87,7 @@ export default defineComponent({
               clearInterval(healthPollTimer);
               healthPollTimer = null;
             }
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => globalThis.location.reload(), 1500);
           }
         } catch {
           // Still down, keep polling

@@ -12,55 +12,38 @@ function getRegistryIcon() {
  * @returns {string}
  */
 function getRegistryProviderIcon(provider) {
-  let icon = 'fas fa-cube';
   switch (provider.split('.')[0]) {
     case 'acr':
-      icon = 'fab fa-microsoft';
-      break;
+      return 'fab fa-microsoft';
     case 'custom':
-      icon = 'fas fa-cubes';
-      break;
+      return 'fas fa-cubes';
     case 'ecr':
-      icon = 'fab fa-aws';
-      break;
+      return 'fab fa-aws';
     case 'forgejo':
-      icon = 'fas fa-code-branch';
-      break;
+      return 'fas fa-code-branch';
     case 'gcr':
-      icon = 'fab fa-google';
-      break;
+      return 'fab fa-google';
     case 'ghcr':
-      icon = 'fab fa-github';
-      break;
+      return 'fab fa-github';
     case 'gitea':
-      icon = 'fas fa-code-branch';
-      break;
+      return 'fas fa-code-branch';
     case 'gitlab':
-      icon = 'fab fa-gitlab';
-      break;
+      return 'fab fa-gitlab';
     case 'hub':
-      icon = 'fab fa-docker';
-      break;
+      return 'fab fa-docker';
     case 'quay':
-      icon = 'fab fa-redhat';
-      break;
+      return 'fab fa-redhat';
     case 'lscr':
-      icon = 'fab fa-linux';
-      break;
-    case 'trueforge':
-      icon = 'fas fa-cube';
-      break;
+      return 'fab fa-linux';
     case 'codeberg':
-      icon = 'fas fa-mountain';
-      break;
+      return 'fas fa-mountain';
     case 'dhi':
-      icon = 'fab fa-docker';
-      break;
+      return 'fab fa-docker';
     case 'docr':
-      icon = 'fab fa-digital-ocean';
-      break;
+      return 'fab fa-digital-ocean';
+    default:
+      return 'fas fa-cube';
   }
-  return icon;
 }
 
 /**

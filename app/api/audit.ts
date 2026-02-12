@@ -11,8 +11,8 @@ const router = express.Router();
  * @param res
  */
 function getAuditEntries(req, res) {
-  const parsedPage = parseInt(req.query.page, 10);
-  const parsedLimit = parseInt(req.query.limit, 10);
+  const parsedPage = Number.parseInt(req.query.page, 10);
+  const parsedLimit = Number.parseInt(req.query.limit, 10);
   const page = Math.max(1, Number.isFinite(parsedPage) ? parsedPage : 1);
   const limit = Math.min(200, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 50));
   const skip = (page - 1) * limit;

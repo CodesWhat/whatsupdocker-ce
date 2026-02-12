@@ -50,15 +50,15 @@ export default defineComponent({
     },
 
     isHomarrIcon() {
-      return this.icon && (this.icon.startsWith('hl-') || this.icon.startsWith('hl:'));
+      return Boolean(this.icon?.startsWith('hl-') || this.icon?.startsWith('hl:'));
     },
 
     isSelfhstIcon() {
-      return this.icon && (this.icon.startsWith('sh-') || this.icon.startsWith('sh:'));
+      return Boolean(this.icon?.startsWith('sh-') || this.icon?.startsWith('sh:'));
     },
 
     isSimpleIcon() {
-      return this.normalizedIcon && this.normalizedIcon.startsWith('si-');
+      return this.normalizedIcon?.startsWith('si-');
     },
 
     isCustomIconUrl() {

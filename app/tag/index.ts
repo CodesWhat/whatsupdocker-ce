@@ -12,9 +12,7 @@ import log from '../log/index.js';
  */
 export function parse(rawVersion) {
   const rawVersionCleaned = semver.clean(rawVersion, { loose: true });
-  const rawVersionSemver = semver.parse(
-    rawVersionCleaned !== null ? rawVersionCleaned : rawVersion,
-  );
+  const rawVersionSemver = semver.parse(rawVersionCleaned ?? rawVersion);
   // Hurrah!
   if (rawVersionSemver !== null) {
     return rawVersionSemver;

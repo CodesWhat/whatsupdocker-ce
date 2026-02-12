@@ -68,7 +68,7 @@ export async function init(options = {}) {
   if (isMemory) {
     log.info('Init store in memory mode');
     createCollections();
-    return Promise.resolve();
+    return;
   }
 
   // Migrate from wud.json if dd.json doesn't exist yet

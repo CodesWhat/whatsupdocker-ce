@@ -33,7 +33,7 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit('notify', `${kind} copied to clipboard`);
+      this.$eventBus.emit('notify', `${kind} copied to clipboard`);
     },
   },
 });

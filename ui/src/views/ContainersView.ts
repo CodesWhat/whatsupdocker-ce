@@ -5,6 +5,12 @@ import ContainerItem from '@/components/ContainerItem.vue';
 import agentService from '@/services/agent';
 import { deleteContainer, getAllContainers } from '@/services/container';
 
+const stringCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+function compareStringLikeValues(a: unknown, b: unknown) {
+  return stringCollator.compare(String(a ?? ''), String(b ?? ''));
+}
+
 function parseQueryParams(query: any) {
   return {
     registrySelected: query.registry,
@@ -51,21 +57,29 @@ export default defineComponent({
   computed: {
     allContainerLabels() {
       const allLabels = this.containers.flatMap((container) => Object.keys(container.labels ?? {}));
-      return [...new Set(allLabels)].sort();
+      return [...new Set(allLabels)].sort(compareStringLikeValues);
     },
     registries() {
-      return [...new Set(this.containers.map((container) => container.image.registry.name).sort())];
+      return [
+        ...new Set(
+          this.containers
+            .map((container) => container.image.registry.name)
+            .sort(compareStringLikeValues),
+        ),
+      ];
     },
     watchers() {
-      return [...new Set(this.containers.map((container) => container.watcher).sort())];
+      return [
+        ...new Set(this.containers.map((container) => container.watcher).sort(compareStringLikeValues)),
+      ];
     },
     agents() {
       return [
         ...new Set(
           this.containers
             .map((container) => container.agent)
-            .filter((agent) => agent)
-            .sort(),
+            .filter(Boolean)
+            .sort(compareStringLikeValues),
         ),
       ];
     },
@@ -77,7 +91,7 @@ export default defineComponent({
             .filter((container) => container.updateKind.kind === 'tag')
             .filter((container) => container.updateKind.semverDiff)
             .map((container) => container.updateKind.semverDiff)
-            .sort(),
+            .sort(compareStringLikeValues),
         ),
       ];
     },
@@ -90,7 +104,7 @@ export default defineComponent({
         this.watcherSelected ? this.watcherSelected === container.watcher : true;
       const byUpdateKind = (container: any) =>
         this.updateKindSelected
-          ? this.updateKindSelected === (container.updateKind && container.updateKind.semverDiff)
+          ? this.updateKindSelected === container.updateKind?.semverDiff
           : true;
       const byUpdateAvailable = (container: any) =>
         this.updateAvailableSelected ? container.updateAvailable : true;
@@ -126,7 +140,7 @@ export default defineComponent({
         if (!grouped.has(labelValue)) {
           grouped.set(labelValue, []);
         }
-        grouped.get(labelValue)!.push(container);
+        grouped.get(labelValue).push(container);
       }
 
       const entries = [...grouped.entries()];
@@ -139,11 +153,11 @@ export default defineComponent({
 
       return entries.map(([name, containers]) => ({ name, containers }));
     },
-  },
+    },
 
   methods: {
     sortContainers(a: any, b: any) {
-      const getImageDate = (item: any) => new Date(item.image.created);
+      const getImageTimestamp = (item: any) => new Date(item.image.created).getTime();
 
       if (this.groupByLabel) {
         const aLabel = a.labels?.[this.groupByLabel];
@@ -153,12 +167,12 @@ export default defineComponent({
         if (!aLabel && bLabel) return 1;
 
         if (aLabel && bLabel) {
-          if (this.oldestFirst) return (getImageDate(a) as any) - (getImageDate(b) as any);
+          if (this.oldestFirst) return getImageTimestamp(a) - getImageTimestamp(b);
           return aLabel.localeCompare(bLabel);
         }
       }
 
-      if (this.oldestFirst) return (getImageDate(a) as any) - (getImageDate(b) as any);
+      if (this.oldestFirst) return getImageTimestamp(a) - getImageTimestamp(b);
       return a.displayName.localeCompare(b.displayName);
     },
     onRegistryChanged(registrySelected: string) {
@@ -233,7 +247,7 @@ export default defineComponent({
         await deleteContainer(container.id);
         this.removeContainerFromList(container);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to delete the container (${e.message})`,
           'error',

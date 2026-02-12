@@ -1,15 +1,33 @@
 // @ts-nocheck
-import { fc, test } from '@fast-check/vitest';
+import { fc, test as fcTest } from '@fast-check/vitest';
 import parse from 'parse-docker-image-name';
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('Docker image name parsing fuzz tests', () => {
-  test.prop([fc.string()])('parse-docker-image-name never throws on arbitrary strings', (input) => {
+  it('parses a canonical tagged image reference', () => {
+    const result = parse('ghcr.io/user/image:v1.0.0');
+    expect(result).toMatchObject({
+      domain: 'ghcr.io',
+      path: 'user/image',
+      tag: 'v1.0.0',
+    });
+  });
+
+  it('parses a docker hub image reference with registry and tag', () => {
+    const result = parse('docker.io/library/nginx:latest');
+    expect(result).toMatchObject({
+      domain: 'docker.io',
+      path: 'library/nginx',
+      tag: 'latest',
+    });
+  });
+
+  fcTest.prop([fc.string()])('parse-docker-image-name never throws on arbitrary strings', (input) => {
     const result = parse(input);
     expect(typeof result).toBe('object');
   });
 
-  test.prop([fc.string({ minLength: 1, maxLength: 200 })])(
+  fcTest.prop([fc.string({ minLength: 1, maxLength: 200 })])(
     'parse-docker-image-name always returns an object with expected fields',
     (input) => {
       const result = parse(input);
@@ -19,7 +37,7 @@ describe('Docker image name parsing fuzz tests', () => {
     },
   );
 
-  test.prop([fc.stringMatching(/^[a-z0-9._/-]{1,60}(:[a-z0-9._-]{1,30})?$/)])(
+  fcTest.prop([fc.stringMatching(/^[a-z0-9._/-]{1,60}(:[a-z0-9._-]{1,30})?$/)])(
     'parse handles realistic image name patterns',
     (input) => {
       const result = parse(input);
@@ -27,7 +45,7 @@ describe('Docker image name parsing fuzz tests', () => {
     },
   );
 
-  test.prop([
+  fcTest.prop([
     fc.oneof(
       fc.constant('nginx'),
       fc.constant('nginx:latest'),
@@ -41,7 +59,7 @@ describe('Docker image name parsing fuzz tests', () => {
     expect(typeof result).toBe('object');
   });
 
-  test.prop([
+  fcTest.prop([
     fc.record({
       domain: fc.option(fc.stringMatching(/^[a-z0-9.-]{1,30}(\.[a-z]{2,6})?(:\d{1,5})?$/), {
         nil: undefined,

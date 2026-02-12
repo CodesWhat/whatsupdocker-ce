@@ -84,6 +84,22 @@ test('validateConfiguration should apply_default_configuration', async () => {
   expect(validatedConfiguration).toStrictEqual(configurationValid);
 });
 
+test('validateConfiguration should default hass.discovery to true when hass.enabled is true', async () => {
+  const validatedConfiguration = mqtt.validateConfiguration({
+    url: configurationValid.url,
+    clientid: 'wud',
+    hass: {
+      enabled: true,
+      prefix: 'homeassistant',
+    },
+  });
+  expect(validatedConfiguration.hass).toStrictEqual({
+    enabled: true,
+    prefix: 'homeassistant',
+    discovery: true,
+  });
+});
+
 test('validateConfiguration should throw error when invalid', async () => {
   const configuration = {
     url: 'http://invalid',

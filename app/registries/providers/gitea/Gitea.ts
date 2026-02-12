@@ -6,26 +6,17 @@ import Custom from '../custom/Custom.js';
  */
 class Gitea extends Custom {
   getConfigurationSchema() {
-    return this.joi.object().keys({
-      url: this.joi.string().uri().required(),
-      login: this.joi.alternatives().conditional('password', {
-        not: undefined,
-        then: this.joi.string().required(),
-        otherwise: this.joi.any().forbidden(),
-      }),
-      password: this.joi.alternatives().conditional('login', {
-        not: undefined,
-        then: this.joi.string().required(),
-        otherwise: this.joi.any().forbidden(),
-      }),
-      auth: this.joi.alternatives().conditional('login', {
-        not: undefined,
-        then: this.joi.any().forbidden(),
-        otherwise: this.joi
-          .alternatives()
-          .try(this.joi.string().base64(), this.joi.string().valid('')),
-      }),
-    });
+    return this.joi
+      .object()
+      .keys({
+        url: this.joi.string().uri().required(),
+        login: this.joi.string(),
+        password: this.joi.string(),
+        auth: this.joi.alternatives().try(this.joi.string().base64(), this.joi.string().valid('')),
+      })
+      .and('login', 'password')
+      .without('login', 'auth')
+      .without('password', 'auth');
   }
 
   /**

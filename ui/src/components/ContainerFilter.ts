@@ -71,7 +71,7 @@ export default defineComponent({
     groupLabelItems(): Array<{ title: string; value: string } | string> {
       return [
         { title: 'Smart group', value: '__smart__' },
-        ...(this.groupLabels as string[]),
+        ...(Array.isArray(this.groupLabels) ? this.groupLabels : []),
       ];
     },
     activeFilterCount(): number {
@@ -165,10 +165,10 @@ export default defineComponent({
       this.isRefreshing = true;
       try {
         const body = await refreshAllContainers();
-        (this as any).$eventBus.emit('notify', 'All containers refreshed');
+        this.$eventBus.emit('notify', 'All containers refreshed');
         this.$emit('refresh-all-containers', body);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to refresh all containers (${e.message})`,
           'error',

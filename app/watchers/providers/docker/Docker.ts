@@ -168,6 +168,29 @@ interface ResolvedImgset {
   inspectTagPath?: string;
 }
 
+interface ContainerLabelOverrides {
+  includeTags?: string;
+  excludeTags?: string;
+  transformTags?: string;
+  linkTemplate?: string;
+  displayName?: string;
+  displayIcon?: string;
+  triggerInclude?: string;
+  triggerExclude?: string;
+  registryLookupImage?: string;
+  registryLookupUrl?: string;
+}
+
+interface DeviceCodeFlowOptions {
+  tokenEndpoint: string;
+  clientId?: string;
+  clientSecret?: string;
+  scope?: string;
+  audience?: string;
+  resource?: string;
+  timeout?: number;
+}
+
 /**
  * Return all supported registries
  * @returns {*}
@@ -219,7 +242,7 @@ function applyIncludeExcludeFilters(
  */
 function filterByCurrentPrefix(tags: string[], container: Container, logContainer: any): string[] {
   const currentTag = container.image.tag.value;
-  const match = currentTag.match(/^(.*?)(\d+.*)$/);
+  const match = /^(.*?)(\d+.*)$/.exec(currentTag);
   const currentPrefix = match ? match[1] : '';
 
   const filtered = currentPrefix
@@ -240,8 +263,8 @@ function filterByCurrentPrefix(tags: string[], container: Container, logContaine
  * Filter tags to only those with the same number of numeric segments as the current tag.
  */
 function filterBySegmentCount(tags: string[], container: Container): string[] {
-  const numericPart = transformTag(container.transformTags, container.image.tag.value).match(
-    /(\d+(\.\d+)*)/,
+  const numericPart = /(\d+(\.\d+)*)/.exec(
+    transformTag(container.transformTags, container.image.tag.value),
   );
 
   if (!numericPart) {
@@ -250,7 +273,7 @@ function filterBySegmentCount(tags: string[], container: Container): string[] {
 
   const referenceGroups = numericPart[0].split('.').length;
   return tags.filter((tag) => {
-    const tagNumericPart = transformTag(container.transformTags, tag).match(/(\d+(\.\d+)*)/);
+    const tagNumericPart = /(\d+(\.\d+)*)/.exec(transformTag(container.transformTags, tag));
     if (!tagNumericPart) return false;
     return tagNumericPart[0].split('.').length === referenceGroups;
   });
@@ -336,12 +359,12 @@ function normalizeContainer(container: Container) {
   const registryProvider = Object.values(getRegistries()).find((provider) =>
     provider.match(imageForMatching),
   );
-  if (!registryProvider) {
-    log.warn(`${fullName(container)} - No Registry Provider found`);
-    containerWithNormalizedImage.image.registry.name = 'unknown';
-  } else {
+  if (registryProvider) {
     containerWithNormalizedImage.image = registryProvider.normalizeImage(imageForMatching);
     containerWithNormalizedImage.image.registry.name = registryProvider.getId();
+  } else {
+    log.warn(`${fullName(container)} - No Registry Provider found`);
+    containerWithNormalizedImage.image.registry.name = 'unknown';
   }
   return validateContainer(containerWithNormalizedImage);
 }
@@ -371,6 +394,7 @@ function getImageForRegistryLookup(image: ContainerImage) {
         },
       };
     } catch (e) {
+      log.debug(`Invalid registry lookup URL "${lookupImageTrimmed}" - using image defaults`);
       return image;
     }
   }
@@ -549,6 +573,7 @@ function getImageReferenceCandidatesFromPattern(pattern: string) {
     }
     return getImageReferenceCandidates(parsedPattern.path, parsedPattern.domain);
   } catch (e) {
+    log.debug(`Invalid imgset image pattern "${patternNormalized}" - using normalized value`);
     return [patternNormalized.toLowerCase()];
   }
 }
@@ -747,17 +772,21 @@ function isDigestToWatch(watchDigestLabelValue: string, parsedImage: any, isSemv
 
 function resolveLabelsFromContainer(
   containerLabels: Record<string, string>,
-  includeTags: string,
-  excludeTags: string,
-  transformTags: string,
-  linkTemplate: string,
-  displayName: string,
-  displayIcon: string,
-  triggerInclude: string,
-  triggerExclude: string,
-  registryLookupImage: string,
-  registryLookupUrl: string,
+  overrides: ContainerLabelOverrides = {},
 ) {
+  const {
+    includeTags,
+    excludeTags,
+    transformTags,
+    linkTemplate,
+    displayName,
+    displayIcon,
+    triggerInclude,
+    triggerExclude,
+    registryLookupImage,
+    registryLookupUrl,
+  } = overrides;
+
   return {
     includeTags: includeTags || getLabel(containerLabels, ddTagInclude, wudTagInclude),
     excludeTags: excludeTags || getLabel(containerLabels, ddTagExclude, wudTagExclude),
@@ -852,6 +881,7 @@ class Docker extends Watcher {
           component: `watcher.docker.${this.name || 'default'}`,
         });
       } catch (error) {
+        console.warn('Failed to initialize watcher logger, using no-op logger fallback');
         // Fallback to silent logger if log module fails
         this.log = {
           info: () => {},
@@ -1220,16 +1250,15 @@ class Docker extends Watcher {
 
     // Device code flow: delegate to the dedicated method
     if (grantType === 'urn:ietf:params:oauth:grant-type:device_code' && deviceUrl) {
-      await this.performDeviceCodeFlow(
-        deviceUrl,
+      await this.performDeviceCodeFlow(deviceUrl, {
         tokenEndpoint,
-        oidcClientId,
-        oidcClientSecret,
-        oidcScope,
-        oidcAudience,
-        oidcResource,
-        oidcTimeout,
-      );
+        clientId: oidcClientId,
+        clientSecret: oidcClientSecret,
+        scope: oidcScope,
+        audience: oidcAudience,
+        resource: oidcResource,
+        timeout: oidcTimeout,
+      });
       return;
     }
 
@@ -1260,8 +1289,8 @@ class Docker extends Watcher {
       this.remoteOidcRefreshToken = tokenPayload.refresh_token;
     }
     const expiresIn = normalizeConfigNumberValue(tokenPayload.expires_in);
-    this.remoteOidcAccessTokenExpiresAt =
-      Date.now() + (expiresIn !== undefined ? expiresIn * 1000 : OIDC_DEFAULT_ACCESS_TOKEN_TTL_MS);
+    const tokenTtlMs = (expiresIn ?? OIDC_DEFAULT_ACCESS_TOKEN_TTL_MS / 1000) * 1000;
+    this.remoteOidcAccessTokenExpiresAt = Date.now() + tokenTtlMs;
   }
 
   /**
@@ -1274,16 +1303,9 @@ class Docker extends Watcher {
    * Step 3: Poll the token endpoint with the device_code until the user completes
    *         authorization, the code expires, or polling times out.
    */
-  async performDeviceCodeFlow(
-    deviceUrl: string,
-    tokenEndpoint: string,
-    clientId: string | undefined,
-    clientSecret: string | undefined,
-    scope: string | undefined,
-    audience: string | undefined,
-    resource: string | undefined,
-    timeout: number | undefined,
-  ) {
+  async performDeviceCodeFlow(deviceUrl: string, options: DeviceCodeFlowOptions) {
+    const { tokenEndpoint, clientId, clientSecret, scope, audience, resource, timeout } = options;
+
     // Step 1: Request device authorization
     const deviceRequestBody = new URLSearchParams();
     if (clientId) {
@@ -1926,28 +1948,29 @@ class Docker extends Watcher {
     const containerPromises = filteredContainers.map((container: any) =>
       this.addImageDetailsToContainer(
         container,
-        getLabel(container.Labels, ddTagInclude, wudTagInclude),
-        getLabel(container.Labels, ddTagExclude, wudTagExclude),
-        getLabel(container.Labels, ddTagTransform, wudTagTransform),
-        getLabel(container.Labels, ddLinkTemplate, wudLinkTemplate),
-        getLabel(container.Labels, ddDisplayName, wudDisplayName),
-        getLabel(container.Labels, ddDisplayIcon, wudDisplayIcon),
-        getLabel(container.Labels, ddTriggerInclude, wudTriggerInclude),
-        getLabel(container.Labels, ddTriggerExclude, wudTriggerExclude),
-        getLabel(container.Labels, ddRegistryLookupImage, wudRegistryLookupImage),
-        getLabel(container.Labels, ddRegistryLookupUrl, wudRegistryLookupUrl),
+        {
+          includeTags: getLabel(container.Labels, ddTagInclude, wudTagInclude),
+          excludeTags: getLabel(container.Labels, ddTagExclude, wudTagExclude),
+          transformTags: getLabel(container.Labels, ddTagTransform, wudTagTransform),
+          linkTemplate: getLabel(container.Labels, ddLinkTemplate, wudLinkTemplate),
+          displayName: getLabel(container.Labels, ddDisplayName, wudDisplayName),
+          displayIcon: getLabel(container.Labels, ddDisplayIcon, wudDisplayIcon),
+          triggerInclude: getLabel(container.Labels, ddTriggerInclude, wudTriggerInclude),
+          triggerExclude: getLabel(container.Labels, ddTriggerExclude, wudTriggerExclude),
+          registryLookupImage: getLabel(
+            container.Labels,
+            ddRegistryLookupImage,
+            wudRegistryLookupImage,
+          ),
+          registryLookupUrl: getLabel(container.Labels, ddRegistryLookupUrl, wudRegistryLookupUrl),
+        },
       ).catch((e) => {
         this.log.warn(`Failed to fetch image detail for container ${container.Id}: ${e.message}`);
         return e;
       }),
     );
-    const containersWithImage = (await Promise.all(containerPromises)).filter(
-      (result) => !(result instanceof Error),
-    );
-
-    // Return containers to process
-    const containersToReturn = containersWithImage.filter(
-      (imagePromise) => imagePromise !== undefined,
+    const containersToReturn = (await Promise.all(containerPromises)).filter(
+      (result): result is Container => !(result instanceof Error) && result != null,
     );
 
     // Prune old containers from the store
@@ -2088,7 +2111,7 @@ class Docker extends Watcher {
     tagsCandidates: string[],
     result: any,
   ) {
-    const imageToGetDigestFrom = JSON.parse(JSON.stringify(container.image));
+    const imageToGetDigestFrom = structuredClone(container.image);
     if (tagsCandidates.length > 0) {
       [imageToGetDigestFrom.tag.value] = tagsCandidates;
     }
@@ -2142,16 +2165,7 @@ class Docker extends Watcher {
    */
   async addImageDetailsToContainer(
     container: any,
-    includeTags: string,
-    excludeTags: string,
-    transformTags: string,
-    linkTemplate: string,
-    displayName: string,
-    displayIcon: string,
-    triggerInclude: string,
-    triggerExclude: string,
-    registryLookupImage: string,
-    registryLookupUrl: string,
+    labelOverrides: ContainerLabelOverrides = {},
   ) {
     const containerId = container.Id;
     const containerLabels = container.Labels || {};
@@ -2175,22 +2189,10 @@ class Docker extends Watcher {
 
     const parsedImage = this.resolveImageName(container.Image, image);
     if (!parsedImage) {
-      return Promise.resolve();
+      return undefined;
     }
 
-    const labelOverrides = resolveLabelsFromContainer(
-      containerLabels,
-      includeTags,
-      excludeTags,
-      transformTags,
-      linkTemplate,
-      displayName,
-      displayIcon,
-      triggerInclude,
-      triggerExclude,
-      registryLookupImage,
-      registryLookupUrl,
-    );
+    const resolvedLabelOverrides = resolveLabelsFromContainer(containerLabels, labelOverrides);
 
     const matchingImgset = this.getMatchingImgsetConfiguration(parsedImage);
     if (matchingImgset) {
@@ -2198,13 +2200,17 @@ class Docker extends Watcher {
       this.log.debug(`Apply imgset "${matchingImgset.name}" to container ${containerId}`);
     }
 
-    const resolvedConfig = mergeConfigWithImgset(labelOverrides, matchingImgset, containerLabels);
+    const resolvedConfig = mergeConfigWithImgset(
+      resolvedLabelOverrides,
+      matchingImgset,
+      containerLabels,
+    );
 
     const tagName = this.resolveTagName(
       parsedImage,
       image,
       resolvedConfig.inspectTagPath,
-      labelOverrides.transformTags,
+      resolvedLabelOverrides.transformTags,
       containerId,
     );
 
@@ -2313,28 +2319,24 @@ class Docker extends Watcher {
     const logContainer = this.log.child({
       container: fullName(containerWithResult),
     });
-    const containerReport = {
-      container: containerWithResult,
-      changed: false,
-    };
 
     // Find container in db & compare
     const containerInDb = storeContainer.getContainer(containerWithResult.id);
 
-    // Not found in DB? => Save it
-    if (!containerInDb) {
-      logContainer.debug('Container watched for the first time');
-      containerReport.container = storeContainer.insertContainer(containerWithResult);
-      containerReport.changed = true;
-
+    if (containerInDb) {
       // Found in DB? => update it
-    } else {
-      containerReport.container = storeContainer.updateContainer(containerWithResult);
-      containerReport.changed =
-        containerInDb.resultChanged(containerReport.container) &&
-        containerWithResult.updateAvailable;
+      const updatedContainer = storeContainer.updateContainer(containerWithResult);
+      return {
+        container: updatedContainer,
+        changed: containerInDb.resultChanged(updatedContainer) && containerWithResult.updateAvailable,
+      };
     }
-    return containerReport;
+    // Not found in DB? => Save it
+    logContainer.debug('Container watched for the first time');
+    return {
+      container: storeContainer.insertContainer(containerWithResult),
+      changed: true,
+    };
   }
 }
 

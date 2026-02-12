@@ -1,0 +1,45 @@
+{
+  "name": "drydock-website",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "description": "Drydock - Open source container update monitoring",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "check": "npm run lint && npm run type-check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "vercel-build": "npm run build"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^1.3.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.559.0",
+    "next": "^16.0.8",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/node": "^24.10.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.8",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3"
+  }
+}

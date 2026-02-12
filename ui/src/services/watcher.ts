@@ -3,12 +3,10 @@ function getWatcherIcon() {
 }
 
 function getWatcherProviderIcon(type) {
-  switch (type) {
-    case 'docker':
-      return 'fab fa-docker';
-    default:
-      return 'fas fa-eye';
+  if (type === 'docker') {
+    return 'fab fa-docker';
   }
+  return 'fas fa-eye';
 }
 
 async function getAllWatchers() {

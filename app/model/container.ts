@@ -337,7 +337,7 @@ function isUpdateSuppressed(container: Container, updateKind: ContainerUpdateKin
  * @returns {undefined|*}
  */
 function getLink(container: Container, originalTagValue: string) {
-  if (!container || !container.linkTemplate) {
+  if (!container?.linkTemplate) {
     return undefined;
   }
 
@@ -364,7 +364,9 @@ function getLink(container: Container, originalTagValue: string) {
           : '';
     }
   }
-  return container.linkTemplate.replace(/\$\{(\w+)\}/g, (_, key) => (key in vars ? vars[key] : ''));
+  return container.linkTemplate.replaceAll(/\$\{(\w+)\}/g, (_, key) =>
+    key in vars ? vars[key] : '',
+  );
 }
 
 /**

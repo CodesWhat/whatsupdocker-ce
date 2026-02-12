@@ -22,7 +22,7 @@ const HASS_LATEST_VERSION_TEMPLATE =
  * @return {*}
  */
 function getHassEntityId(topic) {
-  return topic.replace(/\//g, '_');
+  return topic.replaceAll('/', '_');
 }
 
 /**
@@ -46,12 +46,12 @@ function getHaDevice() {
  */
 function sanitizeIcon(icon) {
   return icon
-    .replace('mdi-', 'mdi:')
-    .replace('fa-', 'fa:')
-    .replace('fab-', 'fab:')
-    .replace('far-', 'far:')
-    .replace('fas-', 'fas:')
-    .replace('si-', 'si:');
+    .replaceAll('mdi-', 'mdi:')
+    .replaceAll('fa-', 'fa:')
+    .replaceAll('fab-', 'fab:')
+    .replaceAll('far-', 'far:')
+    .replaceAll('fas-', 'fas:')
+    .replaceAll('si-', 'si:');
 }
 
 class Hass {
@@ -371,7 +371,7 @@ class Hass {
    * @return {string}
    */
   getContainerStateTopic({ container }) {
-    const containerName = container.name.replace(/\./g, '-');
+    const containerName = container.name.replaceAll('.', '-');
     return `${this.configuration.topic}/${container.watcher}/${containerName}`;
   }
 

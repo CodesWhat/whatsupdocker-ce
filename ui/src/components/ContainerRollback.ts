@@ -37,17 +37,23 @@ export default defineComponent({
     },
   },
   watch: {
-    modelValue(open: boolean) {
-      if (open) {
-        this.fetchBackups();
-      } else {
-        this.backups = [];
-        this.error = '';
-        this.selectedBackupId = null;
+    modelValue() {
+      if (this.modelValue) {
+        this.handleDialogOpened();
+        return;
       }
+      this.handleDialogClosed();
     },
   },
   methods: {
+    handleDialogOpened() {
+      this.fetchBackups();
+    },
+    handleDialogClosed() {
+      this.backups = [];
+      this.error = '';
+      this.selectedBackupId = null;
+    },
     async fetchBackups() {
       this.loading = true;
       this.error = '';
@@ -82,7 +88,7 @@ export default defineComponent({
       this.isOpen = false;
     },
     formatDate(dateStr: string) {
-      return (this as any).$filters.dateTime(dateStr);
+      return this.$filters.dateTime(dateStr);
     },
   },
 });

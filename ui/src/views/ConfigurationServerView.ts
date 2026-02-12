@@ -46,7 +46,7 @@ export default defineComponent({
       return this.server?.configuration?.webhook?.enabled === true;
     },
     webhookBaseUrl() {
-      return window.location.origin;
+      return globalThis.location.origin;
     },
   },
 

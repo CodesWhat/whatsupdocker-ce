@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { fc, test } from '@fast-check/vitest';
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { flatten, testable_getLink, validate } from './container.js';
 
 // A valid minimal container object for fuzzing variations
@@ -29,7 +29,46 @@ function validContainerArb() {
   });
 }
 
+function minimalValidContainer() {
+  return {
+    id: 'container-1',
+    name: 'nginx',
+    watcher: 'docker',
+    image: {
+      id: 'image-1',
+      registry: {
+        name: 'hub',
+        url: 'https://hub',
+      },
+      name: 'library/nginx',
+      tag: {
+        value: '1.0.0',
+        semver: true,
+      },
+      digest: {
+        watch: false,
+      },
+      architecture: 'amd64',
+      os: 'linux',
+    },
+  };
+}
+
 describe('model/container fuzz tests', () => {
+  it('validates a minimal deterministic container', () => {
+    const result = validate(minimalValidContainer());
+    expect(result.id).toBe('container-1');
+    expect(result.name).toBe('nginx');
+    expect(typeof result.updateAvailable).toBe('boolean');
+  });
+
+  it('flattens a validated deterministic container', () => {
+    const validated = validate(minimalValidContainer());
+    const result = flatten(validated);
+    expect(result.image_tag_value).toBe('1.0.0');
+    expect(result.image_registry_name).toBe('hub');
+  });
+
   test.prop([fc.anything()])('validate handles arbitrary input without crashing', (input) => {
     try {
       validate(input);

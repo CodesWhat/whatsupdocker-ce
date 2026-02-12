@@ -49,7 +49,7 @@ test.each(
   await emitter();
 
   // Ensure handler is called
-  expect(handlerMock.mock.calls.length === 1);
+  expect(handlerMock).toHaveBeenCalledTimes(1);
 });
 
 test('container report handlers should run in order', async () => {

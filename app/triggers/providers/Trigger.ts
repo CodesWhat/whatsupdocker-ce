@@ -10,6 +10,7 @@ export interface TriggerConfiguration extends ComponentConfiguration {
   threshold?: string;
   mode?: string;
   once?: boolean;
+  disabletitle?: boolean;
   simpletitle?: string;
   simplebody?: string;
   batchtitle?: string;
@@ -135,17 +136,17 @@ function evalStringLiteral(trimmed: string): string | undefined {
   ) {
     return trimmed
       .slice(1, -1)
-      .replace(/\\n/g, '\n')
-      .replace(/\\t/g, '\t')
-      .replace(/\\"/g, '"')
-      .replace(/\\'/g, "'");
+      .replaceAll('\\n', '\n')
+      .replaceAll('\\t', '\t')
+      .replaceAll('\\"', '"')
+      .replaceAll("\\'", "'");
   }
   return undefined;
 }
 
-function evalNumberLiteral(trimmed: string): any | undefined {
+function evalNumberLiteral(trimmed: string): string | undefined {
   if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
-    return Number(trimmed);
+    return String(Number(trimmed));
   }
   return undefined;
 }
@@ -159,7 +160,7 @@ function evalMethodCall(trimmed: string, vars: Record<string, any>): string | un
     if (!ALLOWED_METHODS.has(method)) {
       return '';
     }
-    const args = rawArgs ? rawArgs.split(',').map((a: string) => safeEvalExpr(a, vars)) : [];
+    const args = rawArgs?.split(',').map((a: string) => safeEvalExpr(a, vars)) ?? [];
     return target[method](...args);
   }
   return '';
@@ -168,7 +169,7 @@ function evalMethodCall(trimmed: string, vars: Record<string, any>): string | un
 function evalPropertyPath(trimmed: string, vars: Record<string, any>): string | undefined {
   if (isValidPropertyPath(trimmed)) {
     const val = resolvePath(vars, trimmed);
-    return val != null ? val : '';
+    return val ?? '';
   }
   return undefined;
 }
@@ -223,34 +224,79 @@ function isPlusOperator(str: string, i: number): boolean {
   return left.length > 0;
 }
 
+function isEscapeCharacter(ch: string): boolean {
+  return ch === '\\';
+}
+
+function toggleQuoteState(
+  ch: string,
+  inDouble: boolean,
+  inSingle: boolean,
+): { inDouble: boolean; inSingle: boolean; didToggle: boolean } {
+  if (ch === '"' && !inSingle) {
+    return { inDouble: !inDouble, inSingle, didToggle: true };
+  }
+  if (ch === "'" && !inDouble) {
+    return { inDouble, inSingle: !inSingle, didToggle: true };
+  }
+  return { inDouble, inSingle, didToggle: false };
+}
+
+function updateParenDepth(depth: number, ch: string): number {
+  if (ch === '(') return depth + 1;
+  if (ch === ')') return depth - 1;
+  return depth;
+}
+
+type TopLevelOperatorScanState = {
+  depth: number;
+  inDouble: boolean;
+  inSingle: boolean;
+};
+
+function scanTopLevelOperatorStep(
+  str: string,
+  i: number,
+  predicate: (str: string, i: number) => boolean,
+  state: TopLevelOperatorScanState,
+): { found: boolean; skipNext: boolean } {
+  const ch = str[i];
+  if (isEscapeCharacter(ch)) {
+    return { found: false, skipNext: true };
+  }
+
+  const quoteState = toggleQuoteState(ch, state.inDouble, state.inSingle);
+  state.inDouble = quoteState.inDouble;
+  state.inSingle = quoteState.inSingle;
+  if (quoteState.didToggle || state.inDouble || state.inSingle) {
+    return { found: false, skipNext: false };
+  }
+
+  state.depth = updateParenDepth(state.depth, ch);
+  if (state.depth === 0 && predicate(str, i)) {
+    return { found: true, skipNext: false };
+  }
+
+  return { found: false, skipNext: false };
+}
+
 /**
  * Find the index of a top-level operator (not inside quotes or parentheses)
  * that satisfies the given predicate.
  */
 function findTopLevelOperator(str: string, predicate: (str: string, i: number) => boolean): number {
-  let depth = 0;
-  let inDouble = false;
-  let inSingle = false;
+  const state: TopLevelOperatorScanState = { depth: 0, inDouble: false, inSingle: false };
+  let skipNext = false;
   for (let i = 0; i < str.length; i++) {
-    const ch = str[i];
-    if (ch === '\\') {
-      i++;
+    if (skipNext) {
+      skipNext = false;
       continue;
     }
-    if (ch === '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-    if (ch === "'" && !inDouble) {
-      inSingle = !inSingle;
-      continue;
-    }
-    if (inDouble || inSingle) continue;
-    if (ch === '(') depth++;
-    if (ch === ')') depth--;
-    if (depth === 0 && predicate(str, i)) {
+    const step = scanTopLevelOperatorStep(str, i, predicate, state);
+    if (step.found) {
       return i;
     }
+    skipNext = step.skipNext;
   }
   return -1;
 }
@@ -264,7 +310,7 @@ function safeInterpolate(template: string | undefined, vars: Record<string, any>
     return '';
   }
   // Match ${...} placeholders, handling nested braces
-  return template.replace(/\$\{([^}]+)\}/g, (_, expr) => {
+  return template.replaceAll(/\$\{([^}]+)\}/g, (_, expr) => {
     const result = safeEvalExpr(expr, vars);
     return result != null ? String(result) : '';
   });
@@ -283,20 +329,11 @@ function renderSimple(template: string, container: Container) {
     id: container.id,
     name: container.name,
     watcher: container.watcher,
-    kind: container.updateKind && container.updateKind.kind ? container.updateKind.kind : '',
-    semver:
-      container.updateKind && container.updateKind.semverDiff
-        ? container.updateKind.semverDiff
-        : '',
-    local:
-      container.updateKind && container.updateKind.localValue
-        ? container.updateKind.localValue
-        : '',
-    remote:
-      container.updateKind && container.updateKind.remoteValue
-        ? container.updateKind.remoteValue
-        : '',
-    link: container.result && container.result.link ? container.result.link : '',
+    kind: container.updateKind?.kind ?? '',
+    semver: container.updateKind?.semverDiff ?? '',
+    local: container.updateKind?.localValue ?? '',
+    remote: container.updateKind?.remoteValue ?? '',
+    link: container.result?.link ?? '',
   };
   return safeInterpolate(template, vars);
 }
@@ -305,7 +342,7 @@ function renderBatch(template: string, containers: Container[]) {
   const vars: Record<string, any> = {
     containers,
     // Deprecated var for backward compatibility
-    count: containers ? containers.length : 0,
+    count: containers.length,
   };
   return safeInterpolate(template, vars);
 }
@@ -339,7 +376,7 @@ class Trigger extends Component {
   }
 
   static parseThresholdWithDigestBehavior(threshold: string | undefined) {
-    const thresholdNormalized = (threshold || 'all').toLowerCase();
+    const thresholdNormalized = (threshold ?? 'all').toLowerCase();
     const nonDigestOnlySuffix = '-no-digest';
     const nonDigestOnly = thresholdNormalized.endsWith(nonDigestOnlySuffix);
     const thresholdBase = nonDigestOnly
@@ -428,13 +465,17 @@ class Trigger extends Component {
     }
 
     const triggerIdParts = triggerIdNormalized.split('.');
-    const triggerName = triggerIdParts[triggerIdParts.length - 1];
+    const triggerName = triggerIdParts.at(-1);
+    if (!triggerName) {
+      return false;
+    }
     if (triggerReferenceNormalized === triggerName) {
       return true;
     }
 
     if (triggerIdParts.length >= 2) {
-      const providerAndName = `${triggerIdParts[triggerIdParts.length - 2]}.${triggerName}`;
+      const provider = triggerIdParts.at(-2);
+      const providerAndName = `${provider}.${triggerName}`;
       if (triggerReferenceNormalized === providerAndName) {
         return true;
       }
@@ -460,12 +501,11 @@ class Trigger extends Component {
         }) || this.log;
       let status = 'error';
       try {
-        if (
-          !Trigger.isThresholdReached(
-            containerReport.container,
-            (this.configuration.threshold || 'all').toLowerCase(),
-          )
-        ) {
+        const thresholdReached = Trigger.isThresholdReached(
+          containerReport.container,
+          (this.configuration.threshold ?? 'all').toLowerCase(),
+        );
+        if (!thresholdReached) {
           logContainer.debug('Threshold not reached => ignore');
         } else if (!this.mustTrigger(containerReport.container)) {
           logContainer.debug('Trigger conditions not met => ignore');
@@ -575,7 +615,7 @@ class Trigger extends Component {
     await this.initTrigger();
     if (this.configuration.auto) {
       this.log.info(`Registering for auto execution`);
-      if (this.configuration.mode && this.configuration.mode.toLowerCase() === 'simple') {
+      if (this.configuration.mode?.toLowerCase() === 'simple') {
         this.unregisterContainerReport = event.registerContainerReport(
           async (containerReport) => this.handleContainerReport(containerReport),
           {
@@ -584,7 +624,7 @@ class Trigger extends Component {
           },
         );
       }
-      if (this.configuration.mode && this.configuration.mode.toLowerCase() === 'batch') {
+      if (this.configuration.mode?.toLowerCase() === 'batch') {
         this.unregisterContainerReports = event.registerContainerReports(
           async (containersReports) => this.handleContainerReports(containersReports),
           {
@@ -605,18 +645,14 @@ class Trigger extends Component {
   }
 
   async deregisterComponent(): Promise<void> {
-    if (this.unregisterContainerReport) {
-      this.unregisterContainerReport();
-      this.unregisterContainerReport = undefined;
-    }
-    if (this.unregisterContainerReports) {
-      this.unregisterContainerReports();
-      this.unregisterContainerReports = undefined;
-    }
-    if (this.unregisterContainerUpdateApplied) {
-      this.unregisterContainerUpdateApplied();
-      this.unregisterContainerUpdateApplied = undefined;
-    }
+    this.unregisterContainerReport?.();
+    this.unregisterContainerReport = undefined;
+
+    this.unregisterContainerReports?.();
+    this.unregisterContainerReports = undefined;
+
+    this.unregisterContainerUpdateApplied?.();
+    this.unregisterContainerUpdateApplied = undefined;
   }
 
   /**
@@ -658,7 +694,7 @@ class Trigger extends Component {
    * Init Trigger. Can be overridden in trigger implementation class.
    */
 
-  initTrigger() {
+  initTrigger(): void | Promise<void> {
     // do nothing by default
   }
 
@@ -730,7 +766,7 @@ class Trigger extends Component {
    */
   protected composeMessage(container: Container): string {
     const body = this.renderSimpleBody(container);
-    if ((this.configuration as any).disabletitle) {
+    if (this.configuration.disabletitle) {
       return body;
     }
     const title = this.renderSimpleTitle(container);
@@ -743,7 +779,7 @@ class Trigger extends Component {
    */
   protected composeBatchMessage(containers: Container[]): string {
     const body = this.renderBatchBody(containers);
-    if ((this.configuration as any).disabletitle) {
+    if (this.configuration.disabletitle) {
       return body;
     }
     const title = this.renderBatchTitle(containers);
@@ -764,10 +800,10 @@ class Trigger extends Component {
    * override maskConfiguration() directly.
    */
   protected maskFields(fieldsToMask: string[]): Record<string, any> {
-    const masked = { ...this.configuration };
+    const masked: Record<string, any> = { ...this.configuration };
     for (const field of fieldsToMask) {
-      if ((masked as any)[field]) {
-        (masked as any)[field] = (this.constructor as typeof Trigger).mask((masked as any)[field]);
+      if (masked[field]) {
+        masked[field] = (this.constructor as typeof Trigger).mask(masked[field]);
       }
     }
     return masked;

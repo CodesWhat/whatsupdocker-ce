@@ -92,7 +92,8 @@ function getAvailableProviders(basePath: string) {
       })
       .sort();
     return providers;
-  } catch (e) {
+  } catch (e: any) {
+    log.debug(`Unable to load providers under ${basePath}: ${e.message}`);
     return [];
   }
 }
@@ -184,11 +185,12 @@ export async function registerComponent(options: RegisterComponentOptions): Prom
   const componentFileByConventionExists = ['.js', '.ts'].some((extension) =>
     fs.existsSync(`${componentFileByConvention}${extension}`),
   );
-  const componentFileBase = agent
-    ? path.join(componentRoot, `Agent${capitalize(kind)}`)
-    : componentFileByConventionExists
-      ? componentFileByConvention
-      : componentFileLowercase;
+  let componentFileBase = componentFileLowercase;
+  if (agent) {
+    componentFileBase = path.join(componentRoot, `Agent${capitalize(kind)}`);
+  } else if (componentFileByConventionExists) {
+    componentFileBase = componentFileByConvention;
+  }
   const componentModuleSpecifier = resolveComponentModuleSpecifier(componentFileBase);
   log.debug(`Resolving ${kind}.${providerLowercase}.${nameLowercase} from ${componentFileBase}`);
   try {
@@ -290,6 +292,31 @@ function applyProviderSharedTriggerConfiguration(configurations: Record<string, 
  * Collect all shared-key values across providers, grouped by trigger name.
  * Returns a map of triggerName -> key -> Set of distinct values.
  */
+function addSharedTriggerValue(
+  valuesByName: Record<string, Record<string, Set<any>>>,
+  triggerName: string,
+  key: string,
+  value: any,
+) {
+  const normalizedTriggerName = triggerName.toLowerCase();
+  valuesByName[normalizedTriggerName] ??= {};
+  valuesByName[normalizedTriggerName][key] ??= new Set();
+  valuesByName[normalizedTriggerName][key].add(value);
+}
+
+function collectSharedValuesForTrigger(
+  valuesByName: Record<string, Record<string, Set<any>>>,
+  triggerName: string,
+  triggerConfiguration: Record<string, any>,
+) {
+  for (const key of SHARED_TRIGGER_CONFIGURATION_KEYS) {
+    const value = triggerConfiguration[key];
+    if (value !== undefined) {
+      addSharedTriggerValue(valuesByName, triggerName, key, value);
+    }
+  }
+}
+
 function collectValuesByName(
   configurations: Record<string, any>,
 ): Record<string, Record<string, Set<any>>> {
@@ -305,19 +332,7 @@ function collectValuesByName(
       if (!isRecord(triggerConfiguration)) {
         continue;
       }
-      const normalized = triggerName.toLowerCase();
-      if (!valuesByName[normalized]) {
-        valuesByName[normalized] = {};
-      }
-      for (const key of SHARED_TRIGGER_CONFIGURATION_KEYS) {
-        if (triggerConfiguration[key] === undefined) {
-          continue;
-        }
-        if (!valuesByName[normalized][key]) {
-          valuesByName[normalized][key] = new Set();
-        }
-        valuesByName[normalized][key].add(triggerConfiguration[key]);
-      }
+      collectSharedValuesForTrigger(valuesByName, triggerName, triggerConfiguration);
     }
   }
 
@@ -335,7 +350,7 @@ function extractSharedValues(
   for (const triggerName of Object.keys(valuesByName)) {
     for (const key of SHARED_TRIGGER_CONFIGURATION_KEYS) {
       const valuesForKey = valuesByName[triggerName][key];
-      if (valuesForKey && valuesForKey.size === 1) {
+      if (valuesForKey?.size === 1) {
         if (!shared[triggerName]) {
           shared[triggerName] = {};
         }
@@ -417,6 +432,72 @@ function classifyConfigurationEntry(
   return 'provider';
 }
 
+function splitTriggerGroupDefaults(
+  configurations: Record<string, any>,
+  knownProviderSet: Set<string>,
+) {
+  const triggerGroupDefaults: Record<string, Record<string, any>> = {};
+  const providerConfigurations: Record<string, any> = {};
+
+  for (const key of Object.keys(configurations)) {
+    const value = configurations[key];
+    const classification = classifyConfigurationEntry(key, value, knownProviderSet);
+    if (classification === 'trigger-group') {
+      const keyLower = key.toLowerCase();
+      triggerGroupDefaults[keyLower] = value;
+      log.info(
+        `Detected trigger group '${keyLower}' with shared configuration: ${JSON.stringify(value)}`,
+      );
+      continue;
+    }
+    providerConfigurations[key] = value;
+  }
+
+  return { triggerGroupDefaults, providerConfigurations };
+}
+
+function mergeTriggerConfigurationWithDefaults(
+  triggerConfiguration: any,
+  groupDefaults: Record<string, any> | undefined,
+) {
+  if (!groupDefaults || !isRecord(triggerConfiguration)) {
+    return triggerConfiguration;
+  }
+
+  return {
+    ...groupDefaults,
+    ...triggerConfiguration,
+  };
+}
+
+function applyDefaultsToProviderConfigurations(
+  providerConfigurations: Record<string, any>,
+  triggerGroupDefaults: Record<string, Record<string, any>>,
+) {
+  const result: Record<string, any> = {};
+
+  for (const provider of Object.keys(providerConfigurations)) {
+    const providerConfig = providerConfigurations[provider];
+    if (!isRecord(providerConfig)) {
+      result[provider] = providerConfig;
+      continue;
+    }
+
+    const providerResult: Record<string, any> = {};
+    for (const triggerName of Object.keys(providerConfig)) {
+      const triggerConfig = providerConfig[triggerName];
+      const groupDefaults = triggerGroupDefaults[triggerName.toLowerCase()];
+      providerResult[triggerName] = mergeTriggerConfigurationWithDefaults(
+        triggerConfig,
+        groupDefaults,
+      );
+    }
+    result[provider] = providerResult;
+  }
+
+  return result;
+}
+
 /**
  * Extract trigger group defaults and apply them across providers.
  *
@@ -449,52 +530,16 @@ function applyTriggerGroupDefaults(
 
   const knownProviders = getAvailableProviders(providerPath);
   const knownProviderSet = new Set(knownProviders.map((p) => p.toLowerCase()));
-
-  // Separate trigger group entries from real provider entries
-  const triggerGroupDefaults: Record<string, Record<string, any>> = {};
-  const providerConfigurations: Record<string, any> = {};
-
-  for (const key of Object.keys(configurations)) {
-    const classification = classifyConfigurationEntry(key, configurations[key], knownProviderSet);
-    if (classification === 'trigger-group') {
-      const keyLower = key.toLowerCase();
-      triggerGroupDefaults[keyLower] = configurations[key];
-      log.info(
-        `Detected trigger group '${keyLower}' with shared configuration: ${JSON.stringify(configurations[key])}`,
-      );
-    } else {
-      providerConfigurations[key] = configurations[key];
-    }
-  }
+  const { triggerGroupDefaults, providerConfigurations } = splitTriggerGroupDefaults(
+    configurations,
+    knownProviderSet,
+  );
 
   if (Object.keys(triggerGroupDefaults).length === 0) {
     return configurations;
   }
 
-  // Apply trigger group defaults to matching triggers across all providers
-  const result: Record<string, any> = {};
-  for (const provider of Object.keys(providerConfigurations)) {
-    const providerConfig = providerConfigurations[provider];
-    if (!isRecord(providerConfig)) {
-      result[provider] = providerConfig;
-      continue;
-    }
-    result[provider] = {};
-    for (const triggerName of Object.keys(providerConfig)) {
-      const triggerConfig = providerConfig[triggerName];
-      const groupDefaults = triggerGroupDefaults[triggerName.toLowerCase()];
-      if (groupDefaults && isRecord(triggerConfig)) {
-        result[provider][triggerName] = {
-          ...groupDefaults,
-          ...triggerConfig,
-        };
-      } else {
-        result[provider][triggerName] = triggerConfig;
-      }
-    }
-  }
-
-  return result;
+  return applyDefaultsToProviderConfigurations(providerConfigurations, triggerGroupDefaults);
 }
 
 /**
@@ -553,12 +598,12 @@ async function registerTriggers(options: RegistrationOptions = {}) {
     'triggers/providers',
   );
   const configurations = applySharedTriggerConfigurationByName(configurationsWithGroupDefaults);
-  const allowedTriggers = ['docker', 'dockercompose'];
+  const allowedTriggers = new Set(['docker', 'dockercompose']);
 
   if (options.agent && configurations) {
     const filteredConfigurations: Record<string, any> = {};
     Object.keys(configurations).forEach((provider) => {
-      if (allowedTriggers.includes(provider.toLowerCase())) {
+      if (allowedTriggers.has(provider.toLowerCase())) {
         filteredConfigurations[provider] = configurations[provider];
       } else {
         log.warn(`Trigger type '${provider}' is not supported in Agent mode and will be ignored.`);
@@ -643,7 +688,7 @@ async function registerAgents() {
       const config = configurations[name];
       const agent = new Agent();
       const registered = await agent.register('agent', 'dd', name, config);
-      state.agent[registered.getId()] = registered as Agent;
+      state.agent[registered.getId()] = registered;
     } catch (e: any) {
       log.warn(`Agent ${name} failed to register (${e.message})`);
       log.debug(e);

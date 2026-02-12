@@ -26,7 +26,7 @@ function authenticateToken(req, res, next) {
   }
 
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing or invalid authorization header' });
     return;
   }
@@ -65,7 +65,7 @@ function findContainerByName(containerName) {
  */
 function findDockerTrigger(container) {
   const triggers = registry.getState().trigger;
-  for (const [id, trigger] of Object.entries(triggers)) {
+  for (const trigger of Object.values(triggers)) {
     if (trigger.type !== 'docker') {
       continue;
     }

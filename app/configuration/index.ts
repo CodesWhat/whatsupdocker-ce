@@ -12,12 +12,12 @@ const VAR_FILE_SUFFIX = '__FILE';
  */
 export function get(prop, env = process.env) {
   const object = {};
-  const envVarPattern = prop.replace(/\./g, '_').toUpperCase();
+  const envVarPattern = prop.replaceAll('.', '_').toUpperCase();
   const matchingEnvVars = Object.keys(env).filter((envKey) => envKey.startsWith(envVarPattern));
   matchingEnvVars.forEach((matchingEnvVar) => {
     const envVarValue = env[matchingEnvVar];
-    const matchingPropPath = matchingEnvVar.replace(/_/g, '.').toLowerCase();
-    const matchingPropPathWithoutPrefix = matchingPropPath.replace(`${prop}.`, '');
+    const matchingPropPath = matchingEnvVar.replaceAll('_', '.').toLowerCase();
+    const matchingPropPathWithoutPrefix = matchingPropPath.replaceAll(`${prop}.`, '');
     setValue(object, matchingPropPathWithoutPrefix, envVarValue);
   });
   return object;
@@ -32,7 +32,7 @@ export function replaceSecrets(ddEnvVars) {
     ddEnvVar.toUpperCase().endsWith(VAR_FILE_SUFFIX),
   );
   secretFileEnvVars.forEach((secretFileEnvVar) => {
-    const secretKey = secretFileEnvVar.replace(VAR_FILE_SUFFIX, '');
+    const secretKey = secretFileEnvVar.replaceAll(VAR_FILE_SUFFIX, '');
     const secretFilePath = ddEnvVars[secretFileEnvVar];
     const secretFileValue = fs.readFileSync(secretFilePath, 'utf-8');
     delete ddEnvVars[secretFileEnvVar];

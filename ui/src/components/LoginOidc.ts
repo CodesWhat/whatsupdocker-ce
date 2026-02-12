@@ -19,7 +19,7 @@ export default defineComponent({
      */
     async redirect() {
       const redirection = await getOidcRedirection(this.name);
-      window.location.href = redirection.url;
+      globalThis.location.href = redirection.url;
     },
   },
 });

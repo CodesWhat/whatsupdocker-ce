@@ -45,10 +45,12 @@ function getRuntimeRootCandidates() {
     candidates.push(path.dirname(path.resolve(process.argv[1])));
   }
 
-  candidates.push(process.cwd());
-  candidates.push(path.resolve(process.cwd(), 'dist'));
-  candidates.push(path.resolve(process.cwd(), 'app'));
-  candidates.push(path.resolve(process.cwd(), 'app', 'dist'));
+  candidates.push(
+    process.cwd(),
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(process.cwd(), 'app'),
+    path.resolve(process.cwd(), 'app', 'dist'),
+  );
 
   return Array.from(new Set(candidates));
 }

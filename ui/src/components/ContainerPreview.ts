@@ -1,6 +1,8 @@
 import { defineComponent } from 'vue';
 import { previewContainer } from '@/services/preview';
 
+type PreviewDialogState = 'opened' | 'closed';
+
 export default defineComponent({
   props: {
     containerId: {
@@ -46,16 +48,31 @@ export default defineComponent({
     },
   },
   watch: {
-    modelValue(open: boolean) {
-      if (open) {
-        this.fetchPreview();
-      } else {
-        this.preview = null;
-        this.error = '';
-      }
+    modelValue() {
+      this.handleDialogStateChange();
     },
   },
   methods: {
+    currentDialogState(): PreviewDialogState {
+      return this.modelValue ? 'opened' : 'closed';
+    },
+    handleDialogStateChange() {
+      const stateActions: Record<PreviewDialogState, () => void> = {
+        opened: this.handleDialogOpened,
+        closed: this.handleDialogClosed,
+      };
+      stateActions[this.currentDialogState()]();
+    },
+    handleDialogOpened() {
+      this.fetchPreview();
+    },
+    handleDialogClosed() {
+      this.resetPreviewState();
+    },
+    resetPreviewState() {
+      this.preview = null;
+      this.error = '';
+    },
     async fetchPreview() {
       this.loading = true;
       this.error = '';

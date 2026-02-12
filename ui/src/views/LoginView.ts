@@ -61,7 +61,7 @@ export default defineComponent({
       const strategies = await getStrategies();
 
       // If anonymous auth is enabled then no need to login => go home
-      if (strategies.find((strategy) => strategy.type === 'anonymous')) {
+      if (strategies.some((strategy) => strategy.type === 'anonymous')) {
         next('/');
       }
 
@@ -71,7 +71,7 @@ export default defineComponent({
       );
       if (oidcWithRedirect) {
         const redirection = await getOidcRedirection(oidcWithRedirect.name);
-        window.location.href = redirection.url;
+        globalThis.location.href = redirection.url;
       } else {
         // Filter on supported auth for UI
         next(async (vm: any) => {

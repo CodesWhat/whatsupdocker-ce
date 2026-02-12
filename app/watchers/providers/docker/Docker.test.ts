@@ -1319,7 +1319,9 @@ describe('Docker Watcher', () => {
       expect(result).toHaveLength(1);
       expect(mockDockerApi.getService).toHaveBeenCalledWith('service123');
       expect(docker.addImageDetailsToContainer).toHaveBeenCalledTimes(1);
-      expect(docker.addImageDetailsToContainer.mock.calls[0][1]).toBe(String.raw`^\d+\.\d+\.\d+$`);
+      expect(docker.addImageDetailsToContainer.mock.calls[0][1].includeTags).toBe(
+        String.raw`^\d+\.\d+\.\d+$`,
+      );
     });
 
     test('should let container labels override swarm service labels', async () => {
@@ -1354,7 +1356,9 @@ describe('Docker Watcher', () => {
       const result = await docker.getContainers();
 
       expect(result).toHaveLength(1);
-      expect(docker.addImageDetailsToContainer.mock.calls[0][1]).toBe(String.raw`^v\d+\.\d+\.\d+$`);
+      expect(docker.addImageDetailsToContainer.mock.calls[0][1].includeTags).toBe(
+        String.raw`^v\d+\.\d+\.\d+$`,
+      );
     });
 
     test('should cache swarm service label lookups per service', async () => {
@@ -1439,7 +1443,9 @@ describe('Docker Watcher', () => {
       expect(result).toHaveLength(1);
       expect(docker.addImageDetailsToContainer).toHaveBeenCalledTimes(1);
       // The tag include regex should come from Spec.Labels
-      expect(docker.addImageDetailsToContainer.mock.calls[0][1]).toBe(String.raw`^\d+\.\d+\.\d+$`);
+      expect(docker.addImageDetailsToContainer.mock.calls[0][1].includeTags).toBe(
+        String.raw`^\d+\.\d+\.\d+$`,
+      );
     });
 
     test('should gracefully handle swarm service inspect failure without losing container', async () => {
@@ -1469,7 +1475,7 @@ describe('Docker Watcher', () => {
       expect(result).toHaveLength(1);
       // tag.include should be undefined since service inspect failed and
       // the container itself has no dd.tag.include
-      expect(docker.addImageDetailsToContainer.mock.calls[0][1]).toBeUndefined();
+      expect(docker.addImageDetailsToContainer.mock.calls[0][1].includeTags).toBeUndefined();
     });
 
     test('should handle mixed label sources: deploy labels + root labels across services', async () => {
@@ -1524,8 +1530,8 @@ describe('Docker Watcher', () => {
       }));
       docker.addImageDetailsToContainer = vi
         .fn()
-        .mockImplementation((_container: any, includeTags: string) =>
-          Promise.resolve({ id: _container.Id, includeTags }),
+        .mockImplementation((_container: any, labelOverrides: any) =>
+          Promise.resolve({ id: _container.Id, includeTags: labelOverrides?.includeTags }),
         );
 
       await docker.register('watcher', 'docker', 'test', {
@@ -1538,12 +1544,12 @@ describe('Docker Watcher', () => {
       const autheliaCall = docker.addImageDetailsToContainer.mock.calls.find(
         (call: any) => call[0].Id === 'swarm-authelia',
       );
-      expect(autheliaCall[1]).toBe(String.raw`^\d+\.\d+\.\d+$`);
+      expect(autheliaCall[1].includeTags).toBe(String.raw`^\d+\.\d+\.\d+$`);
       // Alloy's tag include should come from container labels (root labels)
       const alloyCall = docker.addImageDetailsToContainer.mock.calls.find(
         (call: any) => call[0].Id === 'swarm-alloy',
       );
-      expect(alloyCall[1]).toBe(String.raw`^v\d+\.\d+\.\d+$`);
+      expect(alloyCall[1].includeTags).toBe(String.raw`^v\d+\.\d+\.\d+$`);
     });
 
     test('should prune old containers', async () => {
@@ -1637,7 +1643,9 @@ describe('Docker Watcher', () => {
       await docker.getContainers();
 
       // dd.tag.include should be preferred
-      expect(docker.addImageDetailsToContainer.mock.calls[0][1]).toBe(String.raw`^v\d+`);
+      expect(docker.addImageDetailsToContainer.mock.calls[0][1].includeTags).toBe(
+        String.raw`^v\d+`,
+      );
     });
   });
 
@@ -2023,11 +2031,9 @@ describe('Docker Watcher', () => {
 
       const result = await docker.addImageDetailsToContainer(
         container,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'DD CE Custom',
+        {
+          displayName: 'DD CE Custom',
+        },
       );
 
       expect(result.displayName).toBe('DD CE Custom');
@@ -2114,13 +2120,12 @@ describe('Docker Watcher', () => {
 
       const result = await docker.addImageDetailsToContainer(
         container,
-        '^stable$',
-        undefined,
-        undefined,
-        undefined,
-        'HA Label Name',
-        'mdi-docker',
-        'discord.default:major',
+        {
+          includeTags: '^stable$',
+          displayName: 'HA Label Name',
+          displayIcon: 'mdi-docker',
+          triggerInclude: 'discord.default:major',
+        },
       );
 
       expect(result.includeTags).toBe('^stable$');

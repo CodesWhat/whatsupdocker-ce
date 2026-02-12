@@ -105,7 +105,9 @@ class Component {
    * Can be overridden by the component implementation class
    */
 
-  async init(): Promise<void> {}
+  init(): Promise<void> {
+    return Promise.resolve();
+  }
 
   /**
    * Sanitize sensitive data

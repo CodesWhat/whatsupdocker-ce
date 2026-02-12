@@ -10,58 +10,77 @@ import OidcStrategy from './OidcStrategy.js';
 const OIDC_CHECKS_TTL_MS = 10 * 60 * 1000;
 const OIDC_MAX_PENDING_CHECKS = 5;
 const oidcSessionLocks = new Map<string, Promise<void>>();
+const OIDC_STATE_PATTERN = /^[A-Za-z0-9._~-]{1,256}$/;
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
 
+function isValidStateToken(value: unknown): value is string {
+  return isNonEmptyString(value) && OIDC_STATE_PATTERN.test(value);
+}
+
+function createPendingChecksRecord() {
+  return Object.create(null) as Record<string, any>;
+}
+
 function isValidCheckEntry(state: unknown, check: any): boolean {
-  return isNonEmptyString(state) && !!check && isNonEmptyString(check.codeVerifier);
+  return isValidStateToken(state) && !!check && isNonEmptyString(check.codeVerifier);
 }
 
 function collectValidChecks(pending: Record<string, any>, now: number) {
-  const result = {};
+  const result = createPendingChecksRecord();
   Object.entries(pending).forEach(([state, check]: any) => {
     if (!isValidCheckEntry(state, check)) {
       return;
     }
+    const normalizedState = isNonEmptyString(check.state) ? check.state : state;
+    if (normalizedState !== state) {
+      return;
+    }
     const createdAt = typeof check.createdAt === 'number' ? check.createdAt : now;
     if (now - createdAt <= OIDC_CHECKS_TTL_MS) {
-      result[state] = { codeVerifier: check.codeVerifier, createdAt };
+      result[state] = { state, codeVerifier: check.codeVerifier, createdAt };
     }
   });
   return result;
 }
 
 function convertLegacyFormat(rawChecks: any, now: number) {
-  if (isNonEmptyString(rawChecks.state) && isNonEmptyString(rawChecks.codeVerifier)) {
+  if (isValidStateToken(rawChecks.state) && isNonEmptyString(rawChecks.codeVerifier)) {
     return {
       [rawChecks.state]: {
+        state: rawChecks.state,
         codeVerifier: rawChecks.codeVerifier,
         createdAt: now,
       },
     };
   }
-  return {};
+  return createPendingChecksRecord();
 }
 
 function limitToMostRecent(pendingChecks: Record<string, any>) {
   const mostRecent = Object.entries(pendingChecks)
     .sort(([, c1]: any, [, c2]: any) => c2.createdAt - c1.createdAt)
     .slice(0, OIDC_MAX_PENDING_CHECKS);
-  return Object.fromEntries(mostRecent);
+  const limited = createPendingChecksRecord();
+  mostRecent.forEach(([state, check]) => {
+    limited[state] = check;
+  });
+  return limited;
 }
 
 function normalizePendingChecks(rawChecks) {
   const now = Date.now();
 
-  if (!rawChecks || typeof rawChecks !== 'object') {
-    return {};
+  if (rawChecks === null || typeof rawChecks !== 'object') {
+    return createPendingChecksRecord();
   }
 
-  let pendingChecks = {};
-  if (rawChecks.pending && typeof rawChecks.pending === 'object') {
-    pendingChecks = collectValidChecks(rawChecks.pending, now);
+  let pendingChecks = createPendingChecksRecord();
+  const pendingFromSession = rawChecks.pending;
+  if (pendingFromSession !== null && typeof pendingFromSession === 'object') {
+    pendingChecks = collectValidChecks(pendingFromSession, now);
   }
 
   // Backward compatibility with previously persisted single-check shape.
@@ -196,15 +215,21 @@ class Oidc extends Authentication {
       legacyHeaders: false,
     });
     app.use(`/auth/oidc/${this.name}`, oidcLimiter);
-    app.get(`/auth/oidc/${this.name}/redirect`, async (req, res) => this.redirect(req, res));
-    app.get(`/auth/oidc/${this.name}/cb`, async (req, res) => this.callback(req, res));
+    app.get(`/auth/oidc/${this.name}/redirect`, (req, res) => {
+      void this.redirect(req, res);
+    });
+    app.get(`/auth/oidc/${this.name}/cb`, (req, res) => {
+      void this.callback(req, res);
+    });
     const strategy = new OidcStrategy(
       {
         config: this.client,
         scope: 'openid email profile',
         name: 'oidc',
       },
-      async (accessToken, done) => this.verify(accessToken, done),
+      (accessToken, done) => {
+        void this.verify(accessToken, done);
+      },
       this.log,
     );
     return strategy;
@@ -246,11 +271,12 @@ class Oidc extends Authentication {
       const persistOidcChecks = async () => {
         await reloadSessionIfPossible(req.session);
 
-        if (!req.session.oidc || typeof req.session.oidc !== 'object') {
+        if (!req.session?.oidc || typeof req.session.oidc !== 'object') {
           req.session.oidc = {};
         }
         const pendingChecks = normalizePendingChecks(req.session.oidc[sessionKey]);
         pendingChecks[state] = {
+          state,
           codeVerifier,
           createdAt: Date.now(),
         };
@@ -283,7 +309,7 @@ class Oidc extends Authentication {
       const openidClient = await this.getOpenIdClient();
       const sessionKey = this.getSessionKey();
       await reloadSessionIfPossible(req.session);
-      const oidcChecks = req.session && req.session.oidc ? req.session.oidc[sessionKey] : undefined;
+      const oidcChecks = req.session?.oidc?.[sessionKey];
 
       if (!oidcChecks) {
         this.log.warn(
@@ -295,7 +321,7 @@ class Oidc extends Authentication {
 
       const callbackUrl = new URL(req.originalUrl || req.url, `${getPublicUrl(req)}/`);
       const callbackState = callbackUrl.searchParams.get('state');
-      if (!callbackState) {
+      if (!isValidStateToken(callbackState)) {
         this.log.warn(`OIDC callback is missing state parameter for strategy ${sessionKey}`);
         res.status(401).send('OIDC callback is missing state. Please retry authentication.');
         return;
@@ -303,7 +329,7 @@ class Oidc extends Authentication {
 
       const pendingChecks = normalizePendingChecks(oidcChecks);
       const oidcCheck = pendingChecks[callbackState];
-      if (!oidcCheck || !oidcCheck.codeVerifier) {
+      if (!oidcCheck?.codeVerifier || oidcCheck.state !== callbackState) {
         this.log.warn(
           `OIDC callback state does not match active session checks for strategy ${sessionKey} (pending=${Object.keys(pendingChecks).length})`,
         );
@@ -315,17 +341,22 @@ class Oidc extends Authentication {
 
       const tokenSet = await openidClient.authorizationCodeGrant(this.client, callbackUrl, {
         pkceCodeVerifier: oidcCheck.codeVerifier,
-        expectedState: callbackState,
+        expectedState: oidcCheck.state,
       });
       if (!tokenSet.access_token) {
         throw new Error('Access token is missing from OIDC authorization response');
       }
 
-      if (req.session && req.session.oidc) {
-        delete pendingChecks[callbackState];
-        if (Object.keys(pendingChecks).length > 0) {
+      if (req.session?.oidc) {
+        const remainingChecks = createPendingChecksRecord();
+        Object.entries(pendingChecks).forEach(([state, check]) => {
+          if (state !== callbackState) {
+            remainingChecks[state] = check;
+          }
+        });
+        if (Object.keys(remainingChecks).length > 0) {
           req.session.oidc[sessionKey] = {
-            pending: pendingChecks,
+            pending: remainingChecks,
           };
         } else {
           delete req.session.oidc[sessionKey];

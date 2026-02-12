@@ -35,6 +35,35 @@ test('validatedConfiguration should throw error when auth is not base64', async 
   }).toThrow('"auth" must be a valid base64 string');
 });
 
+test('validatedConfiguration should throw error when login is set without password', async () => {
+  expect(() => {
+    custom.validateConfiguration({
+      url: 'http://localhost:5000',
+      login: TEST_LOGIN,
+    });
+  }).toThrow();
+});
+
+test('validatedConfiguration should throw error when password is set without login', async () => {
+  expect(() => {
+    custom.validateConfiguration({
+      url: 'http://localhost:5000',
+      password: TEST_PASSWORD,
+    });
+  }).toThrow();
+});
+
+test('validatedConfiguration should throw error when auth and login/password are mixed', async () => {
+  expect(() => {
+    custom.validateConfiguration({
+      url: 'http://localhost:5000',
+      login: TEST_LOGIN,
+      password: TEST_PASSWORD,
+      auth: 'dXNlcm5hbWU6cGFzc3dvcmQ=', // NOSONAR - test fixture, not a real credential
+    });
+  }).toThrow();
+});
+
 test('maskConfiguration should mask configuration secrets', async () => {
   expect(custom.maskConfiguration()).toEqual({
     auth: undefined,
@@ -81,7 +110,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 });
 
 test('authenticate should add basic auth', async () => {
-  expect(custom.authenticate(undefined, { headers: {} })).resolves.toEqual({
+  await expect(custom.authenticate(undefined, { headers: {} })).resolves.toEqual({
     headers: {
       Authorization: 'Basic bG9naW46cGFzc3dvcmQ=', // NOSONAR - test fixture, not a real credential
     },

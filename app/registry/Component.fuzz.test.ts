@@ -1,15 +1,24 @@
 // @ts-nocheck
-import { fc, test } from '@fast-check/vitest';
-import { describe, expect } from 'vitest';
+import { fc, test as fcTest } from '@fast-check/vitest';
+import { describe, expect, test } from 'vitest';
 import Component from './Component.js';
 
 describe('registry/Component fuzz tests', () => {
-  test.prop([fc.string()])('Component.mask never throws on arbitrary strings', (input) => {
+  test('Component.mask returns undefined for empty string', () => {
+    expect(Component.mask('')).toBeUndefined();
+  });
+
+  test('validateConfiguration accepts an empty object', () => {
+    const component = new Component();
+    expect(component.validateConfiguration({})).toEqual({});
+  });
+
+  fcTest.prop([fc.string()])('Component.mask never throws on arbitrary strings', (input) => {
     const result = Component.mask(input);
     expect(result === undefined || typeof result === 'string').toBe(true);
   });
 
-  test.prop([fc.string(), fc.integer({ min: 0, max: 20 })])(
+  fcTest.prop([fc.string(), fc.integer({ min: 0, max: 20 })])(
     'Component.mask with arbitrary nb parameter never throws',
     (input, nb) => {
       const result = Component.mask(input, nb);
@@ -17,7 +26,7 @@ describe('registry/Component fuzz tests', () => {
     },
   );
 
-  test.prop([
+  fcTest.prop([
     fc.string(),
     fc.integer({ min: 0, max: 20 }),
     fc.string({ minLength: 1, maxLength: 5 }),
@@ -26,7 +35,7 @@ describe('registry/Component fuzz tests', () => {
     expect(result === undefined || typeof result === 'string').toBe(true);
   });
 
-  test.prop([fc.option(fc.string(), { nil: undefined })])(
+  fcTest.prop([fc.option(fc.string(), { nil: undefined })])(
     'Component.mask handles undefined correctly',
     (input) => {
       const result = Component.mask(input);
@@ -38,7 +47,7 @@ describe('registry/Component fuzz tests', () => {
     },
   );
 
-  test.prop([fc.anything()])('validateConfiguration handles arbitrary config objects', (config) => {
+  fcTest.prop([fc.anything()])('validateConfiguration handles arbitrary config objects', (config) => {
     const component = new Component();
     try {
       const result = component.validateConfiguration(config);
@@ -49,7 +58,7 @@ describe('registry/Component fuzz tests', () => {
     }
   });
 
-  test.prop([
+  fcTest.prop([
     fc.dictionary(
       fc.string({ minLength: 1, maxLength: 20 }),
       fc.oneof(fc.string({ maxLength: 50 }), fc.integer(), fc.boolean(), fc.constant(null)),

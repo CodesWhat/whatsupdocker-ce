@@ -220,8 +220,7 @@ function resolveTriggerAssociation(trigger, includedTriggers, excludedTriggers) 
   }
 
   if (
-    excludedTriggers &&
-    excludedTriggers.some((excludedTrigger) =>
+    excludedTriggers?.some((excludedTrigger) =>
       Trigger.doesReferenceMatchId(excludedTrigger.id, triggerId),
     )
   ) {

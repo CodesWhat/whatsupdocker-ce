@@ -102,13 +102,13 @@ export default defineComponent({
       }
 
       if (errorCount > 0) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Group update completed with ${errorCount} error(s)`,
           'warning',
         );
       } else {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `All containers in "${this.displayName}" updated`,
         );
