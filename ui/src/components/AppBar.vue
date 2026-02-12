@@ -3,6 +3,12 @@
     <v-app-bar-nav-icon v-if="showMenuToggle" @click.stop="$emit('toggle-drawer')">
       <v-icon>fas fa-bars</v-icon>
     </v-app-bar-nav-icon>
+    <img
+      v-if="showMenuToggle"
+      :src="logo"
+      alt="drydock"
+      style="height: 24px; width: auto; margin-left: 4px"
+    />
     <v-toolbar-title
       v-if="viewName && 'home'.toLowerCase() !== viewName.toLowerCase()"
       class="text-body-1 text-capitalize ma-0 pl-4"
@@ -13,7 +19,7 @@
     <v-tooltip :text="'Theme: ' + themeLabel" location="bottom">
       <template v-slot:activator="{ props }">
         <v-btn icon variant="text" size="small" v-bind="props" @click="cycleTheme">
-          <v-icon size="small">{{ themeIcon }}</v-icon>
+          <v-icon size="small" :color="themeIconColor">{{ themeIcon }}</v-icon>
         </v-btn>
       </template>
     </v-tooltip>

@@ -1,8 +1,10 @@
 <template>
   <v-container fluid class="pa-4">
-    <configuration-item :item="configurationItem" />
-    <v-card variant="outlined" rounded="lg">
-      <v-card-title>
+    <div class="mb-3">
+      <configuration-item :item="configurationItem" />
+    </div>
+    <v-card rounded="lg" elevation="1">
+      <v-card-title class="pa-3 d-flex align-center bg-surface">
         <v-icon class="mr-2">fas fa-file-lines</v-icon>
         Application Logs
       </v-card-title>

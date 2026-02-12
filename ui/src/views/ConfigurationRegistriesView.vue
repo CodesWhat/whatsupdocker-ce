@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="pa-4">
     <div v-for="registry in registries" :key="registry.id" class="mb-2">
-      <configuration-item :item="registry" />
+      <configuration-item :item="registry" :icon-color="registry.iconColor" />
     </div>
     <div v-if="registries.length === 0" class="text-center text-medium-emphasis py-8">
       <v-icon size="36" color="grey">fas fa-database</v-icon>

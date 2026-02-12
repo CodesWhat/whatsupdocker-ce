@@ -59,7 +59,7 @@ export default defineComponent({
       },
       {
         to: '/configuration/server',
-        name: 'server',
+        name: 'servers',
         icon: getServerIcon(),
       },
       {

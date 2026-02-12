@@ -61,9 +61,9 @@ describe('WebhookInfo', () => {
     expect(wrapper.text()).toContain('Authorization: Bearer YOUR_TOKEN');
   });
 
-  it('shows satellite-dish icon', () => {
+  it('shows anchor icon', () => {
     wrapper = createWrapper({ enabled: true });
-    expect(wrapper.text()).toContain('fas fa-satellite-dish');
+    expect(wrapper.text()).toContain('fas fa-anchor');
   });
 
   it('does not show endpoint table when disabled', () => {

@@ -3,7 +3,7 @@
     <!-- Row 1: Stat cards -->
     <v-row class="mb-2">
       <v-col cols="6" md="3">
-        <v-card variant="flat" class="stat-card" to="/containers" rounded="lg">
+        <v-card elevation="1" class="stat-card" to="/containers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--containers">
               <v-icon size="18" color="white">{{ containerIcon }}</v-icon>
@@ -25,7 +25,7 @@
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
-        <v-card variant="flat" class="stat-card" to="/configuration/triggers" rounded="lg">
+        <v-card elevation="1" class="stat-card" to="/configuration/triggers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--triggers">
               <v-icon size="18" color="white">{{ triggerIcon }}</v-icon>
@@ -38,7 +38,7 @@
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
-        <v-card variant="flat" class="stat-card" to="/configuration/watchers" rounded="lg">
+        <v-card elevation="1" class="stat-card" to="/configuration/watchers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--watchers">
               <v-icon size="18" color="white">{{ watcherIcon }}</v-icon>
@@ -51,7 +51,7 @@
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
-        <v-card variant="flat" class="stat-card" to="/configuration/registries" rounded="lg">
+        <v-card elevation="1" class="stat-card" to="/configuration/registries" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--registries">
               <v-icon size="18" color="white">{{ registryIcon }}</v-icon>
@@ -68,7 +68,7 @@
     <!-- Row 2: Container Updates -->
     <v-row class="mb-2">
       <v-col cols="12">
-        <v-card variant="outlined" rounded="lg">
+        <v-card rounded="lg" elevation="1">
           <div class="d-flex align-center px-4 pt-3 pb-0">
             <v-icon size="small" class="mr-2">fas fa-code-compare</v-icon>
             <span class="text-subtitle-2 font-weight-medium">Container Updates</span>
@@ -182,14 +182,6 @@
                     >
                       {{ container.updateKind?.remoteValue || 'unknown' }}
                     </v-chip>
-                    <v-chip
-                      size="x-small"
-                      variant="outlined"
-                      :color="updateKindColor(container)"
-                      class="text-uppercase"
-                    >
-                      {{ updateKindLabel(container) }}
-                    </v-chip>
                   </v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -202,7 +194,7 @@
     <!-- Row 3: Recent Activity -->
     <v-row>
       <v-col cols="12">
-        <v-card variant="outlined" rounded="lg">
+        <v-card rounded="lg" elevation="1">
           <div class="d-flex align-center px-4 pt-3 pb-2">
             <v-icon size="small" class="mr-2">fas fa-clock-rotate-left</v-icon>
             <span class="text-subtitle-2 font-weight-medium">Recent Activity</span>
@@ -218,7 +210,9 @@
               :key="entry.id"
             >
               <template v-slot:prepend>
-                <v-icon :color="actionColor(entry.action)" size="small">{{ actionIcon(entry.action) }}</v-icon>
+                <div class="d-flex align-center justify-center flex-shrink-0" style="width: 32px; margin-right: 8px">
+                  <v-icon :color="actionColor(entry.action)" size="small">{{ actionIcon(entry.action) }}</v-icon>
+                </div>
               </template>
               <v-list-item-title class="text-body-2">
                 {{ entry.containerName }}

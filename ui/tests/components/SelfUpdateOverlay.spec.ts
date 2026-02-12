@@ -1,6 +1,18 @@
 import { mount } from '@vue/test-utils';
 import SelfUpdateOverlay from '@/components/SelfUpdateOverlay';
 
+// Mock vuetify useDisplay — default to desktop (smAndDown = false)
+const mockSmAndDown = { value: false };
+vi.mock('vuetify', async () => {
+  const actual = await vi.importActual('vuetify');
+  return {
+    ...actual,
+    useDisplay: vi.fn(() => ({
+      smAndDown: mockSmAndDown,
+    })),
+  };
+});
+
 // Mock window.location.reload
 const reloadMock = vi.fn();
 Object.defineProperty(window, 'location', {
@@ -20,6 +32,7 @@ describe('SelfUpdateOverlay', () => {
     vi.useFakeTimers();
     global.fetch = vi.fn();
     reloadMock.mockClear();
+    mockSmAndDown.value = false;
     rafId = 0;
     rafMock = vi.fn((_cb: FrameRequestCallback) => ++rafId);
     cafMock = vi.fn();
@@ -400,5 +413,47 @@ describe('SelfUpdateOverlay', () => {
     (global.fetch as any).mockResolvedValue({ ok: true } as Response);
     await vi.advanceTimersByTimeAsync(3000);
     expect(wrapper.vm.phase).toBe('ready');
+  });
+
+  describe('mobile behavior (smAndDown)', () => {
+    beforeEach(() => {
+      mockSmAndDown.value = true;
+    });
+
+    it('does not start bounce animation on mobile', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+
+      // On mobile, requestAnimationFrame should NOT be called (no bounce)
+      expect(rafMock).not.toHaveBeenCalled();
+    });
+
+    it('starts mobile hue cycling on self-update', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+
+      const hueBefore = wrapper.vm.hue;
+      await vi.advanceTimersByTimeAsync(200);
+      expect(wrapper.vm.hue).not.toBe(hueBefore);
+    });
+
+    it('shows mobile-logo element instead of bouncing-logo', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('.mobile-logo').exists()).toBe(true);
+      expect(wrapper.find('.bouncing-logo').exists()).toBe(false);
+    });
+
+    it('cleans up mobile hue timer on unmount', async () => {
+      eventHandlers['self-update']();
+      await wrapper.vm.$nextTick();
+
+      wrapper.unmount();
+
+      // Advancing timers should not cause errors after cleanup
+      const hueBefore = wrapper.vm.hue;
+      await vi.advanceTimersByTimeAsync(1000);
+    });
   });
 });

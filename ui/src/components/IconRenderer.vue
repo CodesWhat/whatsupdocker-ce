@@ -1,6 +1,6 @@
 <template>
   <!-- Fallback: show font icon when image failed to load -->
-  <v-icon v-if="imgFailed" :style="iconStyle">
+  <v-icon v-if="imgFailed" :style="iconStyle" :color="color">
     {{ fallbackIcon }}
   </v-icon>
   <img
@@ -33,7 +33,7 @@
     class="custom-icon"
     @error="onImgError"
   />
-  <v-icon v-else :style="iconStyle">
+  <v-icon v-else :style="iconStyle" :color="color">
     {{ normalizedIcon }}
   </v-icon>
 </template>

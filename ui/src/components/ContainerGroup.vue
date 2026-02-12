@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mb-3" variant="outlined">
+  <v-card class="mb-3" rounded="lg" elevation="1">
     <v-card-title
       class="pa-3 d-flex align-center bg-surface"
       style="cursor: pointer"

@@ -16,27 +16,27 @@ describe('Registry Service', () => {
 
   describe('getRegistryProviderIcon', () => {
     it('returns correct icons for different providers', () => {
-      expect(getRegistryProviderIcon('acr.example.com')).toBe('si-microsoftazure');
-      expect(getRegistryProviderIcon('custom.registry.com')).toBe('si-opencontainersinitiative');
-      expect(getRegistryProviderIcon('ecr.amazonaws.com')).toBe('si-amazonaws');
-      expect(getRegistryProviderIcon('forgejo.example.com')).toBe('si-forgejo');
-      expect(getRegistryProviderIcon('gcr.io')).toBe('si-googlecloud');
-      expect(getRegistryProviderIcon('ghcr.io')).toBe('si-github');
-      expect(getRegistryProviderIcon('gitea.example.com')).toBe('si-gitea');
-      expect(getRegistryProviderIcon('gitlab.com')).toBe('si-gitlab');
-      expect(getRegistryProviderIcon('hub.docker.com')).toBe('si-docker');
-      expect(getRegistryProviderIcon('quay.io')).toBe('si-redhat');
-      expect(getRegistryProviderIcon('lscr.io')).toBe('si-linuxserver');
-      expect(getRegistryProviderIcon('trueforge.example')).toBe('si-linuxcontainers');
+      expect(getRegistryProviderIcon('acr.example.com')).toBe('fab fa-microsoft');
+      expect(getRegistryProviderIcon('custom.registry.com')).toBe('fas fa-cubes');
+      expect(getRegistryProviderIcon('ecr.amazonaws.com')).toBe('fab fa-aws');
+      expect(getRegistryProviderIcon('forgejo.example.com')).toBe('fas fa-code-branch');
+      expect(getRegistryProviderIcon('gcr.io')).toBe('fab fa-google');
+      expect(getRegistryProviderIcon('ghcr.io')).toBe('fab fa-github');
+      expect(getRegistryProviderIcon('gitea.example.com')).toBe('fas fa-code-branch');
+      expect(getRegistryProviderIcon('gitlab.com')).toBe('fab fa-gitlab');
+      expect(getRegistryProviderIcon('hub.docker.com')).toBe('fab fa-docker');
+      expect(getRegistryProviderIcon('quay.io')).toBe('fab fa-redhat');
+      expect(getRegistryProviderIcon('lscr.io')).toBe('fab fa-linux');
+      expect(getRegistryProviderIcon('trueforge.example')).toBe('fas fa-cube');
     });
 
     it('returns default icon for unknown providers', () => {
-      expect(getRegistryProviderIcon('unknown.registry')).toBe('si-linuxcontainers');
+      expect(getRegistryProviderIcon('unknown.registry')).toBe('fas fa-cube');
     });
 
     it('handles provider names with dots correctly', () => {
-      expect(getRegistryProviderIcon('hub.docker.com')).toBe('si-docker');
-      expect(getRegistryProviderIcon('gcr.io')).toBe('si-googlecloud');
+      expect(getRegistryProviderIcon('hub.docker.com')).toBe('fab fa-docker');
+      expect(getRegistryProviderIcon('gcr.io')).toBe('fab fa-google');
     });
   });
 

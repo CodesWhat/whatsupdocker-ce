@@ -6,6 +6,13 @@ vi.mock('@/services/trigger', () => ({
     { id: 'trigger1', type: 'webhook', name: 'My Webhook' },
     { id: 'trigger2', type: 'smtp', name: 'Email Alert' },
   ])),
+  getTriggerProviderIcon: vi.fn((type) => {
+    switch (type) {
+      case 'webhook': return 'fas fa-globe';
+      case 'smtp': return 'fas fa-envelope';
+      default: return 'fas fa-bolt';
+    }
+  }),
 }));
 
 describe('ConfigurationTriggersView', () => {
@@ -35,7 +42,7 @@ describe('ConfigurationTriggersView', () => {
   });
 
   it('renders a row for each trigger', () => {
-    const rows = wrapper.findAll('.mb-2');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 

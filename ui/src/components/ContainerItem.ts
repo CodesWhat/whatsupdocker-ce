@@ -331,9 +331,11 @@ export default defineComponent({
     async startContainerAction() {
       this.isStarting = true;
       try {
-        await startContainer(this.container.id);
+        const result = await startContainer(this.container.id);
         (this as any).$eventBus.emit('notify', 'Container started');
-        await this.refreshContainerNow(false);
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
       } catch (e: any) {
         (this as any).$eventBus.emit('notify', `Error starting container (${e.message})`, 'error');
       } finally {
@@ -344,9 +346,11 @@ export default defineComponent({
     async stopContainerAction() {
       this.isStopping = true;
       try {
-        await stopContainer(this.container.id);
+        const result = await stopContainer(this.container.id);
         (this as any).$eventBus.emit('notify', 'Container stopped');
-        await this.refreshContainerNow(false);
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
       } catch (e: any) {
         (this as any).$eventBus.emit('notify', `Error stopping container (${e.message})`, 'error');
       } finally {
@@ -357,9 +361,11 @@ export default defineComponent({
     async restartContainerAction() {
       this.isRestarting = true;
       try {
-        await restartContainer(this.container.id);
+        const result = await restartContainer(this.container.id);
         (this as any).$eventBus.emit('notify', 'Container restarted');
-        await this.refreshContainerNow(false);
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
       } catch (e: any) {
         (this as any).$eventBus.emit(
           'notify',

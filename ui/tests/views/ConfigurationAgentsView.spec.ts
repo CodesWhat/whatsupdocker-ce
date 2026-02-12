@@ -50,7 +50,7 @@ describe('ConfigurationAgentsView', () => {
   });
 
   it('renders a row for each agent', () => {
-    const rows = wrapper.findAll('.mb-2');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 

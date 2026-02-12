@@ -18,6 +18,10 @@ export default defineComponent({
       type: String,
       default: 'fab fa-docker',
     },
+    color: {
+      type: String,
+      default: undefined,
+    },
   },
 
   setup() {

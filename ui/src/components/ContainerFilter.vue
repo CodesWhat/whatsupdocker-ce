@@ -33,18 +33,18 @@
           {{ filter.label }}: {{ filter.value }}
         </v-chip>
 
-        <v-divider vertical class="mx-1" style="height: 24px" />
+        <v-divider vertical class="mx-1 align-self-center" style="height: 24px" />
 
-        <v-checkbox
-          v-model="updateAvailableLocal"
-          @update:modelValue="emitUpdateAvailableChanged()"
-          label="Updates available"
-          density="compact"
-          hide-details
-          class="flex-shrink-0"
-        />
+        <v-btn
+          variant="text"
+          size="small"
+          @click="updateAvailableLocal = !updateAvailableLocal; emitUpdateAvailableChanged()"
+        >
+          <v-icon start size="small">{{ updateAvailableLocal ? 'fas fa-square-check' : 'far fa-square' }}</v-icon>
+          Updates available
+        </v-btn>
 
-        <v-divider vertical class="mx-1" style="height: 24px" />
+        <v-divider vertical class="mx-1 align-self-center" style="height: 24px" />
 
         <v-btn
           variant="text"

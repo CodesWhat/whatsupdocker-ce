@@ -10,6 +10,10 @@ vi.mock('@/services/registry', () => ({
     const icons = { hub: 'si-docker', ghcr: 'si-github' };
     return icons[type] || 'si-linuxcontainers';
   }),
+  getRegistryProviderColor: vi.fn((type) => {
+    const colors = { hub: '#2496ED', ghcr: '#8B5CF6' };
+    return colors[type] || '#6B7280';
+  }),
 }));
 
 describe('ConfigurationRegistriesView', () => {
@@ -19,8 +23,8 @@ describe('ConfigurationRegistriesView', () => {
     wrapper = mount(ConfigurationRegistriesView);
     await wrapper.setData({
       registries: [
-        { id: 'registry-a', type: 'ghcr', name: 'GitHub', icon: 'si-github' },
-        { id: 'registry-b', type: 'hub', name: 'Docker Hub', icon: 'si-docker' },
+        { id: 'registry-a', type: 'ghcr', name: 'GitHub', icon: 'si-github', iconColor: '#8B5CF6' },
+        { id: 'registry-b', type: 'hub', name: 'Docker Hub', icon: 'si-docker', iconColor: '#2496ED' },
       ],
     });
   });
@@ -59,6 +63,9 @@ describe('ConfigurationRegistriesView Route Hook', () => {
     // Should have icons
     expect(vm.registries[0].icon).toBe('si-github');
     expect(vm.registries[1].icon).toBe('si-docker');
+    // Should have icon colors
+    expect(vm.registries[0].iconColor).toBe('#8B5CF6');
+    expect(vm.registries[1].iconColor).toBe('#2496ED');
   });
 
   it('emits error notification on failure', async () => {

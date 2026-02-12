@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-4">
-    <div v-for="watcher in watchers" :key="watcher.name" class="mb-2">
+    <div v-for="watcher in watchers" :key="watcher.name" class="mb-3">
       <configuration-item :item="watcher" />
     </div>
     <div v-if="watchers.length === 0" class="text-center text-medium-emphasis py-8">

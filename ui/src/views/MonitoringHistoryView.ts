@@ -15,6 +15,7 @@ export default defineComponent({
       total: 0,
       currentPage: 1,
       pageSize: 20,
+      showFilters: false,
       filterAction: null as string | null,
       filterContainer: '',
       actionOptions: [
@@ -31,6 +32,12 @@ export default defineComponent({
   computed: {
     totalPages(): number {
       return Math.max(1, Math.ceil(this.total / this.pageSize));
+    },
+    activeFilterCount(): number {
+      let count = 0;
+      if (this.filterAction) count++;
+      if (this.filterContainer) count++;
+      return count;
     },
   },
   watch: {

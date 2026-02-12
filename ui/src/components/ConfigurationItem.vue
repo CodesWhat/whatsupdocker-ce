@@ -1,24 +1,30 @@
 <template>
-  <v-card variant="outlined" rounded="lg">
+  <v-card rounded="lg" elevation="1">
     <v-card-title
       @click="collapse()"
       style="cursor: pointer"
       class="pa-3 d-flex align-center bg-surface"
     >
-      <div class="text-body-2">
-        <span v-if="smAndUp && item.agent">
-          <v-chip label :color="agentStatusColor" variant="outlined">
-            <v-icon start>fas fa-robot</v-icon>
-            {{ item.agent }}
-          </v-chip>
-          /
-        </span>
-        <v-chip label color="info" variant="outlined">{{ item.type }}</v-chip>
-        /
-        <v-chip label color="info" variant="outlined">{{ item.name }}</v-chip>
+      <div class="d-flex align-center" style="gap: 12px">
+        <div
+          class="d-flex align-center justify-center flex-shrink-0"
+          style="width: 32px"
+        >
+          <IconRenderer :icon="item.icon" :size="24" :margin-right="0" :color="iconColor || undefined" />
+        </div>
+        <div class="d-flex flex-column" style="min-width: 0">
+          <span class="text-body-2 font-weight-medium text-truncate">{{ displayName }}</span>
+          <div v-if="smAndUp" class="text-caption text-medium-emphasis d-flex align-center" style="gap: 4px">
+            <span>{{ item.type }}</span>
+            <template v-if="item.agent">
+              <span>&middot;</span>
+              <v-icon size="x-small" :color="agentStatusColor">fas fa-circle</v-icon>
+              <span>{{ item.agent }}</span>
+            </template>
+          </div>
+        </div>
       </div>
       <v-spacer />
-      <IconRenderer :icon="item.icon" :size="24" :margin-right="8" />
       <v-icon>{{ showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down" }}</v-icon>
     </v-card-title>
     <transition name="expand-transition">

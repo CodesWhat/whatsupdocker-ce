@@ -22,7 +22,7 @@ export default defineComponent({
       return {
         type: 'server',
         name: 'configuration',
-        icon: 'fas fa-server',
+        icon: 'fas fa-gear',
         configuration: this.server.configuration,
       };
     },
@@ -30,7 +30,7 @@ export default defineComponent({
       return {
         type: 'logs',
         name: 'configuration',
-        icon: 'fas fa-terminal',
+        icon: 'fas fa-file-lines',
         configuration: this.log,
       };
     },

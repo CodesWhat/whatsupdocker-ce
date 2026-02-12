@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-4">
-    <div v-for="trigger in triggers" :key="trigger.id" class="mb-2">
+    <div v-for="trigger in triggers" :key="trigger.id" class="mb-3">
       <trigger-detail :trigger="trigger" />
     </div>
     <div v-if="triggers.length === 0" class="text-center text-medium-emphasis py-8">

@@ -1,28 +1,68 @@
 <template>
   <v-container fluid class="history-container d-flex flex-column pa-4">
-    <!-- Header + Filters -->
+    <!-- Filters -->
     <div class="flex-shrink-0 mb-3">
-      <h2 class="text-h5 mb-3">Update History</h2>
-      <div class="d-flex flex-wrap" style="gap: 12px">
-        <v-select
-          v-model="filterAction"
-          :items="actionOptions"
-          label="Filter by action"
-          clearable
-          density="compact"
-          variant="outlined"
-          hide-details
-          style="max-width: 220px; min-width: 180px"
-        />
-        <v-text-field
-          v-model="filterContainer"
-          label="Filter by container"
-          clearable
-          density="compact"
-          variant="outlined"
-          hide-details
-          style="max-width: 220px; min-width: 180px"
-        />
+      <div class="filter-bar">
+        <div class="filter-toolbar">
+          <div class="d-flex align-center" style="gap: 6px; flex-wrap: wrap">
+            <v-btn variant="tonal" size="small" @click="showFilters = !showFilters">
+              <v-icon start size="small">fas fa-filter</v-icon>
+              Filters
+              <v-badge
+                v-if="activeFilterCount > 0"
+                :content="activeFilterCount"
+                color="primary"
+                inline
+                class="ml-1"
+              />
+              <v-icon end size="x-small">{{ showFilters ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}</v-icon>
+            </v-btn>
+
+            <!-- Active filter chips -->
+            <v-chip
+              v-if="filterAction"
+              size="small"
+              variant="tonal"
+              color="primary"
+              closable
+              @click:close="filterAction = null"
+            >
+              Action: {{ filterAction }}
+            </v-chip>
+            <v-chip
+              v-if="filterContainer"
+              size="small"
+              variant="tonal"
+              color="primary"
+              closable
+              @click:close="filterContainer = ''"
+            >
+              Container: {{ filterContainer }}
+            </v-chip>
+          </div>
+        </div>
+
+        <v-expand-transition>
+          <div v-show="showFilters" class="filter-panel">
+            <v-select
+              v-model="filterAction"
+              :items="actionOptions"
+              label="Filter by action"
+              clearable
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+            <v-text-field
+              v-model="filterContainer"
+              label="Filter by container"
+              clearable
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </div>
+        </v-expand-transition>
       </div>
     </div>
 
@@ -53,7 +93,7 @@
 
     <!-- Table + Pagination -->
     <template v-else>
-      <v-card variant="outlined" rounded="lg" class="flex-grow-1 d-flex flex-column" style="min-height: 300px; overflow: hidden">
+      <v-card rounded="lg" elevation="1" class="flex-grow-1 d-flex flex-column" style="min-height: 300px; overflow: hidden">
         <div class="flex-grow-1" style="overflow-y: auto; overflow-x: auto">
           <table class="audit-table">
             <thead>
@@ -133,5 +173,33 @@
 
 .audit-table tbody tr:hover {
   background-color: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.filter-panel > * {
+  flex: 1 1 180px;
+  max-width: 240px;
 }
 </style>

@@ -1550,6 +1550,10 @@ describe('Docker Watcher', () => {
       const oldContainers = [{ id: 'old1' }, { id: 'old2' }];
       storeContainer.getContainers.mockReturnValue(oldContainers);
       mockDockerApi.listContainers.mockResolvedValue([]);
+      // Simulate containers no longer existing in Docker
+      mockDockerApi.getContainer.mockReturnValue({
+        inspect: vi.fn().mockRejectedValue(new Error('no such container')),
+      });
 
       await docker.register('watcher', 'docker', 'test', {});
       await docker.getContainers();

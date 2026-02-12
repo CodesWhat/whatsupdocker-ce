@@ -8,6 +8,9 @@ vi.mock('../configuration', () => ({
     feature: { delete: true },
     tls: {},
   })),
+  getWebhookConfiguration: vi.fn(() => ({
+    enabled: false,
+  })),
 }));
 
 // Mock express modules
@@ -59,6 +62,7 @@ describe('Server Router', () => {
         enabled: true,
         feature: { delete: true },
         tls: {},
+        webhook: { enabled: false },
       },
     });
   });

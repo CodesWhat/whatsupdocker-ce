@@ -13,7 +13,7 @@
       </div>
       <v-divider class="pb-3"></v-divider>
     </div>
-    <v-card>
+    <v-card rounded="lg" elevation="1">
       <v-card-title
         @click="collapseDetail()"
         style="cursor: pointer"
@@ -34,6 +34,9 @@
               </span>
               <v-chip label size="x-small" variant="tonal" color="info" class="flex-shrink-0">
                 {{ container.image.tag.value }}
+              </v-chip>
+              <v-chip v-if="container.status !== 'running'" label size="x-small" variant="tonal" color="warning" class="flex-shrink-0">
+                {{ container.status }}
               </v-chip>
             </div>
             <div v-if="smAndUp" class="text-caption text-medium-emphasis d-flex align-center" style="gap: 4px">

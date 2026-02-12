@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue';
 import ConfigurationItem from '@/components/ConfigurationItem.vue';
-import { getAllWatchers } from '@/services/watcher';
+import { getAllWatchers, getWatcherProviderIcon } from '@/services/watcher';
 
 export default defineComponent({
   data() {
@@ -14,8 +14,12 @@ export default defineComponent({
   async beforeRouteEnter(to, from, next) {
     try {
       const watchers = await getAllWatchers();
+      const watchersWithIcons = watchers.map((w) => ({
+        ...w,
+        icon: getWatcherProviderIcon(w.type),
+      }));
       next((vm: any) => {
-        vm.watchers = watchers;
+        vm.watchers = watchersWithIcons;
       });
     } catch (e: any) {
       next((vm: any) => {

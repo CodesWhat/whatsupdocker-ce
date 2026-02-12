@@ -13,6 +13,16 @@
 - :star: [UI] - Add graceful self-update overlay with DVD-style bouncing whale logo, SSE push via `/api/events/ui`, and automatic health polling with page reload
 - :star: [TRIGGER] - Add lifecycle hooks for pre/post-update shell commands (`dd.hook.pre`, `dd.hook.post`) with abort-on-failure and configurable timeout
 - :star: [TRIGGER] - Add automatic rollback on health check failure (`dd.rollback.auto`) with configurable monitoring window and polling interval
+- :star: [UI] - Redesign ConfigurationItem layout with icon left, prominent name, and type subtitle replacing old badge/chip pattern
+- :star: [UI] - Redesign TriggerDetail with same modern layout (icon left, name prominent, type subtitle)
+- :star: [UI] - Add brand-colored icon backgrounds for registry providers (Docker blue, GitHub purple, AWS orange, etc.)
+- :star: [UI] - Unify card styling with `outlined` variant and `rounded="lg"` across all pages
+- :star: [UI] - Add collapsible filter bar with active filter chips on History page
+- :star: [UI] - Make self-update overlay mobile-responsive with fade-in animation on small screens
+- :fire: [UI] - Remove redundant MAJOR/MINOR severity badges from Home page (color already shows severity)
+- :fire: [UI] - Remove redundant "Update History" heading from History page
+- :fire: [UI] - Fix spacing between config item and logs card on Logs page
+- :lock: [QA] - Add HTTP trigger, basic auth, and webhook config to QA compose
 
 ## 8.1.1
 - :fire: [TELEGRAM] - Fix markdown character escape

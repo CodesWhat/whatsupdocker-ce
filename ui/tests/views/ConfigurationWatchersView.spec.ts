@@ -6,6 +6,12 @@ vi.mock('@/services/watcher', () => ({
     { name: 'watcher1', type: 'docker', cron: '0 * * * *' },
     { name: 'watcher2', type: 'docker', cron: '0 0 * * *' },
   ])),
+  getWatcherProviderIcon: vi.fn((type) => {
+    switch (type) {
+      case 'docker': return 'fab fa-docker';
+      default: return 'fas fa-eye';
+    }
+  }),
 }));
 
 describe('ConfigurationWatchersView', () => {
@@ -26,7 +32,7 @@ describe('ConfigurationWatchersView', () => {
   });
 
   it('renders a row for each watcher', () => {
-    const rows = wrapper.findAll('.mb-2');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 

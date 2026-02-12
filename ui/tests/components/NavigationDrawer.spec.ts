@@ -72,7 +72,7 @@ describe('NavigationDrawer', () => {
   it('has configuration items sorted alphabetically', () => {
     const sorted = wrapper.vm.configurationItemsSorted;
     const names = sorted.map(i => i.name);
-    expect(names).toEqual(['agents', 'auth', 'registries', 'server', 'triggers', 'watchers']);
+    expect(names).toEqual(['agents', 'auth', 'registries', 'servers', 'triggers', 'watchers']);
   });
 
   it('has correct container icon', () => {

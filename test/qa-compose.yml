@@ -3,12 +3,41 @@ services:
     image: drydock:dev
     container_name: drydock-qa
     ports:
-      - "3000:3000"
+      - "3456:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DD_LOG_FORMAT=text
       - DD_WATCHER_LOCAL_WATCHBYDEFAULT=false
+      - DD_TRIGGER_DOCKER_LOCAL_PRUNE=true
+      - DD_TRIGGER_HTTP_MYWEBHOOK_URL=http://httpbin.org/post
+      - DD_TRIGGER_HTTP_MYWEBHOOK_METHOD=POST
+      - DD_AUTH_BASIC_ADMIN_USER=admin
+      - "DD_AUTH_BASIC_ADMIN_HASH={SHA}W6ph5Mm5Pz8GgiULbPgzG37mj9g="
+      - DD_SERVER_WEBHOOK_ENABLED=true
+      - DD_SERVER_WEBHOOK_TOKEN=test-token-12345
+      # --- Slack trigger ---
+      - DD_TRIGGER_SLACK_MYSLACK_TOKEN=xoxb-fake-slack-token-for-testing
+      - DD_TRIGGER_SLACK_MYSLACK_CHANNEL=C01FAKECHANNEL
+      # --- SMTP trigger ---
+      - DD_TRIGGER_SMTP_MYEMAIL_HOST=smtp.example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_PORT=587
+      - DD_TRIGGER_SMTP_MYEMAIL_USER=alerts@example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_PASS=fakesmtppassword
+      - DD_TRIGGER_SMTP_MYEMAIL_FROM=alerts@example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_TO=admin@example.com
+      # --- GHCR registry (authenticated) ---
+      - DD_REGISTRY_GHCR_PRIVATE_USERNAME=myghuser
+      - DD_REGISTRY_GHCR_PRIVATE_TOKEN=ghp_fakeGitHubTokenForTesting123
+      # Note: no private Hub registry -- test containers are public images
+      # --- Agent: staging server ---
+      - DD_AGENT_STAGING_HOST=192.168.1.50
+      - DD_AGENT_STAGING_PORT=3000
+      - DD_AGENT_STAGING_SECRET=staging-shared-secret-key
+      # --- Agent: production server ---
+      - DD_AGENT_PRODUCTION_HOST=10.0.0.100
+      - DD_AGENT_PRODUCTION_PORT=3000
+      - DD_AGENT_PRODUCTION_SECRET=production-shared-secret-key
 
   # Container with updates available and lifecycle hooks
   nginx-hooked:

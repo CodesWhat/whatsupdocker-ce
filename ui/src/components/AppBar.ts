@@ -2,6 +2,7 @@ import { computed, defineComponent, inject, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTheme } from 'vuetify';
 import { logout } from '@/services/auth';
+import logo from '@/assets/whale-logo.png';
 
 export default defineComponent({
   props: {
@@ -77,6 +78,17 @@ export default defineComponent({
       }
     });
 
+    const themeIconColor = computed(() => {
+      switch (themeMode.value) {
+        case 'light':
+          return '#F59E0B';
+        case 'dark':
+          return '#60A5FA';
+        default:
+          return undefined;
+      }
+    });
+
     onMounted(() => {
       applyTheme();
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -102,11 +114,13 @@ export default defineComponent({
     };
 
     return {
+      logo,
       viewName,
       logout: performLogout,
       themeMode,
       themeIcon,
       themeLabel,
+      themeIconColor,
       cycleTheme,
       onThemeModeChange,
     };

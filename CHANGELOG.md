@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Audit event wiring** — Wired audit log entries and Prometheus counter increments for rollback, preview, container-added, container-removed, update-applied, and update-failed events. Registered `ContainerUpdateFailed` event with try/catch in Docker trigger.
 - **Test updates** — 20+ test files updated for v1.2.0 icon changes, CSS selectors, HomeView data model, theme toggle relocation, and audit module wiring. Removed obsolete specs.
 - **Updated doc icon examples** — Switched icon examples to prefer `hl:` and `si:` prefixes over deprecated `mdi:`.
+- **ConfigurationItem redesign** — Icon moved to the left with name as prominent text and type as subtitle, replacing the old badge/chip pattern across all configuration pages.
+- **TriggerDetail redesign** — Same modern layout treatment as ConfigurationItem (icon left, name prominent, type subtitle).
+- **Registry page brand colors** — Added brand-colored icon backgrounds for each registry provider (Docker blue, GitHub purple, AWS orange, Google blue, etc.) via `getRegistryProviderColor()` helper and new `iconColor` prop on ConfigurationItem.
+- **Consistent card styling** — Unified `variant="outlined" rounded="lg"` across ContainerItem, ContainerGroup, ContainerTrigger, and WebhookInfo cards for a cohesive look.
+- **Home page severity badges removed** — Removed redundant MAJOR/MINOR severity badges from the container updates list; version chip color already indicates severity.
+- **History page filter bar** — Removed redundant "Update History" heading (already in app bar) and added a collapsible filter bar with active filter chips.
+- **Logs page spacing** — Fixed spacing between the config item and logs card.
+- **Self-update overlay responsive** — Mobile-responsive self-update overlay uses static top-center positioning with fade-in animation on small screens instead of DVD bounce.
+- **QA compose enhancements** — Added HTTP trigger, basic auth, and webhook configuration to `test/qa-compose.yml` for integration testing.
 
 ### Removed
 
@@ -252,6 +261,5 @@ Remaining upstream-only changes (not ported — not applicable to drydock):
 [1.0.2]: https://github.com/CodesWhat/drydock/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/CodesWhat/drydock/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
-[2026.2.3]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
-[2026.2.2]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
-[2026.1.0]: https://github.com/CodesWhat/drydock/releases/tag/v1.0.0
+
+<!-- CalVer tags (2026.x.x) were erased to avoid collisions with the new semver versioning system. -->

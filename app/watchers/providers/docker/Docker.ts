@@ -433,14 +433,26 @@ function getOldContainers(newContainers: Container[], containersFromTheStore: Co
 
 /**
  * Prune old containers from the store.
+ * Containers that still exist in Docker (e.g. stopped) get their status updated
+ * instead of being removed, so the UI can still show them with a start button.
  * @param newContainers
  * @param containersFromTheStore
+ * @param dockerApi
  */
-function pruneOldContainers(newContainers: Container[], containersFromTheStore: Container[]) {
+async function pruneOldContainers(newContainers: Container[], containersFromTheStore: Container[], dockerApi: any) {
   const containersToRemove = getOldContainers(newContainers, containersFromTheStore);
-  containersToRemove.forEach((containerToRemove) => {
-    storeContainer.deleteContainer(containerToRemove.id);
-  });
+  for (const containerToRemove of containersToRemove) {
+    try {
+      const inspectResult = await dockerApi.getContainer(containerToRemove.id).inspect();
+      const newStatus = inspectResult?.State?.Status;
+      if (newStatus) {
+        storeContainer.updateContainer({ ...containerToRemove, status: newStatus });
+      }
+    } catch {
+      // Container no longer exists in Docker — remove from store
+      storeContainer.deleteContainer(containerToRemove.id);
+    }
+  }
 }
 
 function getContainerName(container: any) {
@@ -1943,7 +1955,7 @@ class Docker extends Watcher {
       const containersFromTheStore = storeContainer.getContainers({
         watcher: this.name,
       });
-      pruneOldContainers(containersToReturn, containersFromTheStore);
+      await pruneOldContainers(containersToReturn, containersFromTheStore, this.dockerApi);
     } catch (e: any) {
       this.log.warn(`Error when trying to prune the old containers (${e.message})`);
     }

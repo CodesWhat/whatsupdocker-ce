@@ -1,9 +1,11 @@
 import { defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useDisplay } from 'vuetify';
 
 export default defineComponent({
   name: 'SelfUpdateOverlay',
   setup() {
     const eventBus = inject('eventBus') as any;
+    const { smAndDown } = useDisplay();
     const active = ref(false);
     const phase = ref<'updating' | 'disconnected' | 'ready'>('updating');
     const statusText = ref('Updating drydock...');
@@ -17,6 +19,7 @@ export default defineComponent({
     const logoSize = 120;
     let animationFrame = 0;
     let healthPollTimer: ReturnType<typeof setInterval> | null = null;
+    let hueTimer: ReturnType<typeof setInterval> | null = null;
 
     function animate() {
       if (!active.value) return;
@@ -59,6 +62,19 @@ export default defineComponent({
       }
     }
 
+    function startMobileHue() {
+      hueTimer = setInterval(() => {
+        hue.value = (hue.value + 5) % 360;
+      }, 200);
+    }
+
+    function stopMobileHue() {
+      if (hueTimer) {
+        clearInterval(hueTimer);
+        hueTimer = null;
+      }
+    }
+
     function startHealthPolling() {
       if (healthPollTimer) return;
       healthPollTimer = setInterval(async () => {
@@ -83,7 +99,11 @@ export default defineComponent({
       active.value = true;
       phase.value = 'updating';
       statusText.value = 'Updating drydock...';
-      startBounce();
+      if (smAndDown.value) {
+        startMobileHue();
+      } else {
+        startBounce();
+      }
     }
 
     function onConnectionLost() {
@@ -100,6 +120,7 @@ export default defineComponent({
 
     onUnmounted(() => {
       stopBounce();
+      stopMobileHue();
       if (healthPollTimer) {
         clearInterval(healthPollTimer);
         healthPollTimer = null;
@@ -109,9 +130,12 @@ export default defineComponent({
     });
 
     watch(active, (val) => {
-      if (!val) stopBounce();
+      if (!val) {
+        stopBounce();
+        stopMobileHue();
+      }
     });
 
-    return { active, phase, statusText, x, y, hue, logoSize };
+    return { active, phase, statusText, x, y, hue, logoSize, smAndDown };
   },
 });

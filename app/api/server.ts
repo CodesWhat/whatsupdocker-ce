@@ -1,7 +1,7 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
-import { getServerConfiguration } from '../configuration/index.js';
+import { getServerConfiguration, getWebhookConfiguration } from '../configuration/index.js';
 
 const router = express.Router();
 
@@ -11,8 +11,15 @@ const router = express.Router();
  * @param res
  */
 function getServer(req, res) {
+  const serverConfig = getServerConfiguration();
+  const webhookConfig = getWebhookConfiguration();
   res.status(200).json({
-    configuration: getServerConfiguration(),
+    configuration: {
+      ...serverConfig,
+      webhook: {
+        enabled: webhookConfig.enabled,
+      },
+    },
   });
 }
 

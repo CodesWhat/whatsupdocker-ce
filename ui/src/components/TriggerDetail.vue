@@ -1,17 +1,20 @@
 <template>
-  <v-card variant="outlined" rounded="lg">
+  <v-card rounded="lg" elevation="1">
     <v-card-title
       @click="collapse()"
       style="cursor: pointer"
       class="pa-3 d-flex align-center bg-surface"
     >
-      <div class="text-body-2">
-        <v-chip label color="info" variant="outlined">{{ trigger.type }}</v-chip>
-        /
-        <v-chip label color="info" variant="outlined">{{ trigger.name }}</v-chip>
+      <div class="d-flex align-center" style="gap: 12px">
+        <div class="d-flex align-center justify-center flex-shrink-0" style="width: 32px">
+          <v-icon :size="24">{{ trigger.icon }}</v-icon>
+        </div>
+        <div class="d-flex flex-column" style="min-width: 0">
+          <span class="text-body-2 font-weight-medium text-truncate">{{ trigger.name }}</span>
+          <span class="text-caption text-medium-emphasis">{{ trigger.type }}</span>
+        </div>
       </div>
       <v-spacer />
-      <v-icon>{{ trigger.icon }}</v-icon>
       <v-icon>{{ showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down" }}</v-icon>
     </v-card-title>
     <transition name="expand-transition">

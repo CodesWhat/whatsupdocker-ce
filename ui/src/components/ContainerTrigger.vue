@@ -1,5 +1,5 @@
 <template>
-  <v-card variant="outlined">
+  <v-card rounded="lg" elevation="1">
     <v-list-item>
       <template v-slot:prepend>
         <v-icon>fas fa-bolt</v-icon>

@@ -76,6 +76,14 @@ async function executeAction(req, res, action, method) {
     const dockerContainer = dockerApi.getContainer(container.id);
     await dockerContainer[method]();
 
+    // Update container status in the store so the UI reflects the change
+    const inspectResult = await dockerContainer.inspect();
+    const newStatus = inspectResult?.State?.Status;
+    let updatedContainer = container;
+    if (newStatus) {
+      updatedContainer = storeContainer.updateContainer({ ...container, status: newStatus });
+    }
+
     auditStore.insertAudit({
       id: '',
       timestamp: new Date().toISOString(),
@@ -87,7 +95,7 @@ async function executeAction(req, res, action, method) {
     getAuditCounter()?.inc({ action });
     getContainerActionsCounter()?.inc({ action });
 
-    res.status(200).json({ message: ACTION_MESSAGES[method] });
+    res.status(200).json({ message: ACTION_MESSAGES[method], container: updatedContainer });
   } catch (e) {
     log.warn(`Error performing ${method} on container ${id} (${e.message})`);
 

@@ -6,6 +6,12 @@ vi.mock('@/services/authentication', () => ({
     { id: 'auth1', type: 'basic', name: 'Docker Hub' },
     { id: 'auth2', type: 'token', name: 'GHCR' },
   ])),
+  getAuthProviderIcon: vi.fn((type) => {
+    switch (type) {
+      case 'basic': return 'fas fa-key';
+      default: return 'fas fa-lock';
+    }
+  }),
 }));
 
 describe('ConfigurationAuthenticationsView', () => {
@@ -26,7 +32,7 @@ describe('ConfigurationAuthenticationsView', () => {
   });
 
   it('renders a row for each authentication', () => {
-    const rows = wrapper.findAll('.mb-2');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 

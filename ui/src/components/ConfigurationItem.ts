@@ -20,6 +20,11 @@ export default defineComponent({
       required: false,
       default: () => [],
     },
+    iconColor: {
+      type: String,
+      required: false,
+      default: '',
+    },
   },
   data() {
     return {

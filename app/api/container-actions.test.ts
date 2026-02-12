@@ -4,6 +4,7 @@ import { createMockRequest, createMockResponse } from '../test/helpers.js';
 const {
   mockRouter,
   mockGetContainer,
+  mockUpdateContainer,
   mockGetState,
   mockInsertAudit,
   mockGetAuditCounter,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   mockRouter: { use: vi.fn(), post: vi.fn() },
   mockGetContainer: vi.fn(),
+  mockUpdateContainer: vi.fn((c) => c),
   mockGetState: vi.fn(),
   mockInsertAudit: vi.fn(),
   mockGetAuditCounter: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('nocache', () => ({ default: vi.fn(() => 'nocache-middleware') }));
 
 vi.mock('../store/container', () => ({
   getContainer: mockGetContainer,
+  updateContainer: mockUpdateContainer,
 }));
 
 vi.mock('../registry', () => ({
@@ -66,6 +69,8 @@ function createDockerTrigger(overrides = {}) {
     start: vi.fn().mockResolvedValue(undefined),
     stop: vi.fn().mockResolvedValue(undefined),
     restart: vi.fn().mockResolvedValue(undefined),
+    inspect: vi.fn().mockResolvedValue({ State: { Status: 'running' } }),
+    inspect: vi.fn().mockResolvedValue({ State: { Status: 'running' } }),
   };
   return {
     trigger: {
@@ -115,7 +120,7 @@ describe('Container Actions Router', () => {
 
       expect(dockerContainer.start).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Container started successfully' });
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Container started successfully' }));
     });
 
     test('should return 404 when container not found', async () => {
@@ -249,7 +254,7 @@ describe('Container Actions Router', () => {
 
       expect(dockerContainer.stop).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Container stopped successfully' });
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Container stopped successfully' }));
     });
 
     test('should return 403 when feature flag is disabled', async () => {
@@ -296,7 +301,7 @@ describe('Container Actions Router', () => {
 
       expect(dockerContainer.restart).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Container restarted successfully' });
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Container restarted successfully' }));
     });
 
     test('should return 403 when feature flag is disabled', async () => {

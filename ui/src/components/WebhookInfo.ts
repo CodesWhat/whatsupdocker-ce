@@ -12,4 +12,9 @@ export default defineComponent({
       default: '',
     },
   },
+  data() {
+    return {
+      showDetail: false,
+    };
+  },
 });

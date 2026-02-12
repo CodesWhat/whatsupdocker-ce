@@ -1,6 +1,10 @@
 import { defineComponent } from 'vue';
 import ConfigurationItem from '@/components/ConfigurationItem.vue';
-import { getAllRegistries, getRegistryProviderIcon } from '@/services/registry';
+import {
+  getAllRegistries,
+  getRegistryProviderIcon,
+  getRegistryProviderColor,
+} from '@/services/registry';
 
 export default defineComponent({
   data() {
@@ -19,6 +23,7 @@ export default defineComponent({
         .map((registry) => ({
           ...registry,
           icon: getRegistryProviderIcon(registry.type),
+          iconColor: getRegistryProviderColor(registry.type),
         }))
         .sort((r1, r2) => r1.id.localeCompare(r2.id));
       next((vm: any) => (vm.registries = registriesWithIcons));

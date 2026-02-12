@@ -162,7 +162,10 @@ export function getServerConfiguration() {
   });
 
   // Validate Configuration
-  const configurationToValidate = configurationSchema.validate(configurationFromEnv || {});
+  const configurationToValidate = configurationSchema.validate(configurationFromEnv || {}, {
+    allowUnknown: true,
+    stripUnknown: true,
+  });
   if (configurationToValidate.error) {
     throw configurationToValidate.error;
   }

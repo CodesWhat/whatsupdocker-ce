@@ -113,7 +113,7 @@ describe('ContainerItem', () => {
   });
 
   it('computes correct registry icon', () => {
-    expect(wrapper.vm.registryIcon).toBe('si-docker');
+    expect(wrapper.vm.registryIcon).toBe('fab fa-docker');
   });
 
   it('computes correct OS icon for linux', () => {
