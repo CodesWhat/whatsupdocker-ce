@@ -1,5 +1,7 @@
 import { mount } from '@vue/test-utils';
 import HomeView from '@/views/HomeView';
+import { getAuditLog } from '@/services/audit';
+import { getAllContainers } from '@/services/container';
 
 // Mock services
 vi.mock('@/services/container', () => ({
@@ -66,6 +68,15 @@ describe('HomeView', () => {
           displayName: 'redis',
           displayIcon: 'fab fa-docker',
           image: { name: 'redis', tag: { value: '7.0' } },
+        },
+      ],
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancenextwindow: '2026-02-13T02:00:00.000Z',
+            maintenancewindowopen: false,
+          },
         },
       ],
       containersCount: 2,
@@ -162,6 +173,112 @@ describe('HomeView', () => {
     expect(wrapper.vm.formatTime('')).toBe('');
   });
 
+  it('shows maintenance countdown when next window is available', async () => {
+    await wrapper.setData({
+      maintenanceCountdownNow: Date.parse('2026-02-13T01:30:00.000Z'),
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancewindowopen: false,
+            maintenancenextwindow: '2026-02-13T02:00:00.000Z',
+          },
+        },
+      ],
+    });
+    expect(wrapper.text()).toContain('30m');
+  });
+
+  it('shows maintenance window open status when window is active', async () => {
+    await wrapper.setData({
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancewindowopen: true,
+          },
+        },
+      ],
+    });
+    expect(wrapper.text()).toContain('Open now');
+  });
+
+  it('returns empty maintenance label when no maintenance watchers exist', async () => {
+    await wrapper.setData({
+      watchers: [],
+    });
+    expect(wrapper.vm.maintenanceCountdownLabel).toBe('');
+  });
+
+  it('returns configured label when maintenance window has no next start', async () => {
+    await wrapper.setData({
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancewindowopen: false,
+          },
+        },
+      ],
+    });
+    expect(wrapper.vm.maintenanceCountdownLabel).toBe('Scheduled');
+  });
+
+  it('returns opening soon label when next window is in the past', async () => {
+    await wrapper.setData({
+      maintenanceCountdownNow: Date.parse('2026-02-13T02:00:00.000Z'),
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancewindowopen: false,
+            maintenancenextwindow: '2026-02-13T01:59:00.000Z',
+          },
+        },
+      ],
+    });
+    expect(wrapper.vm.maintenanceCountdownLabel).toBe('Opening soon');
+  });
+
+  it('ignores invalid maintenance next window timestamps', async () => {
+    await wrapper.setData({
+      watchers: [
+        {
+          configuration: {
+            maintenancewindow: '0 2 * * *',
+            maintenancenextwindow: 'not-a-date',
+          },
+        },
+      ],
+    });
+
+    expect(wrapper.vm.nextMaintenanceWindowAt).toBeUndefined();
+  });
+
+  it('formats long durations as days and hours', () => {
+    expect(wrapper.vm.formatDuration(2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)).toBe('2d 3h');
+  });
+
+  it('returns update kind color/label for all branches', () => {
+    expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'digest' } })).toBe('info');
+    expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'tag', semverDiff: 'major' } })).toBe(
+      'error',
+    );
+    expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'tag', semverDiff: 'minor' } })).toBe(
+      'warning',
+    );
+    expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'tag', semverDiff: 'patch' } })).toBe(
+      'success',
+    );
+    expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'tag', semverDiff: 'unknown' } })).toBe(
+      'info',
+    );
+
+    expect(wrapper.vm.updateKindLabel({ updateKind: { kind: 'digest' } })).toBe('digest');
+    expect(wrapper.vm.updateKindLabel({ updateKind: { semverDiff: 'minor' } })).toBe('minor');
+    expect(wrapper.vm.updateKindLabel({ updateKind: undefined })).toBe('unknown');
+  });
+
   it('navigates to correct routes', () => {
     const cards = wrapper.findAll('.stat-card');
     const paths = cards.map((w) => w.attributes('to') || w.props('to')).filter(Boolean);
@@ -200,5 +317,62 @@ describe('HomeView Route Hook', () => {
     expect(vm.containersCount).toBe(2);
     expect(vm.registriesCount).toBe(3);
     expect(vm.recentActivity).toHaveLength(1);
+  });
+
+  it('falls back to empty recent activity when audit fetch fails', async () => {
+    vi.mocked(getAuditLog).mockRejectedValueOnce(new Error('audit disabled'));
+    const next = vi.fn();
+
+    await HomeView.beforeRouteEnter.call(HomeView, {}, {}, next);
+
+    const vm = {
+      containers: [],
+      watchers: [],
+      containersCount: 0,
+      triggersCount: 0,
+      watchersCount: 0,
+      registriesCount: 0,
+      recentActivity: [{ id: 'stale' }],
+    };
+    const callback = next.mock.calls[0][0];
+    callback(vm);
+
+    expect(vm.recentActivity).toEqual([]);
+  });
+
+  it('handles beforeRouteEnter errors', async () => {
+    vi.mocked(getAllContainers).mockRejectedValueOnce(new Error('containers fetch failed'));
+    const next = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      await HomeView.beforeRouteEnter.call(HomeView, {}, {}, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(Function));
+      const callback = next.mock.calls[0][0];
+      callback({});
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
+});
+
+describe('HomeView lifecycle', () => {
+  it('updates countdown now on interval and clears timer on unmount', async () => {
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearInterval');
+    const wrapper = mount(HomeView);
+    const before = wrapper.vm.maintenanceCountdownNow;
+
+    vi.advanceTimersByTime(30 * 1000);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.maintenanceCountdownNow).toBeGreaterThanOrEqual(before);
+
+    wrapper.unmount();
+    expect(clearSpy).toHaveBeenCalled();
+    clearSpy.mockRestore();
+    vi.useRealTimers();
   });
 });
