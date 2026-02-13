@@ -72,5 +72,3 @@ COPY --from=app-build /home/node/app/package.json ./package.json
 
 # Copy ui
 COPY --from=ui-build /home/node/ui/dist/ ./ui
-
-USER node

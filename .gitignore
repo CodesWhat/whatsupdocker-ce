@@ -114,5 +114,8 @@ dist/
 # Playwright MCP
 .playwright-mcp/
 
+# Generated screenshots
+screenshots/
+
 # SonarCloud scanner working directory
 .scannerwork/

@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
-import HomeView from '@/views/HomeView';
 import { getAuditLog } from '@/services/audit';
 import { getAllContainers } from '@/services/container';
+import HomeView from '@/views/HomeView';
 
 // Mock services
 vi.mock('@/services/container', () => ({

@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import joi from 'joi';
 import Loki from 'lokijs';
-import { resolveConfiguredPath, resolveConfiguredPathWithinBase } from '../runtime/paths.js';
 import logger from '../log/index.js';
+import { resolveConfiguredPath, resolveConfiguredPathWithinBase } from '../runtime/paths.js';
 
 const log = logger.child({ component: 'store' });
 

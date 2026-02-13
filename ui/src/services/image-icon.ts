@@ -167,9 +167,6 @@ const IMAGE_TO_ICON: Record<string, string> = {
   outline: 'outline',
   dokuwiki: 'dokuwiki',
 
-  // Drydock itself
-  drydock: '__drydock__',
-
   // Misc popular images
   wordpress: 'wordpress',
   ghost: 'ghost',
@@ -271,9 +268,6 @@ function resolveIconSlug(imageName: string): string | null {
   return null;
 }
 
-/** Drydock's own logo, served from /drydock-logo.png in the static build. */
-const DRYDOCK_LOGO_URL = '/drydock-logo.png';
-
 /**
  * Get the effective display icon for a container.
  *
@@ -292,11 +286,8 @@ export function getEffectiveDisplayIcon(displayIcon: string, imageName: string):
 
   // Auto-resolve from image name
   const slug = resolveIconSlug(imageName);
-  if (slug === '__drydock__') {
-    return DRYDOCK_LOGO_URL;
-  }
   if (slug) {
-    return `hl-${slug}`;
+    return `sh-${slug}`;
   }
 
   // Final fallback: Docker brand icon

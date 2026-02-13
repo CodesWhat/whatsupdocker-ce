@@ -2,11 +2,13 @@ services:
   drydock:
     image: drydock:dev
     container_name: drydock-qa
+    user: root
     ports:
       - "3456:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      - DD_RUN_AS_ROOT=true
       - DD_LOG_FORMAT=text
       - DD_WATCHER_LOCAL_WATCHBYDEFAULT=false
       - DD_TRIGGER_DOCKER_LOCAL_PRUNE=true
@@ -45,12 +47,12 @@ services:
 
   # Container with updates available and lifecycle hooks
   nginx-hooked:
-    image: nginx:1.25.0
+    image: nginx:1.25.5
+    pull_policy: never
     container_name: nginx-hooked
     labels:
       - dd.watch=true
       - dd.display.name=Nginx (Hooked)
-      - dd.display.icon=fas fa-server
       - dd.group=web-stack
       - dd.hook.pre=echo "pre-update check"
       - dd.hook.post=echo "post-update cleanup"
@@ -58,22 +60,22 @@ services:
 
   # Container in same group, no hooks
   redis-cache:
-    image: redis:7.0.0
+    image: redis:7.2.0
+    pull_policy: never
     container_name: redis-cache
     labels:
       - dd.watch=true
       - dd.display.name=Redis Cache
-      - dd.display.icon=fas fa-database
       - dd.group=web-stack
 
   # Container with auto-rollback
   traefik-proxy:
-    image: traefik:2.10.0
+    image: traefik:v3.0.0
+    pull_policy: never
     container_name: traefik-proxy
     labels:
       - dd.watch=true
       - dd.display.name=Traefik Proxy
-      - dd.display.icon=fas fa-network-wired
       - dd.group=infra
       - dd.rollback.auto=true
       - dd.rollback.window=120000
@@ -81,11 +83,11 @@ services:
 
   # Ungrouped container
   postgres-db:
-    image: postgres:15.0
+    image: postgres:16.0
+    pull_policy: never
     container_name: postgres-db
     environment:
       - POSTGRES_PASSWORD=testpass
     labels:
       - dd.watch=true
       - dd.display.name=PostgreSQL
-      - dd.display.icon=fas fa-database

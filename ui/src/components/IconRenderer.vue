@@ -8,14 +8,14 @@
     :src="homarrIconUrl"
     :style="imageStyle"
     :alt="icon"
-    @error="onImgError"
+    @error="onImgError(false)"
   />
   <img
     v-else-if="isSelfhstIcon"
     :src="selfhstIconUrl"
     :style="imageStyle"
     :alt="icon"
-    @error="onImgError"
+    @error="onImgError(true)"
   />
   <img
     v-else-if="isSimpleIcon"
@@ -23,7 +23,7 @@
     :style="imageStyle"
     :alt="icon"
     class="simple-icon"
-    @error="onImgError"
+    @error="onImgError(false)"
   />
   <img
     v-else-if="isCustomIconUrl"
@@ -31,7 +31,7 @@
     :style="imageStyle"
     :alt="icon"
     class="custom-icon"
-    @error="onImgError"
+    @error="onImgError(false)"
   />
   <v-icon v-else :style="iconStyle" :color="color">
     {{ normalizedIcon }}

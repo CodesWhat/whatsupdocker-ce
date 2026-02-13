@@ -8,9 +8,9 @@
       <div class="d-flex align-center" style="gap: 12px">
         <div
           class="d-flex align-center justify-center flex-shrink-0"
-          style="width: 32px"
+          style="width: 40px"
         >
-          <IconRenderer :icon="item.icon" :size="24" :margin-right="0" :color="iconColor || undefined" />
+          <IconRenderer :icon="item.icon" :size="32" :margin-right="0" :color="iconColor || undefined" />
         </div>
         <div class="d-flex flex-column" style="min-width: 0">
           <span class="text-body-2 font-weight-medium text-truncate">{{ displayName }}</span>

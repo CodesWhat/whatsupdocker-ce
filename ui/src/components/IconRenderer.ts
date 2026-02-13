@@ -26,15 +26,21 @@ export default defineComponent({
 
   setup() {
     const imgFailed = ref(false);
-    const onImgError = () => {
-      imgFailed.value = true;
+    const useFallbackCdn = ref(false);
+    const onImgError = (isSelfhst: boolean) => {
+      if (isSelfhst && !useFallbackCdn.value) {
+        useFallbackCdn.value = true;
+      } else {
+        imgFailed.value = true;
+      }
     };
-    return { imgFailed, onImgError };
+    return { imgFailed, useFallbackCdn, onImgError };
   },
 
   watch: {
     icon() {
       this.imgFailed = false;
+      this.useFallbackCdn = false;
     },
   },
 
@@ -80,6 +86,9 @@ export default defineComponent({
 
     selfhstIconUrl() {
       const iconName = this.icon.replace('sh-', '').replace('sh:', '');
+      if (this.useFallbackCdn) {
+        return `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${iconName}.png`;
+      }
       return `https://cdn.jsdelivr.net/gh/selfhst/icons/png/${iconName}.png`;
     },
 

@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { useRoute, useRouter } from 'vue-router';
-import { logout } from '@/services/auth';
 import AppBar from '@/components/AppBar';
+import { logout } from '@/services/auth';
 
 const mockThemeName = { value: 'light' };
 let mediaQueryMatches = false;

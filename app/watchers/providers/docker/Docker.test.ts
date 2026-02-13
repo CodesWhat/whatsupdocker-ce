@@ -7,10 +7,10 @@ import * as storeContainer from '../../../store/container.js';
 import { mockConstructor } from '../../../test/mock-constructor.js';
 import Docker, {
   testable_filterBySegmentCount,
-  testable_getFirstDigitIndex,
   testable_getContainerDisplayName,
   testable_getContainerName,
   testable_getCurrentPrefix,
+  testable_getFirstDigitIndex,
   testable_getImageForRegistryLookup,
   testable_getImageReferenceCandidatesFromPattern,
   testable_getImgsetSpecificity,

@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref, watch, type PropType } from 'vue';
+import { defineComponent, onMounted, type PropType, ref, watch } from 'vue';
 import { getContainerLogs } from '../services/container';
 
 type ContainerLogTarget = {

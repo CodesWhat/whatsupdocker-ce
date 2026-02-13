@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
-import NavigationDrawer from '@/components/NavigationDrawer';
 import { useDisplay } from 'vuetify';
+import NavigationDrawer from '@/components/NavigationDrawer';
 import { getAppInfos } from '@/services/app';
 
 // Mock all icon services

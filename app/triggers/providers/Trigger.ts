@@ -3,12 +3,12 @@ import { registerContainerUpdateApplied } from '../../event/index.js';
 import { type Container, fullName } from '../../model/container.js';
 import { getTriggerCounter } from '../../prometheus/trigger.js';
 import Component, { type ComponentConfiguration } from '../../registry/Component.js';
+import { renderBatch, renderSimple } from './trigger-expression-parser.js';
 import {
   isThresholdReached as isThresholdReachedHelper,
   parseThresholdWithDigestBehavior as parseThresholdWithDigestBehaviorHelper,
   SUPPORTED_THRESHOLDS,
 } from './trigger-threshold.js';
-import { renderBatch, renderSimple } from './trigger-expression-parser.js';
 
 type SupportedThreshold = (typeof SUPPORTED_THRESHOLDS)[number];
 

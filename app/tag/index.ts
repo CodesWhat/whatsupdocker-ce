@@ -2,8 +2,9 @@
 /**
  * Semver utils.
  */
-import semver from 'semver';
+
 import RE2 from 're2';
+import semver from 'semver';
 import log from '../log/index.js';
 
 function normalizeNumericMultiSegmentTag(rawVersion) {

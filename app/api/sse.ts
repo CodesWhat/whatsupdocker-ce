@@ -1,5 +1,5 @@
-import express from 'express';
 import type { Request, Response } from 'express';
+import express from 'express';
 import { registerSelfUpdateStarting } from '../event/index.js';
 import log from '../log/index.js';
 
