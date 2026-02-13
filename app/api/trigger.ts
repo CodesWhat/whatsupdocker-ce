@@ -39,7 +39,9 @@ export async function runTrigger(req, res) {
 
   const triggerToRun = registry.getState().trigger[`${triggerType}.${triggerName}`];
   if (!triggerToRun) {
-    log.warn(`No trigger found(type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)})`);
+    log.warn(
+      `No trigger found(type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)})`,
+    );
     res.status(404).json({
       error: `Error when running trigger ${triggerType}.${triggerName} (trigger not found)`,
     });
@@ -67,7 +69,9 @@ export async function runTrigger(req, res) {
     );
     res.status(200).json({});
   } catch (e) {
-    log.warn(`Error when running trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} (${sanitizeLogParam(e.message)})`);
+    log.warn(
+      `Error when running trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} (${sanitizeLogParam(e.message)})`,
+    );
     res.status(500).json({
       error: `Error when running trigger ${triggerType}.${triggerName} (${e.message})`,
     });

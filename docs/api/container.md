@@ -1,7 +1,9 @@
 # Container API
+
 This API allows to query the state of the watched containers.
 
 ## Get all containers
+
 This operation lets you get all the watched cainers.
 
 ```bash
@@ -40,6 +42,7 @@ curl http://drydock:3000/api/containers
 ```
 
 ## Watch all Containers
+
 This operation triggers a manual watch on all containers.
 
 ```bash
@@ -139,6 +142,7 @@ curl http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32
 ```
 
 ## Watch a Container
+
 This operation triggers a manual watch on a container.
 
 ```bash
@@ -205,6 +209,7 @@ curl -X PATCH http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7e
 ```
 
 ## Delete a Container
+
 This operation lets you delete a container by id.
 
 ```bash

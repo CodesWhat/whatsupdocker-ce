@@ -30,6 +30,7 @@ This update improves how triggers can be coordinated when they share the same tr
 ### What changed
 
 #### 1. Trigger execution ordering
+
 You can now control trigger execution order with:
 
 `DD_TRIGGER_{trigger_type}_{trigger_name}_ORDER`
@@ -39,6 +40,7 @@ You can now control trigger execution order with:
 - If two triggers have the same `ORDER`, they are sorted by trigger id
 
 Example:
+
 ```bash
 DD_TRIGGER_DOCKER_UPDATE_ORDER=10
 DD_TRIGGER_DISCORD_UPDATE_ORDER=20
@@ -47,11 +49,14 @@ DD_TRIGGER_DISCORD_UPDATE_ORDER=20
 This ensures the Docker update trigger runs before the Discord notification trigger for the same update event.
 
 #### 2. Trigger name aliases in container labels
+
 Container labels `dd.trigger.include` and `dd.trigger.exclude` now accept either:
+
 - full trigger id (`docker.update`)
 - trigger name alias (`update`)
 
 Example:
+
 ```bash
 dd.trigger.exclude=update
 ```
@@ -59,11 +64,14 @@ dd.trigger.exclude=update
 This applies to all triggers named `update` (for example `docker.update`, `discord.update`).
 
 #### 3. Shared threshold by trigger name
+
 Triggers sharing the same trigger name can share `THRESHOLD` automatically:
+
 - if exactly one threshold value is explicitly set among same-name triggers, that value is inherited by the others
 - if multiple different threshold values are set, no inheritance is applied
 
 Example:
+
 ```bash
 DD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
 ```
@@ -71,6 +79,7 @@ DD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
 With no explicit Discord threshold, `discord.update` inherits `minor`.
 
 ### Recommended setup for "update then notify"
+
 ```bash
 DD_TRIGGER_DOCKER_UPDATE_THRESHOLD=minor
 DD_TRIGGER_DOCKER_UPDATE_ORDER=10

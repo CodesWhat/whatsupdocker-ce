@@ -2,26 +2,27 @@
 
 The `http` trigger lets you send container update notifications via HTTP.
 
-#### Variables
+## Variables
 
-| Env var                                         |    Required    | Description                                       | Supported values             | Default value when missing |
-|-------------------------------------------------|:--------------:|---------------------------------------------------|------------------------------|----------------------------| 
-| `DD_TRIGGER_HTTP_{trigger_name}_URL`           |  :red_circle:  | The URL of the webhook                            | Valid http or https endpoint |                            |
-| `DD_TRIGGER_HTTP_{trigger_name}_METHOD`        | :white_circle: | The HTTP method to use                            | `GET`, `POST`                | `POST`                     |
-| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_TYPE`     | :white_circle: | The Auth type (among )                            | `BASIC`, `BEARER`            | `BASIC`                    |
-| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_USER`     | :white_circle: | The Auth user if BASIC Auth is enabled            |                              |                            |
-| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_PASSWORD` | :white_circle: | The Auth user password if `BASIC` Auth is enabled |                              |                            |
-| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_BEARER`   | :white_circle: | The Auth bearer token if `BEARER` Auth is enabled |                              |                            |
-| `DD_TRIGGER_HTTP_{trigger_name}_PROXY`         | :white_circle: | The HTTP Proxy                                    |                              |                            |
+| Env var | Required | Description | Supported values | Default value when missing |
+| ------------------------------------------------- | :--------------: | --------------------------------------------------- | ------------------------------ | ---------------------------- |
+| `DD_TRIGGER_HTTP_{trigger_name}_URL` | :red_circle: | The URL of the webhook | Valid http or https endpoint | |
+| `DD_TRIGGER_HTTP_{trigger_name}_METHOD` | :white_circle: | The HTTP method to use | `GET`, `POST` | `POST` |
+| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_TYPE` | :white_circle: | The Auth type (among ) | `BASIC`, `BEARER` | `BASIC` |
+| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_USER` | :white_circle: | The Auth user if BASIC Auth is enabled | | |
+| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_PASSWORD` | :white_circle: | The Auth user password if `BASIC` Auth is enabled | | |
+| `DD_TRIGGER_HTTP_{trigger_name}_AUTH_BEARER` | :white_circle: | The Auth bearer token if `BEARER` Auth is enabled | | |
+| `DD_TRIGGER_HTTP_{trigger_name}_PROXY` | :white_circle: | The HTTP Proxy | | |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
 ### Examples
 
-#### Post an HTTP request to an existing server 
+#### Post an HTTP request to an existing server
 
 <!-- tabs:start -->
 #### **Docker Compose**
+
 ```yaml
 services:
   drydock:
@@ -30,7 +31,9 @@ services:
     environment:
       - DD_TRIGGER_HTTP_MYREMOTEHOST_URL=https://my-remote-host/new-version
 ```
+
 #### **Docker**
+
 ```bash
 docker run \
   -e DD_TRIGGER_HTTP_MYREMOTEHOST_URL="https://my-remote-host/new-version" \
@@ -40,6 +43,7 @@ docker run \
 <!-- tabs:end -->
 
 #### Example of payload (POST request)
+
 ```json
 {
   "id":"31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816",

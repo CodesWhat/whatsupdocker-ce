@@ -6,7 +6,7 @@ echo "🐳 Setting up test containers for local e2e tests..."
 
 # Login to private registries (if credentials available)
 if [ ! -z "$GITLAB_TOKEN" ]; then
-  docker login registry.gitlab.com -u "$GITLAB_USERNAME" -p "$GITLAB_TOKEN"
+	docker login registry.gitlab.com -u "$GITLAB_USERNAME" -p "$GITLAB_TOKEN"
 fi
 
 # Pull nginx as a test image

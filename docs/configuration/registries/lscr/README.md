@@ -1,19 +1,21 @@
 # LSCR (LinuxServer Container Registry)
+
 ![logo](linuxserver.png)
 
 The `lscr` registry lets you configure [LSCR](https://fleet.linuxserver.io/) integration.
 
-### Variables
+## Variables
 
-| Env var                                      |   Required    | Description     | Supported values                         | Default value when missing |
-|----------------------------------------------|:-------------:|-----------------|------------------------------------------|----------------------------|
-| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_USERNAME` | :red_circle:  | Github username |                                          |                            |
-| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN`    | :red_circle:  | Github token    | Github password or Github Personal Token |                            |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_USERNAME` | :red_circle: | Github username | | |
+| `DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN` | :red_circle: | Github token | Github password or Github Personal Token | |
 
-### Examples
+## Examples
 
 <!-- tabs:start -->
-#### **Docker Compose**
+### **Docker Compose**
+
 ```yaml
 services:
   drydock:
@@ -23,7 +25,9 @@ services:
       - DD_REGISTRY_LSCR_PRIVATE_USERNAME=johndoe
       - DD_REGISTRY_LSCR_PRIVATE_TOKEN=xxxxx 
 ```
-#### **Docker**
+
+### **Docker**
+
 ```bash
 docker run \
   -e DD_REGISTRY_LSCR_PRIVATE_USERNAME="johndoe" \
@@ -33,13 +37,17 @@ docker run \
 ```
 <!-- tabs:end -->
 
-### How to create a Github Personal Token
-#### Go to your Github settings and open the Personal Access Token tab
-[Click here](https://github.com/settings/tokens)
+## How to create a Github Personal Token
 
-#### Click on `Generate new token`
+### Go to your Github settings and open the Personal Access Token tab
+
+[Open GitHub Personal Access Tokens](https://github.com/settings/tokens)
+
+### Click on `Generate new token`
+
 Choose an expiration time & appropriate scopes (`read:packages` is only needed for drydock) and generate.
 ![image](lscr_01.png)
 
-#### Copy the token & use it as the DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN value
+### Copy the token & use it as the DD_REGISTRY_LSCR_{REGISTRY_NAME}_TOKEN value
+
 ![image](lscr_02.png)

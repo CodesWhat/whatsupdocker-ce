@@ -1,4 +1,5 @@
 # Docker Watchers
+
 ![logo](docker.png)
 
 Watchers are responsible for scanning Docker containers.
@@ -7,28 +8,28 @@ The `docker` watcher lets you configure the Docker hosts you want to watch.
 
 ## Variables
 
-| Env var                                                   | Required       | Description                                                                                                            | Supported values                               | Default value when missing                                      |
-| --------------------------------------------------------- |:--------------:| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- | 
-| `DD_WATCHER_{watcher_name}_CAFILE`                       | :white_circle: | CA pem file path (only for TLS connection)                                                                             |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_AUTH_BEARER`                  | :white_circle: | Bearer token for remote Docker API auth (HTTPS only)                                                                   |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_AUTH_PASSWORD`                | :white_circle: | Password for remote Docker API basic auth (HTTPS only)                                                                 |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_AUTH_TYPE`                    | :white_circle: | Auth mode for remote Docker API auth                                                                                   | `BASIC`, `BEARER`                              | auto-detected from provided credentials                         |
-| `DD_WATCHER_{watcher_name}_AUTH_USER`                    | :white_circle: | Username for remote Docker API basic auth (HTTPS only)                                                                 |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_CERTFILE`                     | :white_circle: | Certificate pem file path (only for TLS connection)                                                                    |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_CRON`                         | :white_circle: | Scheduling options                                                                                                     | [Valid CRON expression](https://crontab.guru/) | `0 * * * *` (every hour)                                        |
-| `DD_WATCHER_{watcher_name}_HOST`                         | :white_circle: | Docker hostname or ip of the host to watch                                                                             |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_JITTER`                       | :white_circle: | Jitter in ms applied to the CRON to better distribute the load on the registries (on the Hub at the first place) | > 0 | `60000` (1 minute)                                              |
-| `DD_WATCHER_{watcher_name}_KEYFILE`                      | :white_circle: | Key pem file path (only for TLS connection)                                                                            |                                                |                                                                 |
-| `DD_WATCHER_{watcher_name}_MAINTENANCE_WINDOW`           | :white_circle: | Allowed update schedule (checks outside this window are skipped)                                                       | [Valid CRON expression](https://crontab.guru/) |                                                                 |
-| `DD_WATCHER_{watcher_name}_MAINTENANCE_WINDOW_TZ`        | :white_circle: | Timezone used to evaluate `MAINTENANCE_WINDOW`                                                                         | IANA timezone (e.g. `UTC`, `Europe/Paris`)    | `UTC`                                                           |
-| `DD_WATCHER_{watcher_name}_PORT`                         | :white_circle: | Docker port of the host to watch                                                                                       |                                                | `2375`                                                          |
-| `DD_WATCHER_{watcher_name}_PROTOCOL`                     | :white_circle: | Docker remote API protocol                                                                                              | `http`, `https`                                | `http`                                                          |
-| `DD_WATCHER_{watcher_name}_SOCKET`                       | :white_circle: | Docker socket to watch                                                                                                 | Valid unix socket                              | `/var/run/docker.sock`                                          |
-| `DD_WATCHER_{watcher_name}_WATCHALL`                     | :white_circle: | If drydock must monitor all containers instead of just running ones                                                        | `true`, `false`                                | `false`                                                         |
-| `DD_WATCHER_{watcher_name}_WATCHATSTART` (deprecated)    | :white_circle: | If drydock must check for image updates during startup                                                                     | `true`, `false`                                | `true` if this watcher store is empty                           |
-| `DD_WATCHER_{watcher_name}_WATCHBYDEFAULT`               | :white_circle: | If drydock must monitor all containers by default                                                                          | `true`, `false`                                | `true`                                                          |
-| `DD_WATCHER_{watcher_name}_WATCHEVENTS`                  | :white_circle: | If drydock must monitor docker events                                                                                      | `true`, `false`                                | `true`                                                          |
-| `DD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_*`       | :white_circle: | Shared per-image defaults (image match + include/exclude/transform/link/display/trigger/lookup)                       | See **Image Set Presets** section below        |                                                                 |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_WATCHER_{watcher_name}_CAFILE` | :white_circle: | CA pem file path (only for TLS connection) | | |
+| `DD_WATCHER_{watcher_name}_AUTH_BEARER` | :white_circle: | Bearer token for remote Docker API auth (HTTPS only) | | |
+| `DD_WATCHER_{watcher_name}_AUTH_PASSWORD` | :white_circle: | Password for remote Docker API basic auth (HTTPS only) | | |
+| `DD_WATCHER_{watcher_name}_AUTH_TYPE` | :white_circle: | Auth mode for remote Docker API auth | `BASIC`, `BEARER` | auto-detected from provided credentials |
+| `DD_WATCHER_{watcher_name}_AUTH_USER` | :white_circle: | Username for remote Docker API basic auth (HTTPS only) | | |
+| `DD_WATCHER_{watcher_name}_CERTFILE` | :white_circle: | Certificate pem file path (only for TLS connection) | | |
+| `DD_WATCHER_{watcher_name}_CRON` | :white_circle: | Scheduling options | [Valid CRON expression](https://crontab.guru/) | `0 * * * *` (every hour) |
+| `DD_WATCHER_{watcher_name}_HOST` | :white_circle: | Docker hostname or ip of the host to watch | | |
+| `DD_WATCHER_{watcher_name}_JITTER` | :white_circle: | Jitter in ms applied to the CRON to better distribute the load on the registries (on the Hub at the first place) | > 0 | `60000` (1 minute) |
+| `DD_WATCHER_{watcher_name}_KEYFILE` | :white_circle: | Key pem file path (only for TLS connection) | | |
+| `DD_WATCHER_{watcher_name}_MAINTENANCE_WINDOW` | :white_circle: | Allowed update schedule (checks outside this window are skipped) | [Valid CRON expression](https://crontab.guru/) | |
+| `DD_WATCHER_{watcher_name}_MAINTENANCE_WINDOW_TZ` | :white_circle: | Timezone used to evaluate `MAINTENANCE_WINDOW` | IANA timezone (e.g. `UTC`, `Europe/Paris`) | `UTC` |
+| `DD_WATCHER_{watcher_name}_PORT` | :white_circle: | Docker port of the host to watch | | `2375` |
+| `DD_WATCHER_{watcher_name}_PROTOCOL` | :white_circle: | Docker remote API protocol | `http`, `https` | `http` |
+| `DD_WATCHER_{watcher_name}_SOCKET` | :white_circle: | Docker socket to watch | Valid unix socket | `/var/run/docker.sock` |
+| `DD_WATCHER_{watcher_name}_WATCHALL` | :white_circle: | If drydock must monitor all containers instead of just running ones | `true`, `false` | `false` |
+| `DD_WATCHER_{watcher_name}_WATCHATSTART` (deprecated) | :white_circle: | If drydock must check for image updates during startup | `true`, `false` | `true` if this watcher store is empty |
+| `DD_WATCHER_{watcher_name}_WATCHBYDEFAULT` | :white_circle: | If drydock must monitor all containers by default | `true`, `false` | `true` |
+| `DD_WATCHER_{watcher_name}_WATCHEVENTS` | :white_circle: | If drydock must monitor docker events | `true`, `false` | `true` |
+| `DD_WATCHER_{watcher_name}_IMGSET_{imgset_name}_*` | :white_circle: | Shared per-image defaults (image match + include/exclude/transform/link/display/trigger/lookup) | See **Image Set Presets** section below | |
 
 ?> If no watcher is configured, a default one named `local` will be automatically created (reading the Docker socket).
 
@@ -60,6 +61,7 @@ If you face [quota related errors](https://docs.docker.com/docker-hub/download-r
 
 <!-- tabs:start -->
 #### **Docker Compose (Daily CRON)**
+
 ```yaml
 services:
   drydock:
@@ -70,6 +72,7 @@ services:
 ```
 
 #### **Docker (Daily CRON)**
+
 ```bash
 docker run \
     -e DD_WATCHER_LOCAL_CRON="0 1 * * *" \
@@ -82,6 +85,7 @@ docker run \
 
 <!-- tabs:start -->
 #### **Docker Compose (Watch All)**
+
 ```yaml
 services:
   drydock:
@@ -92,6 +96,7 @@ services:
 ```
 
 #### **Docker (Watch All)**
+
 ```bash
 docker run \
     -e DD_WATCHER_LOCAL_WATCHALL="true" \
@@ -104,6 +109,7 @@ docker run \
 
 <!-- tabs:start -->
 #### **Docker Compose (Remote TCP)**
+
 ```yaml
 services:
   drydock:
@@ -114,6 +120,7 @@ services:
 ```
 
 #### **Docker (Remote TCP)**
+
 ```bash
 docker run \
     -e DD_WATCHER_MYREMOTEHOST_HOST="myremotehost" \
@@ -126,6 +133,7 @@ docker run \
 
 <!-- tabs:start -->
 #### **Docker Compose (HTTPS Bearer)**
+
 ```yaml
 services:
   drydock:
@@ -140,6 +148,7 @@ services:
 ```
 
 #### **Docker (HTTPS Bearer)**
+
 ```bash
 docker run \
     -e DD_WATCHER_MYREMOTEHOST_HOST="myremotehost" \
@@ -156,6 +165,7 @@ docker run \
 
 <!-- tabs:start -->
 #### **Docker Compose (TLS)**
+
 ```yaml
 services:
   drydock:
@@ -174,6 +184,7 @@ services:
 ```
 
 #### **Docker (TLS)**
+
 ```bash
 docker run \
     -e DD_WATCHER_MYREMOTEHOST_HOST="myremotehost" \
@@ -246,7 +257,7 @@ services:
 #### Proxy permissions by feature
 
 | Feature | Required proxy env vars |
-|---|---|
+| --- | --- |
 | Watch containers (default) | `CONTAINERS=1`, `IMAGES=1`, `EVENTS=1`, `SERVICES=1` |
 | Docker trigger (auto-updates) | All of the above **plus** `POST=1`, `NETWORKS=1` |
 
@@ -254,6 +265,7 @@ services:
 
 <!-- tabs:start -->
 #### **Docker Compose (Multiple Hosts)**
+
 ```yaml
 services:
   drydock:
@@ -266,6 +278,7 @@ services:
 ```
 
 #### **Docker (Multiple Hosts)**
+
 ```bash
 docker run \
     -e  DD_WATCHER_LOCAL_SOCKET="/var/run/docker.sock" \
@@ -319,20 +332,20 @@ services:
 
 To fine-tune the behaviour of drydock _per container_, you can add labels on them.
 
-| Label                 |    Required    | Description                                        | Supported values                                                                                                                                                            | Default value when missing                                                            |
-|-----------------------|:--------------:|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| `dd.display.icon`    | :white_circle: | Custom display icon for the container              | Valid [Fontawesome Icon](https://fontawesome.com/), [Homarr Labs Icon](https://dashboardicons.com/), [Selfh.st Icon](https://selfh.st/icons/), or [Simple Icon](https://simpleicons.org/) (see details below). `mdi:` icons are auto-resolved but not recommended. | `fab fa-docker`                                                                       |
-| `dd.display.name`    | :white_circle: | Custom display name for the container              | Valid String                                                                                                                                                                | Container name                                                                        |
-| `dd.inspect.tag.path`| :white_circle: | Docker inspect path used to derive a local semver tag | Slash-separated path in `docker inspect` output                                                                                                                             |                                                                                       |
-| `dd.registry.lookup.image` | :white_circle: | Alternative image reference used for update lookups | Full image path (for example `library/traefik` or `ghcr.io/traefik/traefik`)                                                                                               |                                                                                       |
-| `dd.link.template`   | :white_circle: | Browsable link associated to the container version | JS string template with vars `${container}`, `${original}`, `${transformed}`, `${major}`, `${minor}`, `${patch}`, `${prerelease}`                                           |                                                                                       |
-| `dd.tag.exclude`     | :white_circle: | Regex to exclude specific tags                     | Valid JavaScript Regex                                                                                                                                                      |                                                                                       |
-| `dd.tag.include`     | :white_circle: | Regex to include specific tags only                | Valid JavaScript Regex                                                                                                                                                      |                                                                                       |
-| `dd.tag.transform`   | :white_circle: | Transform function to apply to the tag             | `$valid_regex => $valid_string_with_placeholders` (see below)                                                                                                               |                                                                                       |
-| `dd.trigger.exclude` | :white_circle: | Optional list of triggers to exclude               | `$trigger_1_id_or_name,$trigger_2_id_or_name:$threshold`                                                                                                                    |                                                                                       |
-| `dd.trigger.include` | :white_circle: | Optional list of triggers to include               | `$trigger_1_id_or_name,$trigger_2_id_or_name:$threshold`                                                                                                                    |                                                                                       |
-| `dd.watch.digest`    | :white_circle: | Watch this container digest                        | Valid Boolean                                                                                                                                                               | `false`                                                                               |
-| `dd.watch`           | :white_circle: | Watch this container                               | Valid Boolean                                                                                                                                                               | `true` when `DD_WATCHER_{watcher_name}_WATCHBYDEFAULT` is `true` (`false` otherwise) |
+| Label | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `dd.display.icon` | :white_circle: | Custom display icon for the container | Valid [Fontawesome Icon](https://fontawesome.com/), [Homarr Labs Icon](https://dashboardicons.com/), [Selfh.st Icon](https://selfh.st/icons/), or [Simple Icon](https://simpleicons.org/) (see details below). `mdi:` icons are auto-resolved but not recommended. | `fab fa-docker` |
+| `dd.display.name` | :white_circle: | Custom display name for the container | Valid String | Container name |
+| `dd.inspect.tag.path` | :white_circle: | Docker inspect path used to derive a local semver tag | Slash-separated path in `docker inspect` output | |
+| `dd.registry.lookup.image` | :white_circle: | Alternative image reference used for update lookups | Full image path (for example `library/traefik` or `ghcr.io/traefik/traefik`) | |
+| `dd.link.template` | :white_circle: | Browsable link associated to the container version | JS string template with vars `${container}`, `${original}`, `${transformed}`, `${major}`, `${minor}`, `${patch}`, `${prerelease}` | |
+| `dd.tag.exclude` | :white_circle: | Regex to exclude specific tags | Valid JavaScript Regex | |
+| `dd.tag.include` | :white_circle: | Regex to include specific tags only | Valid JavaScript Regex | |
+| `dd.tag.transform` | :white_circle: | Transform function to apply to the tag | `$valid_regex => $valid_string_with_placeholders` (see below) | |
+| `dd.trigger.exclude` | :white_circle: | Optional list of triggers to exclude | `$trigger_1_id_or_name,$trigger_2_id_or_name:$threshold` | |
+| `dd.trigger.include` | :white_circle: | Optional list of triggers to include | `$trigger_1_id_or_name,$trigger_2_id_or_name:$threshold` | |
+| `dd.watch.digest` | :white_circle: | Watch this container digest | Valid Boolean | `false` |
+| `dd.watch` | :white_circle: | Watch this container | Valid Boolean | `true` when `DD_WATCHER_{watcher_name}_WATCHBYDEFAULT` is `true` (`false` otherwise) |
 
 !> `dd.inspect.tag.path` is optional and opt-in. Use it only when your image metadata tracks the running app version reliably; some images set unrelated values.
 !> Legacy alias `dd.registry.lookup.url` is still accepted for compatibility, but prefer `dd.registry.lookup.image`.
@@ -340,9 +353,11 @@ To fine-tune the behaviour of drydock _per container_, you can add labels on the
 ## Label examples
 
 ### Include specific containers to watch
+
 Configure drydock to disable WATCHBYDEFAULT feature.
 <!-- tabs:start -->
 #### **Docker Compose (Disable Watch by Default)**
+
 ```yaml
 services:
   drydock:
@@ -353,6 +368,7 @@ services:
 ```
 
 #### **Docker (Disable Watch by Default)**
+
 ```bash
 docker run \
     -e DD_WATCHER_LOCAL_WATCHBYDEFAULT="false" \
@@ -364,6 +380,7 @@ docker run \
 Then add the `dd.watch=true` label on the containers you want to watch.
 <!-- tabs:start -->
 #### **Docker Compose (Include Label)**
+
 ```yaml
 services:
   mariadb:
@@ -374,17 +391,20 @@ services:
 ```
 
 #### **Docker (Include Label)**
+
 ```bash
 docker run -d --name mariadb --label dd.watch=true mariadb:10.4.5
 ```
 <!-- tabs:end -->
 
 ### Exclude specific containers to watch
+
 Ensure `DD_WATCHER_{watcher_name}_WATCHBYDEFAULT` is true (default value).
 
 Then add the `dd.watch=false` label on the containers you want to exclude from being watched.
 <!-- tabs:start -->
 #### **Docker Compose (Exclude Label)**
+
 ```yaml
 services:
   mariadb:
@@ -395,6 +415,7 @@ services:
 ```
 
 #### **Docker (Exclude Label)**
+
 ```bash
 docker run -d --name mariadb --label dd.watch=false mariadb:10.4.5
 ```
@@ -406,6 +427,7 @@ Use this when the running container exposes a version label in `docker inspect`.
 
 <!-- tabs:start -->
 #### **Docker Compose (Inspect Tag Path)**
+
 ```yaml
 services:
   myapp:
@@ -415,6 +437,7 @@ services:
 ```
 
 #### **Docker (Inspect Tag Path)**
+
 ```bash
 docker run -d \
   --name myapp \
@@ -429,6 +452,7 @@ Use this when your runtime image is pulled from a cache/proxy registry, but you 
 
 <!-- tabs:start -->
 #### **Docker Compose (Lookup Image)**
+
 ```yaml
 services:
   traefik:
@@ -439,6 +463,7 @@ services:
 ```
 
 #### **Docker (Lookup Image)**
+
 ```bash
 docker run -d \
   --name traefik \
@@ -449,11 +474,13 @@ docker run -d \
 <!-- tabs:end -->
 
 ### Include only 3 digits semver tags
+
 You can filter (by inclusion or exclusion) which versions can be candidates for update.
 
 For example, you can indicate that you want to watch x.y.z versions only
 <!-- tabs:start -->
 #### **Docker Compose (Tag Include)**
+
 ```yaml
 services:
 
@@ -464,12 +491,14 @@ services:
 ```
 
 #### **Docker (Tag Include)**
+
 ```bash
 docker run -d --name mariadb --label 'dd.tag.include=^\d+\.\d+\.\d+$' mariadb:10.4.5
 ```
 <!-- tabs:end -->
 
 ### Transform the tags before performing the analysis
+
 In certain cases, tag values are so badly formatted that the resolution algorithm cannot find any valid update candidates or, worst, find bad positive matches.
 
 For example, you can encounter such an issue if you need to deal with tags looking like `1.0.0-99-7b368146`, `1.0.0-273-21d7efa6`...  
@@ -480,22 +509,25 @@ You can get around this issue by providing a function that keeps only the part y
 
 How does it work?  
 The transform function must follow the following syntax:
-```
+
+```text
 $valid_regex_with_capturing_groups => $valid_string_with_placeholders
 ```
 
 For example:
+
 ```bash
 ^(\d+\.\d+\.\d+-\d+)-.*$ => $1
 ```
 
-The capturing groups are accessible with the syntax `$1`, `$2`, `$3`.... 
+The capturing groups are accessible with the syntax `$1`, `$2`, `$3`....
 
-!> The first capturing group is accessible as `$1`! 
+!> The first capturing group is accessible as `$1`!
 
 For example, you can indicate that you want to watch x.y.z versions only
 <!-- tabs:start -->
 #### **Docker Compose (Tag Transform)**
+
 ```yaml
 services:
 
@@ -507,6 +539,7 @@ services:
 ```
 
 #### **Docker (Tag Transform)**
+
 ```bash
 docker run -d --name searx \
 --label 'dd.tag.include=^\d+\.\d+\.\d+-\d+-.*$' \
@@ -516,11 +549,13 @@ searx/searx:1.0.0-269-7b368146
 <!-- tabs:end -->
 
 ### Enable digest watching
+
 Additionally to semver tag tracking, you can also track if the digest associated to the local tag has been updated.  
 It can be convenient to monitor image tags known to be overridden (`latest`, `10`, `10.6`...)
 
 <!-- tabs:start -->
 #### **Docker Compose (Digest Watch)**
+
 ```yaml
 services:
 
@@ -530,19 +565,23 @@ services:
       - dd.tag.include=^\d+$$
       - dd.watch.digest=true
 ```
+
 #### **Docker (Digest Watch)**
+
 ```bash
 docker run -d --name mariadb --label 'dd.tag.include=^\d+$' --label dd.watch.digest=true mariadb:10
 ```
 <!-- tabs:end -->
 
 ### Associate a link to the container version
+
 You can associate a browsable link to the container version using a templated string.
-For example, if you want to associate a mariadb version to a changelog (e.g. https://mariadb.com/kb/en/mariadb-1064-changelog),
+For example, if you want to associate a mariadb version to a changelog (e.g. <https://mariadb.com/kb/en/mariadb-1064-changelog>),
 
 you would specify a template like `https://mariadb.com/kb/en/mariadb-${major}${minor}${patch}-changelog`
 
 The available variables are:
+
 - `${original}` the original unparsed tag
 - `${transformed}` the original unparsed tag transformed with the optional `dd.tag.transform` label option
 - `${major}` the major version (if tag value is semver)
@@ -552,6 +591,7 @@ The available variables are:
 
 <!-- tabs:start -->
 #### **Docker Compose (Link Template)**
+
 ```yaml
 services:
 
@@ -562,15 +602,18 @@ services:
 ```
 
 #### **Docker (Link Template)**
+
 ```bash
 docker run -d --name mariadb --label 'dd.link.template=https://mariadb.com/kb/en/mariadb-${major}${minor}${patch}-changelog' mariadb:10
 ```
 <!-- tabs:end -->
 
 ### Customize the name and the icon to display
+
 You can customize the name & the icon of a container (displayed in the UI, in Home-Assistant...)
 
 Icons must be prefixed with:
+
 - `fab:` or `fab-` for [Fontawesome brand icons](https://fontawesome.com/) (`fab:github`, `fab-mailchimp`...)
 - `far:` or `far-` for [Fontawesome regular icons](https://fontawesome.com/) (`far:heart`, `far-house`...)
 - `fas:` or `fas-` for [Fontawesome solid icons](https://fontawesome.com/) (`fas:heart`, `fas-house`...)
@@ -583,6 +626,7 @@ Icons must be prefixed with:
 
 <!-- tabs:start -->
 #### **Docker Compose (Display Name & Icon)**
+
 ```yaml
 services:
 
@@ -594,18 +638,21 @@ services:
 ```
 
 #### **Docker (Display Name & Icon)**
+
 ```bash
 docker run -d --name mariadb --label 'dd.display.name=Maria DB' --label 'dd.display.icon=si:mariadb' mariadb:10.6.4
 ```
 <!-- tabs:end -->
 
 ### Assign different triggers to containers
+
 You can assign different triggers and thresholds on a per container basis.
 
 #### Example send a mail notification for all updates but auto-update only if minor or patch
 
 <!-- tabs:start -->
 #### **Docker Compose (Trigger Include)**
+
 ```yaml
 services:
 
@@ -616,6 +663,7 @@ services:
 ```
 
 #### **Docker (Trigger Include)**
+
 ```bash
 docker run -d --name my_important_service --label 'dd.trigger.include=smtp.gmail,dockercompose.local:minor' my_important_service:1.0.0
 ```
@@ -626,7 +674,7 @@ docker run -d --name my_important_service --label 'dd.trigger.include=smtp.gmail
 
 ?> Threshold `all` means that the trigger will run regardless of the nature of the change
 
-?> Threshold `major` means that the trigger will run only if this is a `major`, `minor` or `patch` semver change 
+?> Threshold `major` means that the trigger will run only if this is a `major`, `minor` or `patch` semver change
 
 ?> Threshold `minor` means that the trigger will run only if this is a `minor` or `patch` semver change
 

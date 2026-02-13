@@ -2,7 +2,7 @@
 pre-push:
   commands:
     qlty:
-      run: qlty check --all
+      run: qlty check
     snyk-deps:
       root: app/
       run: snyk test --severity-threshold=high

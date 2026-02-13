@@ -2,28 +2,28 @@
 
 The `smtp` trigger lets you send emails with smtp.
 
-### Variables
+## Variables
 
-| Env var                                           | Required       | Description                                | Supported values              | Default value when missing |
-| ------------------------------------------------- |:--------------:|:------------------------------------------ | ----------------------------- | -------------------------- |
-| `DD_TRIGGER_SMTP_{trigger_name}_HOST`            | :red_circle:   | Smtp server host                           | Valid hostname or IP address  |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_PORT`            | :red_circle:   | Smtp server port                           | Valid smtp port               |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_FROM`            | :red_circle:   | Email from address                         | Valid email address           |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_TO`              | :red_circle:   | Email to address                           | Valid email address           |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_USER`            | :white_circle: | Smtp user                                  |                               |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_PASS`            | :white_circle: | Smtp password                              |                               |                            |
-| `DD_TRIGGER_SMTP_{trigger_name}_TLS_ENABLED`     | :white_circle: | Use TLS                                    | `true`, `false`               | `false`                    |
-| `DD_TRIGGER_SMTP_{trigger_name}_TLS_VERIFY`      | :white_circle: | Verify server TLS certificate              | `true`, `false`               | `true`                     |
-| `DD_TRIGGER_SMTP_{trigger_name}_ALLOWCUSTOMTLD`  | :white_circle: | Allow custom tlds for the email addresses  | `true`, `false`               | `false`                    |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | :--- | --- | --- |
+| `DD_TRIGGER_SMTP_{trigger_name}_HOST` | :red_circle: | Smtp server host | Valid hostname or IP address | |
+| `DD_TRIGGER_SMTP_{trigger_name}_PORT` | :red_circle: | Smtp server port | Valid smtp port | |
+| `DD_TRIGGER_SMTP_{trigger_name}_FROM` | :red_circle: | Email from address | Valid email address | |
+| `DD_TRIGGER_SMTP_{trigger_name}_TO` | :red_circle: | Email to address | Valid email address | |
+| `DD_TRIGGER_SMTP_{trigger_name}_USER` | :white_circle: | Smtp user | | |
+| `DD_TRIGGER_SMTP_{trigger_name}_PASS` | :white_circle: | Smtp password | | |
+| `DD_TRIGGER_SMTP_{trigger_name}_TLS_ENABLED` | :white_circle: | Use TLS | `true`, `false` | `false` |
+| `DD_TRIGGER_SMTP_{trigger_name}_TLS_VERIFY` | :white_circle: | Verify server TLS certificate | `true`, `false` | `true` |
+| `DD_TRIGGER_SMTP_{trigger_name}_ALLOWCUSTOMTLD` | :white_circle: | Allow custom tlds for the email addresses | `true`, `false` | `false` |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
-### Examples
+## Examples
 
-#### Send an email with Gmail
+### Send an email with Gmail
 
 <!-- tabs:start -->
-#### **Docker Compose**
+### **Docker Compose**
 
 ```yaml
 services:
@@ -40,7 +40,7 @@ services:
         - DD_TRIGGER_SMTP_GMAIL_TLS_ENABLED=true 
 ```
 
-#### **Docker**
+### **Docker**
 
 ```bash
 docker run \

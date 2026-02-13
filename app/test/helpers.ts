@@ -1,7 +1,7 @@
 /**
  * Shared test helpers to reduce duplication across test files.
  *
- * NOTE: vi.mock() and vi.hoisted() callbacks are hoisted above imports,
+ * Note: vi.mock() and vi.hoisted() callbacks are hoisted above imports,
  * so these helpers can only be used in test bodies, beforeEach, etc.
  * For logger mocking, use the manual mock at log/__mocks__/index.ts
  * with vi.mock('../log') (no factory).

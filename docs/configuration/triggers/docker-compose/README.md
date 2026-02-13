@@ -1,9 +1,11 @@
 # Docker-Compose
+
 ![logo](docker-compose.png)
 
 The `dockercompose` trigger lets you update docker-compose.yml files & replace existing containers with their updated versions.
 
 The trigger will:
+
 - Update the related docker-compose.yml file
 - Clone the existing container specification
 - Pull the new image
@@ -14,14 +16,14 @@ The trigger will:
 - Run `post_start` hooks declared on the updated service (if any)
 - Remove the previous image (optionally)
 
-### Variables
+## Variables
 
-| Env var                                           | Required       | Description                                                    | Supported values | Default value when missing |
-| ------------------------------------------------- |:--------------:| -------------------------------------------------------------- | ---------------- | -------------------------- | 
-| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_FILE`   | :red_circle:   | The docker-compose.yml file location                           |                  |                            |
-| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_BACKUP` | :white_circle: | Backup the docker-compose.yml file as `.back` before updating? | `true`, `false`  | `false`                    |
-| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_PRUNE`  | :white_circle: | If the old image must be pruned after upgrade                  | `true`, `false`  | `false`                    |
-| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time            | `true`, `false`  | `false`                    |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_FILE` | :red_circle: | The docker-compose.yml file location | | |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_BACKUP` | :white_circle: | Backup the docker-compose.yml file as `.back` before updating? | `true`, `false` | `false` |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_PRUNE` | :white_circle: | If the old image must be pruned after upgrade | `true`, `false` | `false` |
+| `DD_TRIGGER_DOCKERCOMPOSE_{trigger_name}_DRYRUN` | :white_circle: | When enabled, only pull the new image ahead of time | `true`, `false` | `false` |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration). but only supports the `batch` mode.
 
@@ -29,7 +31,7 @@ The trigger will:
 
 !> Do not forget to mount the docker-compose.yml file in the drydock container.
 
-### Troubleshooting: `permission denied` (`EACCES`)
+## Troubleshooting: `permission denied` (`EACCES`)
 
 If logs show an error like:
 
@@ -61,10 +63,11 @@ services:
 
 ?> `COMPOSE_FILES_GID` should match the GID that owns the mounted compose files on the host.
 
-### Examples
+## Examples
 
 <!-- tabs:start -->
-#### **Docker Compose**
+### **Docker Compose**
+
 ```yaml
 services:
   drydock:
@@ -75,7 +78,9 @@ services:
     environment:
       - DD_TRIGGER_DOCKERCOMPOSE_EXAMPLE_FILE=/drydock/docker-compose.yml
 ```
-#### **Docker**
+
+### **Docker**
+
 ```bash
 docker run \
   -v /etc/my-services/docker-compose.yml:/drydock/docker-compose.yml
@@ -83,7 +88,9 @@ docker run \
   ...
   ghcr.io/codeswhat/drydock
 ```
-#### **Label**
+
+### **Label**
+
 ```yaml
 labels:
   dd.compose.file: "/my/path/docker-compose.yaml

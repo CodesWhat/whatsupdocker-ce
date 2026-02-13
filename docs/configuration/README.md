@@ -1,4 +1,5 @@
 # Configuration
+
 drydock is configured via **Environment Variables** and **[Docker labels](https://docs.docker.com/config/labels-custom-metadata/)**.
 
 ## Prefix convention
@@ -6,27 +7,21 @@ drydock is configured via **Environment Variables** and **[Docker labels](https:
 All environment variables use the `DD_` prefix. All Docker labels use the `dd.` prefix.
 
 | Context | Prefix | Example |
-|---------|--------|---------|
+| --------- | -------- | --------- |
 | Environment variables | `DD_` | `DD_SERVER_PORT` |
 | Docker labels | `dd.` | `dd.watch` |
 | Secret files | `DD_` + `__FILE` | `DD_AUTH_BASIC_JOHN_HASH__FILE` |
 
 Please find below the documentation for each of them:
-> [**Authentication**](/configuration/authentications/)
 
-> [**Logs**](/configuration/logs/)
-
-> [**Registries**](/configuration/registries/)
-
-> [**Server**](/configuration/server/)
-
-> [**Storage**](/configuration/storage/)
-
-> [**Timezone**](/configuration/timezone/)
-
-> [**Triggers**](/configuration/triggers/)
-
-> [**watchers**](/configuration/watchers/)
+- [**Authentication**](/configuration/authentications/)
+- [**Logs**](/configuration/logs/)
+- [**Registries**](/configuration/registries/)
+- [**Server**](/configuration/server/)
+- [**Storage**](/configuration/storage/)
+- [**Timezone**](/configuration/timezone/)
+- [**Triggers**](/configuration/triggers/)
+- [**Watchers**](/configuration/watchers/)
 
 ## Complete example
 
@@ -91,16 +86,19 @@ services:
 ```
 
 ## Secret management
+
 !> If you don't want to expose your secret values as environment variables, you can externalize them in external files and reference them by suffixing the original env var name with `__FILE`.
 
 For example, instead of providing the Basic auth details as
-```
+
+```bash
 DD_AUTH_BASIC_JOHN_HASH={SHA}1rToTufzHYhhemtgQhRRJy6/Gjo=
 ```
 
 You can create an external file with the appropriate permissions (let's say `/tmp/john_hash`) containing the secret value (`{SHA}1rToTufzHYhhemtgQhRRJy6/Gjo=`).
 Then you need to reference this file by using the following env var
-```
+
+```bash
 DD_AUTH_BASIC_JOHN_HASH__FILE=/tmp/john_hash
 ```
 

@@ -1,21 +1,23 @@
 # GHCR (Github Container Registry)
+
 ![logo](github.png)
 
 The `ghcr` registry lets you configure [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-docker-registry) integration.
 
-### Variables
+## Variables
 
-| Env var                                      | Required       | Description     | Supported values                         | Default value when missing |
-| -------------------------------------------- |:--------------:| --------------- | ---------------------------------------- | -------------------------- | 
-| `DD_REGISTRY_GHCR_{REGISTRY_NAME}_USERNAME` | :white_circle: | Github username |                                          |                            |
-| `DD_REGISTRY_GHCR_{REGISTRY_NAME}_TOKEN`    | :white_circle: | Github token    | Github password or Github Personal Token |                            |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_REGISTRY_GHCR_{REGISTRY_NAME}_USERNAME` | :white_circle: | Github username | | |
+| `DD_REGISTRY_GHCR_{REGISTRY_NAME}_TOKEN` | :white_circle: | Github token | Github password or Github Personal Token | |
 
-### Examples
+## Examples
 
-#### Configure to access private images
+### Configure to access private images
 
 <!-- tabs:start -->
-#### **Docker Compose**
+### **Docker Compose**
+
 ```yaml
 services:
   drydock:
@@ -25,7 +27,9 @@ services:
       - DD_REGISTRY_GHCR_PRIVATE_USERNAME=john@doe
       - DD_REGISTRY_GHCR_PRIVATE_TOKEN=xxxxx 
 ```
-#### **Docker**
+
+### **Docker**
+
 ```bash
 docker run \
   -e DD_REGISTRY_GHCR_PRIVATE_USERNAME="john@doe" \
@@ -35,13 +39,17 @@ docker run \
 ```
 <!-- tabs:end -->
 
-### How to create a Github Personal Token
-#### Go to your Github settings and open the Personal Access Token tab
-[Click here](https://github.com/settings/tokens)
+## How to create a Github Personal Token
 
-#### Click on `Generate new token`
+### Go to your Github settings and open the Personal Access Token tab
+
+[Open GitHub Personal Access Tokens](https://github.com/settings/tokens)
+
+### Click on `Generate new token`
+
 Choose an expiration time & appropriate scopes (`read:packages` is only needed for drydock) and generate.
 ![image](ghcr_01.png)
 
-#### Copy the token & use it as the DD_REGISTRY_GHCR_{REGISTRY_NAME}_TOKEN value
+### Copy the token & use it as the DD_REGISTRY_GHCR_{REGISTRY_NAME}_TOKEN value
+
 ![image](ghcr_02.png)

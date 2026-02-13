@@ -5,6 +5,7 @@ Branch context: `feature/v1.2.0`
 Last updated: 2026-02-12
 
 ## Status Legend
+
 - `Mitigated`: path input is now validated/normalized before filesystem access.
 - `Accepted Risk`: path is internally generated or constrained; no external path injection surface.
 - `Pending`: not yet addressed.
@@ -12,7 +13,7 @@ Last updated: 2026-02-12
 ## Findings
 
 | # | File | Finding | Status | Notes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 1 | `app/configuration/index.ts` | `fs.readFileSync(secretFilePath, 'utf-8')` | Mitigated | `secretFilePath` now goes through `resolveConfiguredPath(...)` in `replaceSecrets`. |
 | 2 | `app/api/index.ts` | `fs.readFileSync(configuration.tls.key)` | Mitigated | TLS key path normalized with `resolveConfiguredPath(...)`. |
 | 3 | `app/api/index.ts` | `fs.readFileSync(configuration.tls.cert)` | Mitigated | TLS cert path normalized with `resolveConfiguredPath(...)`. |

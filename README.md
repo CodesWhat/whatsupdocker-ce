@@ -209,7 +209,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 > For the full itemized changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 | Feature | drydock | Watchtower | WUD | Diun | Ouroboros |
-|---------|---------|------------|-----|------|-----------|
+| --- | --- | --- | --- | --- | --- |
 | Web UI / Dashboard | ✅ | ❌ | ✅ | ❌ | ❌ |
 | Auto-update containers | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Docker Compose updates | ✅ | ⚠️ | ✅ | ❌ | ❌ |
@@ -237,7 +237,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 ### Additional Features vs WUD
 
 | Feature | Description |
-|---------|-------------|
+| --- | --- |
 | **Agent mode** | Distributed monitoring with remote agents over SSE |
 | **OIDC token lifecycle** | Bearer/Basic auth for remote watcher HTTPS connections |
 | **Container update policy** | Skip/snooze specific versions per container via API and UI |
@@ -267,7 +267,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 ### Bug Fixes (not in WUD)
 
 | Fix | Impact |
-|-----|--------|
+| --- | --- |
 | `eval()` code injection | Replaced with safe `String.replace()` interpolation |
 | OIDC session state races | Serialized redirect checks, multiple pending states |
 | Docker event stream crash | Buffered split payloads before JSON parse |
@@ -279,7 +279,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 <summary><strong>Tech stack: drydock vs WUD</strong></summary>
 
 | | WUD | drydock |
-|---|---|---|
+| --- | --- | --- |
 | **Language** | JavaScript | TypeScript (ESM, `NodeNext`) |
 | **Test runner** | Jest | Vitest 4 |
 | **Linter** | ESLint + Prettier | Biome |
@@ -296,7 +296,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 <summary><strong>Public registries</strong> (auto-registered, no config needed)</summary>
 
 | Registry | Provider | URL |
-|----------|----------|-----|
+| --- | --- | --- |
 | Docker Hub | `hub` | `hub.docker.com` |
 | GitHub Container Registry | `ghcr` | `ghcr.io` |
 | Google Container Registry | `gcr` | `gcr.io` |
@@ -313,7 +313,7 @@ DVD-style animated overlay during drydock's own container update with auto-recon
 <summary><strong>Private registries</strong> (require credentials)</summary>
 
 | Registry | Provider | Env vars |
-|----------|----------|----------|
+| --- | --- | --- |
 | Docker Hub | `hub` | `DD_REGISTRY_HUB_{name}_LOGIN`, `_TOKEN` |
 | Amazon ECR | `ecr` | `DD_REGISTRY_ECR_{name}_ACCESSKEYID`, `_SECRETACCESSKEY`, `_REGION` |
 | Azure ACR | `acr` | `DD_REGISTRY_ACR_{name}_CLIENTID`, `_CLIENTSECRET` |
@@ -337,7 +337,7 @@ See [Registry docs](docs/configuration/registries/README.md) for full configurat
 All env vars use the `DD_` prefix; Docker labels use the `dd.` prefix.
 
 | Trigger | Description | Docs |
-|---------|-------------|------|
+| --- | --- | --- |
 | Apprise | Universal notification gateway | [docs](docs/configuration/triggers/apprise/README.md) |
 | Command | Run arbitrary shell commands | [docs](docs/configuration/triggers/command/README.md) |
 | Discord | Discord webhook | [docs](docs/configuration/triggers/discord/README.md) |
@@ -367,7 +367,7 @@ All triggers support **threshold filtering** (`all`, `major`, `minor`, `patch`) 
 <summary><strong>Supported auth methods</strong></summary>
 
 | Method | Description | Docs |
-|--------|-------------|------|
+| --- | --- | --- |
 | Anonymous | No auth (default) | — |
 | Basic | Username + password hash | [docs](docs/configuration/authentications/basic/README.md) |
 | OIDC | OpenID Connect (Authelia, Auth0, Authentik) | [docs](docs/configuration/authentications/oidc/README.md) |
@@ -388,7 +388,7 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 **Full backwards compatibility is built in.** You do not need to rename anything in your compose file, environment, or labels:
 
 | WUD (legacy) | drydock (new) | Status |
-|---|---|---|
+| --- | --- | --- |
 | `WUD_` env vars | `DD_` env vars | Both work — `WUD_` vars are automatically mapped to their `DD_` equivalents at startup. If both are set, `DD_` takes priority. |
 | `wud.*` container labels | `dd.*` container labels | Both work — all `wud.*` labels (`wud.watch`, `wud.tag.include`, `wud.display.name`, etc.) are recognized alongside their `dd.*` counterparts. |
 | `/store/wud.json` state file | `/store/dd.json` state file | Automatic migration — on first start, if `wud.json` exists and `dd.json` does not, drydock renames it in place. No data loss. |
@@ -402,7 +402,7 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 ## Documentation
 
 | Resource | Link |
-|----------|------|
+| --- | --- |
 | Website | [drydock.codeswhat.com](https://drydock.codeswhat.com/) |
 | Docs | [`docs/README.md`](docs/README.md) |
 | Configuration | [`docs/configuration/README.md`](docs/configuration/README.md) |
@@ -416,13 +416,13 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 
 ### Built With
 
-[![TypeScript](https://img.shields.io/badge/TypeScript_5.9-3178C6?logo=typescript&logoColor=fff)](#)
-[![Vue 3](https://img.shields.io/badge/Vue_3-42b883?logo=vuedotjs&logoColor=fff)](#)
-[![Express 5](https://img.shields.io/badge/Express_5-000?logo=express&logoColor=fff)](#)
-[![Vitest](https://img.shields.io/badge/Vitest_4-6E9F18?logo=vitest&logoColor=fff)](#)
-[![Biome](https://img.shields.io/badge/Biome_2.3-60a5fa?logo=biome&logoColor=fff)](#)
-[![Node 24](https://img.shields.io/badge/Node_24_Alpine-339933?logo=nodedotjs&logoColor=fff)](#)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript_5.9-3178C6?logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
+[![Vue 3](https://img.shields.io/badge/Vue_3-42b883?logo=vuedotjs&logoColor=fff)](https://vuejs.org/)
+[![Express 5](https://img.shields.io/badge/Express_5-000?logo=express&logoColor=fff)](https://expressjs.com/)
+[![Vitest](https://img.shields.io/badge/Vitest_4-6E9F18?logo=vitest&logoColor=fff)](https://vitest.dev/)
+[![Biome](https://img.shields.io/badge/Biome_2.3-60a5fa?logo=biome&logoColor=fff)](https://biomejs.dev/)
+[![Node 24](https://img.shields.io/badge/Node_24_Alpine-339933?logo=nodedotjs&logoColor=fff)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](https://www.docker.com/)
 
 ---
 

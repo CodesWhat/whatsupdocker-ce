@@ -7,9 +7,11 @@ Thanks for your interest in contributing to drydock!
 1. **Fork** the repository and create a branch from `main`.
 2. **Make your changes** — keep commits focused and atomic.
 3. **Run tests** before submitting:
+
    ```bash
    cd app && npm test
    ```
+
 4. **Open a pull request** against `main`.
 
 ## Coding standards

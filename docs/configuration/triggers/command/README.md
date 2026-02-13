@@ -1,22 +1,25 @@
 # Command
+
 ![logo](command.png)
 
 The `command` trigger lets you run arbitrary commands upon container update notifications.
 
-### Variables
+## Variables
 
-| Env var                                      |    Required    | Description                 | Supported values                            | Default value when missing |
-|----------------------------------------------|:--------------:|-----------------------------|---------------------------------------------|----------------------------| 
-| `DD_TRIGGER_COMMAND_{trigger_name}_CMD`     | :red_circle:   | The command to run          |                                             |                            |
-| `DD_TRIGGER_COMMAND_{trigger_name}_SHELL`   | :red_circle:   | The shell to use            | Any valid installed shell path              | `/bin/sh`                  |
-| `DD_TRIGGER_COMMAND_{trigger_name}_TIMEOUT` | :red_circle:   | The command timeout (in ms) | Any positive integer (`0` means no timeout) | `60000`                    |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_TRIGGER_COMMAND_{trigger_name}_CMD` | :red_circle: | The command to run | | |
+| `DD_TRIGGER_COMMAND_{trigger_name}_SHELL` | :red_circle: | The shell to use | Any valid installed shell path | `/bin/sh` |
+| `DD_TRIGGER_COMMAND_{trigger_name}_TIMEOUT` | :red_circle: | The command timeout (in ms) | Any positive integer (`0` means no timeout) | `60000` |
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
 ?> Update informations are passed as environment variables (see below).
 
-### Environment variables passed to the executed command
-#### In simple mode (execution per container to update)
+## Environment variables passed to the executed command
+
+### In simple mode (execution per container to update)
+
 - display_icon
 - display_name
 - id
@@ -41,8 +44,9 @@ The `command` trigger lets you run arbitrary commands upon container update noti
 - update_kind_semver_diff
 - watcher
 
-##### Example
-```
+#### Example
+
+```bash
 display_icon='mdi:docker'
 display_name='test-nginx-1'
 id='94f9f845de0fc4f8ad17c0ee1aaeaf495669de229edf41cdcd14d2af7157e47e'
@@ -70,16 +74,17 @@ watcher='local'
 
 ?> In addition, a `container_json` environment variable is passed containing the full `container` entity as a JSON string.
 
-#### In batch mode (execution for a batch of containers to update)
+### In batch mode (execution for a batch of containers to update)
 
 ?> A `containers_json` environment variable is passed containing the array of all the containers to update as a JSON string.
 
-### Examples
+## Examples
 
-#### Running an arbitrary command
+### Running an arbitrary command
 
 <!-- tabs:start -->
-#### **Docker Compose (Arbitrary Command)**
+### **Docker Compose (Arbitrary Command)**
+
 ```yaml
 services:
   drydock:
@@ -88,7 +93,9 @@ services:
     environment:
       - DD_TRIGGER_COMMAND_LOCAL_CMD=echo $${display_name} can be updated to $${update_kind_remote_value}
 ```
-#### **Docker (Arbitrary Command)**
+
+### **Docker (Arbitrary Command)**
+
 ```bash
 docker run \
   -e DD_TRIGGER_COMMAND_LOCAL_CMD=echo ${display_name} can be updated to ${update_kind_remote_value} \
@@ -97,10 +104,11 @@ docker run \
 ```
 <!-- tabs:end -->
 
-#### Running a custom bash script
+### Running a custom bash script
 
 <!-- tabs:start -->
-#### **Docker Compose (Bash Script)**
+### **Docker Compose (Bash Script)**
+
 ```yaml
 services:
   drydock:
@@ -111,7 +119,9 @@ services:
     volumes:
       - ${PWD}/drydock/trigger.sh:/drydock/trigger.sh
 ```
-#### **Docker (Bash Script)**
+
+### **Docker (Bash Script)**
+
 ```bash
 docker run \
   -e DD_TRIGGER_COMMAND_LOCAL_CMD=DD_TRIGGER_COMMAND_LOCAL_CMD=bash -c /drydock/trigger.sh \

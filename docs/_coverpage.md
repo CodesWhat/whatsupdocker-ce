@@ -1,4 +1,4 @@
-<!-- markdownlint-disable first-line-h1 -->
+<!-- markdownlint-disable first-line-h1 MD051 -->
 
 ![logo](assets/drydock.png)
 

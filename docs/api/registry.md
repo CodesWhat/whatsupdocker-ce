@@ -1,9 +1,11 @@
 # Registry API
+
 This API allows to query the state of the registries.
 
 ?> [Need to add a new Registry?](/configuration/registries/)
 
 ## Get all Registries
+
 This operation lets you get all the configured registries.
 
 ```bash
@@ -32,6 +34,7 @@ curl http://drydock:3000/api/registries
 ```
 
 ## Get a Registry by id
+
 This operation lets you get a specific Registry.
 
 ```bash
@@ -46,4 +49,3 @@ curl http://drydock:3000/api/registries/hub/private
     }
 }
 ```
-

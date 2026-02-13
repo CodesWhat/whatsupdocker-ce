@@ -5,11 +5,13 @@
 drydock exposes an endpoint to check the service healthiness.
 
 ### HealthCheck Endpoint
+
 The healthiness is exposed at [/health](http://localhost:3000/health).
 
 If the application is healthy, the Http Response Status Code is `200` (`500` otherwise).
 
 ### Example
+
 ```json
 {
   "uptime": 123
@@ -32,13 +34,14 @@ services:
       start_period: 10s
 ```
 
-
 ## Prometheus metrics
+
 ![logo](prometheus.png)
 
 drydock exposes various metrics that [Prometheus](https://prometheus.io/) can scrape.
 
 ### Metrics Endpoint
+
 The metrics are exposed at [/metrics](http://localhost:3000/metrics).
 
 By default, `/metrics` requires authentication when API auth is enabled.  
@@ -52,6 +55,7 @@ environment:
 ### Metrics
 
 #### drydock specific metrics
+
 ```bash
 
 # HELP drydock_containers The watched containers
@@ -85,6 +89,7 @@ drydock_watcher_total{type="docker",name="local"} 6
 ```
 
 #### Standard process metrics
+
 ```bash
 # HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
 # TYPE process_cpu_user_seconds_total counter
@@ -124,6 +129,7 @@ process_max_fds 1048576
 ```
 
 #### Standard Node.js metrics
+
 ```bash
 # HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
 # TYPE nodejs_eventloop_lag_seconds gauge
@@ -265,6 +271,7 @@ nodejs_gc_duration_seconds_count{kind="weakcb"} 1
 ```
 
 ## Grafana
+
 ![logo](grafana.png)
 
 You can use [Grafana](https://grafana.com/) to display charts and graphs using the Prometheus metrics.
@@ -275,9 +282,10 @@ A ready-to-use overview dashboard can be found under `grafana/overview.json`.
 
 It can be imported into any Grafana instance, just pick an existing data source.
 An interactive preview of the dashboard can be found
-[here](https://theforge.grafana.net/dashboard/snapshot/FskV8Lgi41VwD6jnSPnJxzLzz6B42QZF).
+[on Grafana](https://theforge.grafana.net/dashboard/snapshot/FskV8Lgi41VwD6jnSPnJxzLzz6B42QZF).
 
 ### Watched images
+
 You can also display drydock watched images on Grafana.
 
 #### Example to display the container Table

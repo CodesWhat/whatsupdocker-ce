@@ -13,6 +13,7 @@ ENV DD_VERSION=$DD_VERSION
 
 HEALTHCHECK --interval=30s --timeout=5s CMD ["sh", "-c", "if [ -z \"$DD_SERVER_ENABLED\" ] || [ \"$DD_SERVER_ENABLED\" = 'true' ]; then curl --fail http://localhost:${DD_SERVER_PORT:-3000}/health || exit 1; else exit 0; fi"]
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache \
     bash \
     curl \
@@ -22,7 +23,7 @@ RUN apk add --no-cache \
     su-exec \
     tini \
     tzdata \
- && mkdir /store && chown node:node /store
+    && mkdir /store && chown node:node /store
 
 # Build stage for backend app
 FROM base AS app-build
@@ -38,7 +39,7 @@ COPY app/ ./
 
 # Build and remove dev dependencies
 RUN npm run build \
- && npm prune --omit=dev
+    && npm prune --omit=dev
 
 # Build stage for frontend UI
 FROM base AS ui-build
@@ -72,5 +73,4 @@ COPY --from=app-build /home/node/app/package.json ./package.json
 # Copy ui
 COPY --from=ui-build /home/node/ui/dist/ ./ui
 
-# No USER directive — entrypoint handles privilege drop via su-exec.
-# See Docker.entrypoint.sh for GID-conditional logic.
+USER node

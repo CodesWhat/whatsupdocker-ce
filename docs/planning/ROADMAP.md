@@ -8,9 +8,11 @@ Completed work has been intentionally removed.
 ## Current State
 
 `feature/v1.2.0` remains active with one roadmap item pending:
+
 - Maintenance windows final QA sign-off (manual validation still pending; automated run partially blocked by baseline lint/type debt)
 
 Next release targets:
+
 - `v1.3.0`: Security Integration
 - `v1.4.0`: UI stack modernization (PrimeVue migration + UX refresh)
 
@@ -21,7 +23,7 @@ Based on analysis of Watchtower, Diun, Dozzle, Portainer, Yacht, Shepherd, Renov
 ### Tier 1 -- High-value, builds on existing strengths
 
 | Feature | Competitor(s) | Complexity | Notes |
-|---------|---------------|------------|-------|
+| --------- | --------------- | ------------ | ------- |
 | Lifecycle hooks (pre/post-update) | Watchtower | Medium | Labels like `dd.lifecycle.pre-update` to run commands before/after updates (e.g. DB backup before Postgres update) |
 | Dependency-aware update ordering | Watchtower | Medium | Detect `depends_on` / network links, topological sort, update dependencies first |
 | Automatic rollback on failure | Shepherd | Medium | Health check after update (HTTP probe, TCP, exec), auto-rollback to backup if unhealthy |
@@ -31,7 +33,7 @@ Based on analysis of Watchtower, Diun, Dozzle, Portainer, Yacht, Shepherd, Renov
 ### Tier 2 -- Strategic differentiators
 
 | Feature | Competitor(s) | Complexity | Notes |
-|---------|---------------|------------|-------|
+| --------- | --------------- | ------------ | ------- |
 | Image vulnerability / CVE scanning | Renovate, Portainer | Medium | Trivy integration, severity badges in UI, prioritize security updates in notifications |
 | Tag regex include/exclude filters | Diun | Small | `dd.tag.include` / `dd.tag.exclude` with regex, `watch_repo` mode |
 | Container grouping / stack views | Dozzle | Small-Medium | Auto-group by Compose project, collapsible groups, per-stack actions |
@@ -40,7 +42,7 @@ Based on analysis of Watchtower, Diun, Dozzle, Portainer, Yacht, Shepherd, Renov
 ### Tier 3 -- Platform expansion
 
 | Feature | Competitor(s) | Complexity | Notes |
-|---------|---------------|------------|-------|
+| --------- | --------------- | ------------ | ------- |
 | Kubernetes provider | Diun, Portainer, Dozzle | Large | Watch pods/deployments, check images, biggest addressable market gap |
 | Docker Swarm service provider | Shepherd, Diun | Medium | Detect services, `docker service update --image` |
 | Watch non-running / static images | Diun | Small-Medium | File provider for YAML image lists, Dockerfile extraction |
@@ -64,6 +66,7 @@ Restrict when auto-updates can execute. Users configure allowed time windows per
 - UI shows "next maintenance window" countdown on dashboard
 
 **Status:** complete
+
 - Automated QA (2026-02-12): `app` tests pass, `ui` tests pass, `ui` production build passes; `app`/`ui` lint and `app` TypeScript build remain blocked by pre-existing repository issues outside maintenance-window changes
 - Manual QA (2026-02-12): all scenarios passed via Playwright MCP against OrbStack
   - Window open: UI shows "Maintenance window open now" on Watchers card
@@ -119,7 +122,8 @@ Standardize component authoring to one style and remove split logic/template fil
 - Add migration checklist for each converted component (props/events parity, typed emits, test updates)
 - Replace Vuetify-first UI dependencies incrementally with PrimeVue equivalents, starting with highest-friction screens
 
-**Success criteria**
+#### Success criteria
+
 - No new components use external `src="./Component.ts"` script pattern
 - Home, Containers, and App shell are fully migrated with passing unit tests
 - Team contribution guide updated with the canonical component pattern
@@ -133,7 +137,8 @@ Remove Vue CLI-era runtime assumptions and align with current Vite conventions.
 - Keep route-level lazy loading, and add typed route-name constants for guards/navigation
 - Document env variable conventions for UI (`VITE_*`) in docs
 
-**Success criteria**
+#### Success criteria
+
 - No `process.env.*` usage remains in UI runtime code
 - Service worker behavior is explicit, testable, and documented
 - Router auth guard and redirect behavior covered by tests without warnings
@@ -147,7 +152,8 @@ Clean up warnings and reduce bundle risk while keeping current feature behavior 
 - Split heavy UI modules/chunks where practical (icons/assets/views) to reduce initial load
 - Add one Playwright smoke test for login -> dashboard -> containers path
 
-**Success criteria**
+#### Success criteria
+
 - Unit tests pass without repeated router/component resolution warnings
 - Production build emits no new large-chunk regressions above defined budget
 - Smoke test passes in CI on every PR touching `ui/`
@@ -262,7 +268,7 @@ Progressive traffic shifting for Kubernetes workloads.
 ## Not Planned
 
 | Feature | Reason |
-|---------|--------|
+| --------- | -------- |
 | Git PR workflow | Renovate's domain; drydock is runtime monitoring, not source-dependency management |
 | 90+ package managers | Out of scope for a container-focused product |
 | Docker run to compose converter | Dockge/compose management domain |

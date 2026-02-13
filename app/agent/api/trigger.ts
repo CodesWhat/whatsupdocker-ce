@@ -55,7 +55,9 @@ export async function runTriggerBatch(req: Request, res: Response) {
     await trigger.triggerBatch(sanitizedContainers);
     res.status(200).json({});
   } catch (e: any) {
-    log.error(`Error running batch trigger ${sanitizeLogParam(name)}: ${sanitizeLogParam(e.message)}`);
+    log.error(
+      `Error running batch trigger ${sanitizeLogParam(name)}: ${sanitizeLogParam(e.message)}`,
+    );
     res.status(500).json({ error: e.message });
   }
 }

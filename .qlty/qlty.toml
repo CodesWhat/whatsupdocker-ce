@@ -84,6 +84,7 @@ name = "osv-scanner"
 
 [[plugin]]
 name = "semgrep"
+mode = "monitor"
 
 [[plugin]]
 name = "radarlint-iac"

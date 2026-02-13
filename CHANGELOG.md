@@ -298,8 +298,6 @@ Remaining upstream-only changes (not ported — not applicable to drydock):
 | Update changelog | Upstream-specific |
 
 [Unreleased]: https://github.com/CodesWhat/drydock/compare/1.1.3...HEAD
-[1.1.3]: https://github.com/CodesWhat/drydock/compare/1.1.2...1.1.3
-[1.1.2]: https://github.com/CodesWhat/drydock/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/CodesWhat/drydock/compare/v1.1.0...1.1.1
 [1.1.0]: https://github.com/CodesWhat/drydock/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/CodesWhat/drydock/compare/v1.0.1...v1.0.2
