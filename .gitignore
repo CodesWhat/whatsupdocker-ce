@@ -117,5 +117,8 @@ dist/
 # Generated screenshots
 screenshots/
 
+# qlty tool outputs
+.qlty/
+
 # SonarCloud scanner working directory
 .scannerwork/

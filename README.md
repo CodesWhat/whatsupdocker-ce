@@ -11,6 +11,8 @@
 <p align="center">
   <a href="https://github.com/CodesWhat/drydock/releases"><img src="https://img.shields.io/badge/version-1.2.0-blue" alt="Version"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/GHCR-image-2ea44f?logo=docker&logoColor=white" alt="GHCR package"></a>
+  <a href="https://hub.docker.com/r/codeswhat/drydock"><img src="https://img.shields.io/docker/pulls/codeswhat/drydock?logo=docker&logoColor=white&label=Docker%20Hub" alt="Docker Hub pulls"></a>
+  <a href="https://quay.io/repository/codeswhat/drydock"><img src="https://img.shields.io/badge/Quay.io-image-ee0000?logo=redhat&logoColor=white" alt="Quay.io"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://img.shields.io/badge/platforms-amd64%20%7C%20arm64-informational?logo=linux&logoColor=white" alt="Multi-arch"></a>
   <a href="https://github.com/orgs/CodesWhat/packages/container/package/drydock"><img src="https://ghcr-badge.egpl.dev/codeswhat/drydock/size" alt="Image size"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-C9A227" alt="License MIT"></a>
@@ -75,6 +77,19 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+```
+
+</details>
+
+<details>
+<summary><strong>Alternative registries</strong></summary>
+
+```bash
+# Docker Hub
+docker pull codeswhat/drydock:latest
+
+# Quay.io
+docker pull quay.io/codeswhat/drydock:latest
 ```
 
 </details>
@@ -412,7 +427,9 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 | Configuration | [`docs/configuration/README.md`](docs/configuration/README.md) |
 | Quick Start | [`docs/quickstart/README.md`](docs/quickstart/README.md) |
 | Changelog | [`CHANGELOG.md`](CHANGELOG.md) |
+| Roadmap | [`docs/planning/ROADMAP.md`](docs/planning/ROADMAP.md) |
 | Issues | [GitHub Issues](https://github.com/CodesWhat/drydock/issues) |
+| Discussions | [GitHub Discussions](https://github.com/CodesWhat/drydock/discussions) — feature requests & ideas welcome |
 
 ---
 
