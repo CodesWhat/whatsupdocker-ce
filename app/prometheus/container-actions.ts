@@ -1,6 +1,6 @@
 import { Counter, register } from 'prom-client';
 
-var containerActionsCounter;
+let containerActionsCounter;
 
 export function init() {
   if (containerActionsCounter) {

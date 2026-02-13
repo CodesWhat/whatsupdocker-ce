@@ -15,7 +15,7 @@ export function recordAuditEvent({
   fromVersion,
   toVersion,
 }) {
-  var entry: Partial<AuditEntry> = {
+  const entry: Partial<AuditEntry> = {
     id: '',
     timestamp: new Date().toISOString(),
     action,

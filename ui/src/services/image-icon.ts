@@ -22,7 +22,7 @@ function isLegacyOrDefaultIcon(displayIcon: string): boolean {
  * Curated map: Docker image base name -> Dashboard Icons slug.
  * Only needed when the image name differs from the icon slug.
  */
-var IMAGE_TO_ICON: Record<string, string> = {
+const IMAGE_TO_ICON: Record<string, string> = {
   // Databases
   postgres: 'postgresql',
   mongo: 'mongodb',
@@ -198,7 +198,7 @@ var IMAGE_TO_ICON: Record<string, string> = {
  * Well-known namespace prefixes whose org name should be stripped
  * to get the base software name.
  */
-var STRIP_NAMESPACES = [
+const STRIP_NAMESPACES = [
   'library',
   'linuxserver',
   'lscr.io/linuxserver',
@@ -219,22 +219,22 @@ var STRIP_NAMESPACES = [
  *   "ghcr.io/linuxserver/nginx"    -> "nginx"
  */
 function extractBaseName(imageName: string): string {
-  var name = imageName.toLowerCase().trim();
+  let name = imageName.toLowerCase().trim();
 
   // Remove tag if present
-  var colonIdx = name.indexOf(':');
+  const colonIdx = name.indexOf(':');
   if (colonIdx !== -1) {
     name = name.substring(0, colonIdx);
   }
 
   // Remove digest if present
-  var atIdx = name.indexOf('@');
+  const atIdx = name.indexOf('@');
   if (atIdx !== -1) {
     name = name.substring(0, atIdx);
   }
 
   // Strip known namespace prefixes
-  for (var ns of STRIP_NAMESPACES) {
+  for (const ns of STRIP_NAMESPACES) {
     const prefix = `${ns}/`;
     if (name.startsWith(prefix)) {
       name = name.substring(prefix.length);
@@ -242,7 +242,7 @@ function extractBaseName(imageName: string): string {
   }
 
   // Take only the last path segment (handles "org/repo" -> "repo")
-  var lastSlash = name.lastIndexOf('/');
+  const lastSlash = name.lastIndexOf('/');
   if (lastSlash !== -1) {
     name = name.substring(lastSlash + 1);
   }
@@ -255,7 +255,7 @@ function extractBaseName(imageName: string): string {
  * Returns the slug if a match is found, or null if no confident match.
  */
 function resolveIconSlug(imageName: string): string | null {
-  var baseName = extractBaseName(imageName);
+  const baseName = extractBaseName(imageName);
 
   // Direct map lookup
   if (IMAGE_TO_ICON[baseName]) {
@@ -272,7 +272,7 @@ function resolveIconSlug(imageName: string): string | null {
 }
 
 /** Drydock's own logo, served from /drydock-logo.png in the static build. */
-var DRYDOCK_LOGO_URL = '/drydock-logo.png';
+const DRYDOCK_LOGO_URL = '/drydock-logo.png';
 
 /**
  * Get the effective display icon for a container.
@@ -291,7 +291,7 @@ export function getEffectiveDisplayIcon(displayIcon: string, imageName: string):
   }
 
   // Auto-resolve from image name
-  var slug = resolveIconSlug(imageName);
+  const slug = resolveIconSlug(imageName);
   if (slug === '__drydock__') {
     return DRYDOCK_LOGO_URL;
   }

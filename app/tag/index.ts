@@ -10,7 +10,7 @@ function hasOnlyDigits(value) {
     return false;
   }
   for (let i = 0; i < value.length; i += 1) {
-    const charCode = value.charCodeAt(i);
+    const charCode = value.codePointAt(i);
     if (charCode < 48 || charCode > 57) {
       return false;
     }

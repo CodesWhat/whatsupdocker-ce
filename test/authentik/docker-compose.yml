@@ -19,6 +19,7 @@ services:
       - authentik_postgresql_data:/var/lib/postgresql/data
     tmpfs:
       - /tmp
+      - /run
 
   redis:
     image: redis:alpine
@@ -31,6 +32,7 @@ services:
       - authentik_redis_data:/data
     tmpfs:
       - /tmp
+      - /run
 
   server:
     image: goauthentik.io/server:2021.10.2
@@ -50,6 +52,7 @@ services:
       - .env
     tmpfs:
       - /tmp
+      - /run
     ports:
       - "0.0.0.0:9000:9000"
       - "0.0.0.0:9443:9443"
@@ -57,6 +60,9 @@ services:
   worker:
     image: goauthentik.io/server:2021.10.2
     command: worker
+    # NOTE: In production, the worker may need a Docker socket mount
+    # (/var/run/docker.sock) for outpost management. It is intentionally
+    # omitted here to reduce the attack surface in the test environment.
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -72,6 +78,7 @@ services:
       - .env
     tmpfs:
       - /tmp
+      - /run
 
 volumes:
   authentik_postgresql_data:

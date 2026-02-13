@@ -12,28 +12,28 @@ import * as storeContainer from '../store/container.js';
 import { recordAuditEvent } from './audit-events.js';
 import { findDockerTriggerForContainer, NO_DOCKER_TRIGGER_FOUND_ERROR } from './docker-trigger.js';
 
-var log = logger.child({ component: 'webhook' });
+const log = logger.child({ component: 'webhook' });
 
-var router = express.Router();
+const router = express.Router();
 
 /**
  * Authenticate webhook requests via Bearer token.
  */
 function authenticateToken(req, res, next) {
-  var webhookConfig = getWebhookConfiguration();
+  const webhookConfig = getWebhookConfiguration();
   if (!webhookConfig.enabled) {
     res.status(403).json({ error: 'Webhooks are disabled' });
     return;
   }
 
-  var authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing or invalid authorization header' });
     return;
   }
 
-  var token = authHeader.slice(7);
-  var configuredToken = webhookConfig.token;
+  const token = authHeader.slice(7);
+  const configuredToken = webhookConfig.token;
 
   // Reject empty or missing configured token (misconfiguration guard)
   if (!configuredToken) {
@@ -43,8 +43,8 @@ function authenticateToken(req, res, next) {
   }
 
   // Constant-time comparison to prevent timing attacks
-  var tokenBuf = Buffer.from(token, 'utf8');
-  var expectedBuf = Buffer.from(configuredToken, 'utf8');
+  const tokenBuf = Buffer.from(token, 'utf8');
+  const expectedBuf = Buffer.from(configuredToken, 'utf8');
   if (tokenBuf.length !== expectedBuf.length || !timingSafeEqual(tokenBuf, expectedBuf)) {
     res.status(401).json({ error: 'Invalid token' });
     return;
@@ -57,7 +57,7 @@ function authenticateToken(req, res, next) {
  * Find a container by name from the store.
  */
 function findContainerByName(containerName) {
-  var containers = storeContainer.getContainers();
+  const containers = storeContainer.getContainers();
   return containers.find((c) => c.name === containerName);
 }
 
@@ -65,8 +65,8 @@ function findContainerByName(containerName) {
  * POST /watch — trigger full watch cycle on ALL watchers.
  */
 async function watchAll(req, res) {
-  var watchers = registry.getState().watcher;
-  var watcherEntries = Object.entries(watchers);
+  const watchers = registry.getState().watcher;
+  const watcherEntries = Object.entries(watchers);
 
   try {
     await Promise.all(watcherEntries.map(([, watcher]) => watcher.watch()));
@@ -102,15 +102,15 @@ async function watchAll(req, res) {
  * POST /watch/:containerName — watch a specific container by name.
  */
 async function watchContainer(req, res) {
-  var { containerName } = req.params;
-  var container = findContainerByName(containerName);
+  const { containerName } = req.params;
+  const container = findContainerByName(containerName);
 
   if (!container) {
     res.status(404).json({ error: `Container ${containerName} not found` });
     return;
   }
 
-  var watchers = registry.getState().watcher;
+  const watchers = registry.getState().watcher;
 
   try {
     await Promise.all(Object.values(watchers).map((watcher) => watcher.watchContainer(container)));
@@ -145,15 +145,15 @@ async function watchContainer(req, res) {
  * POST /update/:containerName — trigger update on a specific container by name.
  */
 async function updateContainer(req, res) {
-  var { containerName } = req.params;
-  var container = findContainerByName(containerName);
+  const { containerName } = req.params;
+  const container = findContainerByName(containerName);
 
   if (!container) {
     res.status(404).json({ error: `Container ${containerName} not found` });
     return;
   }
 
-  var trigger = findDockerTriggerForContainer(registry.getState().trigger, container);
+  const trigger = findDockerTriggerForContainer(registry.getState().trigger, container);
   if (!trigger) {
     res.status(404).json({ error: NO_DOCKER_TRIGGER_FOUND_ERROR });
     return;
@@ -193,7 +193,7 @@ async function updateContainer(req, res) {
  * @returns {*}
  */
 export function init() {
-  var webhookLimiter = rateLimit({
+  const webhookLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 30,
     standardHeaders: true,

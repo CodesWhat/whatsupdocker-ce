@@ -38,41 +38,26 @@ function getRegistryProviderIcon(provider) {
  * @param provider
  * @returns {string}
  */
+const REGISTRY_PROVIDER_COLORS = {
+  acr: '#0078D4',
+  ecr: '#FF9900',
+  forgejo: '#FB923C',
+  gcr: '#4285F4',
+  ghcr: '#8B5CF6',
+  gitea: '#609926',
+  gitlab: '#FC6D26',
+  hub: '#2496ED',
+  quay: '#EE0000',
+  lscr: '#DA3B8A',
+  codeberg: '#2185D0',
+  dhi: '#2496ED',
+  docr: '#0080FF',
+  custom: '#6B7280',
+  trueforge: '#6B7280',
+};
+
 function getRegistryProviderColor(provider) {
-  switch (provider.split('.')[0]) {
-    case 'acr':
-      return '#0078D4';
-    case 'ecr':
-      return '#FF9900';
-    case 'forgejo':
-      return '#FB923C';
-    case 'gcr':
-      return '#4285F4';
-    case 'ghcr':
-      return '#8B5CF6';
-    case 'gitea':
-      return '#609926';
-    case 'gitlab':
-      return '#FC6D26';
-    case 'hub':
-      return '#2496ED';
-    case 'quay':
-      return '#EE0000';
-    case 'lscr':
-      return '#DA3B8A';
-    case 'codeberg':
-      return '#2185D0';
-    case 'dhi':
-      return '#2496ED';
-    case 'docr':
-      return '#0080FF';
-    case 'custom':
-      return '#6B7280';
-    case 'trueforge':
-      return '#6B7280';
-    default:
-      return '#6B7280';
-  }
+  return REGISTRY_PROVIDER_COLORS[provider.split('.')[0]] || '#6B7280';
 }
 
 /**

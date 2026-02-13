@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import type { AuditEntry } from '../model/audit.js';
 import { initCollection } from './util.js';
 
-var auditCollection;
+let auditCollection;
 
 /**
  * Create audit collections.
@@ -17,7 +17,7 @@ export function createCollections(db) {
  * @param entry
  */
 export function insertAudit(entry: AuditEntry): AuditEntry {
-  var entryToSave: AuditEntry = {
+  const entryToSave: AuditEntry = {
     ...entry,
     id: entry.id || crypto.randomUUID(),
     timestamp: entry.timestamp || new Date().toISOString(),
@@ -46,7 +46,7 @@ export function getAuditEntries(
     return { entries: [], total: 0 };
   }
 
-  var results = auditCollection.find().map((item) => item.data as AuditEntry);
+  let results = auditCollection.find().map((item) => item.data as AuditEntry);
 
   if (query.action) {
     results = results.filter((e) => e.action === query.action);
@@ -66,10 +66,10 @@ export function getAuditEntries(
   // Sort newest first
   results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  var total = results.length;
-  var skip = query.skip || 0;
-  var limit = query.limit || 50;
-  var entries = results.slice(skip, skip + limit);
+  const total = results.length;
+  const skip = query.skip || 0;
+  const limit = query.limit || 50;
+  const entries = results.slice(skip, skip + limit);
 
   return { entries, total };
 }
@@ -90,9 +90,9 @@ export function pruneOldEntries(days: number): number {
   if (!auditCollection) {
     return 0;
   }
-  var cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-  var toRemove = auditCollection.find().filter((item) => item.data.timestamp < cutoff);
-  var count = toRemove.length;
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const toRemove = auditCollection.find().filter((item) => item.data.timestamp < cutoff);
+  const count = toRemove.length;
   toRemove.forEach((item) => auditCollection.remove(item));
   return count;
 }

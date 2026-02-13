@@ -22,7 +22,7 @@ export interface HealthMonitorOptions {
  * Returns an AbortController that can be used to cancel monitoring.
  */
 export function startHealthMonitor(options: HealthMonitorOptions): AbortController {
-  var {
+  const {
     dockerApi,
     containerId,
     containerName,
@@ -33,11 +33,11 @@ export function startHealthMonitor(options: HealthMonitorOptions): AbortControll
     log,
   } = options;
 
-  var abortController = new AbortController();
-  var { signal } = abortController;
+  const abortController = new AbortController();
+  const { signal } = abortController;
 
-  var pollTimer: ReturnType<typeof setInterval> | undefined;
-  var windowTimer: ReturnType<typeof setTimeout> | undefined;
+  let pollTimer: ReturnType<typeof setInterval> | undefined;
+  let windowTimer: ReturnType<typeof setTimeout> | undefined;
 
   function cleanup() {
     if (pollTimer !== undefined) {

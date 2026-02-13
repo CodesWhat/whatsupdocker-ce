@@ -201,7 +201,7 @@ export default defineComponent({
   },
 
   mounted() {
-    this.maintenanceCountdownTimer = window.setInterval(() => {
+    this.maintenanceCountdownTimer = globalThis.setInterval(() => {
       this.maintenanceCountdownNow = Date.now();
     }, 30 * 1000);
   },

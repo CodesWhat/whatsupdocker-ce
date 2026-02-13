@@ -1,14 +1,14 @@
 import { defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 
-var UINT32_MAX_PLUS_ONE = 2 ** 32;
+const UINT32_MAX_PLUS_ONE = 2 ** 32;
 
 function getSecureRandomFloat(): number {
   if (!globalThis.crypto?.getRandomValues) {
     return 0.5;
   }
 
-  var values = new Uint32Array(1);
+  const values = new Uint32Array(1);
   globalThis.crypto.getRandomValues(values);
   return values[0] / UINT32_MAX_PLUS_ONE;
 }
@@ -16,28 +16,28 @@ function getSecureRandomFloat(): number {
 export default defineComponent({
   name: 'SelfUpdateOverlay',
   setup() {
-    var eventBus = inject('eventBus') as any;
-    var { smAndDown } = useDisplay();
-    var active = ref(false);
-    var phase = ref<'updating' | 'disconnected' | 'ready'>('updating');
-    var statusText = ref('Updating drydock...');
+    const eventBus = inject('eventBus') as any;
+    const { smAndDown } = useDisplay();
+    const active = ref(false);
+    const phase = ref<'updating' | 'disconnected' | 'ready'>('updating');
+    const statusText = ref('Updating drydock...');
 
     // DVD bounce state
-    var x = ref(100);
-    var y = ref(100);
-    var dx = ref(2);
-    var dy = ref(1.5);
-    var hue = ref(0);
-    var logoSize = 120;
-    var animationFrame = 0;
-    var healthPollTimer: ReturnType<typeof setInterval> | null = null;
-    var hueTimer: ReturnType<typeof setInterval> | null = null;
+    const x = ref(100);
+    const y = ref(100);
+    const dx = ref(2);
+    const dy = ref(1.5);
+    const hue = ref(0);
+    const logoSize = 120;
+    let animationFrame = 0;
+    let healthPollTimer: ReturnType<typeof setInterval> | null = null;
+    let hueTimer: ReturnType<typeof setInterval> | null = null;
 
     function animate() {
       if (!active.value) return;
 
-      var maxX = globalThis.innerWidth - logoSize;
-      var maxY = globalThis.innerHeight - logoSize;
+      const maxX = globalThis.innerWidth - logoSize;
+      const maxY = globalThis.innerHeight - logoSize;
 
       x.value += dx.value;
       y.value += dy.value;
@@ -59,8 +59,8 @@ export default defineComponent({
     function startBounce() {
       x.value = getSecureRandomFloat() * (globalThis.innerWidth - logoSize);
       y.value = getSecureRandomFloat() * (globalThis.innerHeight - logoSize);
-      var speed = 1.5 + getSecureRandomFloat();
-      var angle = getSecureRandomFloat() * Math.PI * 2;
+      const speed = 1.5 + getSecureRandomFloat();
+      const angle = getSecureRandomFloat() * Math.PI * 2;
       dx.value = Math.cos(angle) * speed;
       dy.value = Math.sin(angle) * speed;
       hue.value = Math.floor(getSecureRandomFloat() * 360);
