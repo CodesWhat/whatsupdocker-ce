@@ -138,7 +138,7 @@ export async function registerComponent(options: RegisterComponentOptions): Prom
  */
 async function registerComponents(
   kind: ComponentKind,
-  configurations: Record<string, any>,
+  configurations: Record<string, any> | null | undefined,
   path: string,
 ) {
   if (configurations) {

@@ -4,6 +4,7 @@ import nocache from 'nocache';
 import { getAgent } from '../agent/manager.js';
 import { getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import * as storeContainer from '../store/container.js';
 import Trigger from '../triggers/providers/Trigger.js';
@@ -280,12 +281,12 @@ async function runTrigger(req, res) {
       try {
         await triggerToRun.trigger(containerToTrigger);
         log.info(
-          `Trigger executed with success (type=${triggerType}, name=${triggerName}, container=${JSON.stringify(containerToTrigger)})`,
+          `Trigger executed with success (type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)}, container=${sanitizeLogParam(JSON.stringify(containerToTrigger), 500)})`,
         );
         res.status(200).json({});
       } catch (e) {
         log.warn(
-          `Error when running trigger (type=${triggerType}, name=${triggerName}) (${e.message})`,
+          `Error when running trigger (type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)}) (${sanitizeLogParam(e.message)})`,
         );
         res.status(500).json({
           error: `Error when running trigger (type=${triggerType}, name=${triggerName}) (${e.message})`,

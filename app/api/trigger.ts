@@ -2,6 +2,7 @@
 
 import * as agent from '../agent/index.js';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import * as component from './component.js';
 
@@ -17,7 +18,7 @@ export async function runTrigger(req, res) {
 
   if (!containerToTrigger) {
     log.warn(
-      `Trigger cannot be executed without container (type=${triggerType}, name=${triggerName})`,
+      `Trigger cannot be executed without container (type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)})`,
     );
     res.status(400).json({
       error: `Error when running trigger ${triggerType}.${triggerName} (container is undefined)`,
@@ -28,7 +29,7 @@ export async function runTrigger(req, res) {
   // Running local triggers on remote containers is not supported
   if (containerToTrigger.agent) {
     log.warn(
-      `Cannot execute local trigger ${triggerType}.${triggerName} on remote container ${containerToTrigger.agent}.${containerToTrigger.id}`,
+      `Cannot execute local trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} on remote container ${sanitizeLogParam(containerToTrigger.agent)}.${sanitizeLogParam(containerToTrigger.id)}`,
     );
     res.status(400).json({
       error: `Cannot execute local trigger ${triggerType}.${triggerName} on remote container ${containerToTrigger.agent}.${containerToTrigger.id}`,
@@ -38,7 +39,7 @@ export async function runTrigger(req, res) {
 
   const triggerToRun = registry.getState().trigger[`${triggerType}.${triggerName}`];
   if (!triggerToRun) {
-    log.warn(`No trigger found(type=${triggerType}, name=${triggerName})`);
+    log.warn(`No trigger found(type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)})`);
     res.status(404).json({
       error: `Error when running trigger ${triggerType}.${triggerName} (trigger not found)`,
     });
@@ -58,17 +59,15 @@ export async function runTrigger(req, res) {
 
   try {
     log.debug(
-      `Running trigger ${triggerType}.${triggerName} (container=${JSON.stringify(
-        containerToTrigger,
-      )})`,
+      `Running trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} (container=${sanitizeLogParam(JSON.stringify(containerToTrigger), 500)})`,
     );
     await triggerToRun.trigger(containerToTrigger);
     log.info(
-      `Trigger executed with success (type=${triggerType}, name=${triggerName}, container=${JSON.stringify(containerToTrigger)})`,
+      `Trigger executed with success (type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)}, container=${sanitizeLogParam(JSON.stringify(containerToTrigger), 500)})`,
     );
     res.status(200).json({});
   } catch (e) {
-    log.warn(`Error when running trigger ${triggerType}.${triggerName} (${e.message})`);
+    log.warn(`Error when running trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} (${sanitizeLogParam(e.message)})`);
     res.status(500).json({
       error: `Error when running trigger ${triggerType}.${triggerName} (${e.message})`,
     });
@@ -98,12 +97,12 @@ async function runRemoteTrigger(req, res) {
   try {
     await agentClient.runRemoteTrigger(containerToTrigger, triggerType, triggerName);
     log.info(
-      `Remote trigger executed with success (agent=${agentName}, type=${triggerType}, name=${triggerName}, container=${containerToTrigger.id})`,
+      `Remote trigger executed with success (agent=${sanitizeLogParam(agentName)}, type=${sanitizeLogParam(triggerType)}, name=${sanitizeLogParam(triggerName)}, container=${sanitizeLogParam(containerToTrigger.id)})`,
     );
     res.status(200).json({});
   } catch (e) {
     log.warn(
-      `Error when running remote trigger ${triggerType}.${triggerName} on agent ${agentName} (${e.message})`,
+      `Error when running remote trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} on agent ${sanitizeLogParam(agentName)} (${sanitizeLogParam(e.message)})`,
     );
     res.status(500).json({
       error: `Error when running remote trigger ${triggerType}.${triggerName} on agent ${agentName} (${e.message})`,

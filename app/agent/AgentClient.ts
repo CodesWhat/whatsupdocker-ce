@@ -4,6 +4,7 @@ import { StringDecoder } from 'node:string_decoder';
 import axios, { type AxiosRequestConfig } from 'axios';
 import { emitContainerReport } from '../event/index.js';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import type { Container, ContainerReport } from '../model/container.js';
 import * as registry from '../registry/index.js';
 import { resolveConfiguredPath } from '../runtime/paths.js';
@@ -295,7 +296,7 @@ export class AgentClient {
         this.axiosOptions,
       );
     } catch (e: any) {
-      this.log.error(`Error running remote batch trigger: ${e.message}`);
+      this.log.error(`Error running remote batch trigger: ${sanitizeLogParam(e.message)}`);
       throw e;
     }
   }
@@ -364,7 +365,7 @@ export class AgentClient {
       this.pruneOldContainers(containers, watcherName);
       return reports;
     } catch (e: any) {
-      this.log.error(`Error watching on agent: ${e.message}`);
+      this.log.error(`Error watching on agent: ${sanitizeLogParam(e.message)}`);
       throw e;
     }
   }

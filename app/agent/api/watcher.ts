@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { mapComponentsToList } from '../../api/component.js';
 import logger from '../../log/index.js';
+import { sanitizeLogParam } from '../../log/sanitize.js';
 import * as registry from '../../registry/index.js';
 import * as storeContainer from '../../store/container.js';
 
@@ -31,7 +32,7 @@ export async function watchWatcher(req: Request, res: Response) {
     const results = await watcher.watch();
     res.json(results);
   } catch (e: any) {
-    log.error(`Error watching watcher ${name}: ${e.message}`);
+    log.error(`Error watching watcher ${sanitizeLogParam(name)}: ${sanitizeLogParam(e.message)}`);
     res.status(500).json({ error: e.message });
   }
 }
@@ -57,7 +58,7 @@ export async function watchContainer(req: Request, res: Response) {
     const result = await watcher.watchContainer(container);
     res.json(result);
   } catch (e: any) {
-    log.error(`Error watching container ${id}: ${e.message}`);
+    log.error(`Error watching container ${sanitizeLogParam(id)}: ${sanitizeLogParam(e.message)}`);
     res.status(500).json({ error: e.message });
   }
 }

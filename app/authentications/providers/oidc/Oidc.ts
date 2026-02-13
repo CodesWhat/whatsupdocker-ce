@@ -328,6 +328,15 @@ class Oidc extends Authentication {
       }
 
       const pendingChecks = normalizePendingChecks(oidcChecks);
+      if (!Object.hasOwn(pendingChecks, callbackState)) {
+        this.log.warn(
+          `OIDC callback state not found in pending checks for strategy ${sessionKey}`,
+        );
+        res
+          .status(401)
+          .send('OIDC session state mismatch or expired. Please retry authentication.');
+        return;
+      }
       const oidcCheck = pendingChecks[callbackState];
       if (!oidcCheck?.codeVerifier || oidcCheck.state !== callbackState) {
         this.log.warn(
@@ -358,7 +367,7 @@ class Oidc extends Authentication {
           req.session.oidc[sessionKey] = {
             pending: remainingChecks,
           };
-        } else {
+        } else if (Object.hasOwn(req.session.oidc, sessionKey)) {
           delete req.session.oidc[sessionKey];
         }
         await saveSessionIfPossible(req.session);

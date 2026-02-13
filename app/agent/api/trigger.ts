@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { mapComponentsToList } from '../../api/component.js';
 import * as triggerApi from '../../api/trigger.js';
 import logger from '../../log/index.js';
+import { sanitizeLogParam } from '../../log/sanitize.js';
 import * as registry from '../../registry/index.js';
 
 const log = logger.child({ component: 'agent-api-trigger' });
@@ -54,7 +55,7 @@ export async function runTriggerBatch(req: Request, res: Response) {
     await trigger.triggerBatch(sanitizedContainers);
     res.status(200).json({});
   } catch (e: any) {
-    log.error(`Error running batch trigger ${name}: ${e.message}`);
+    log.error(`Error running batch trigger ${sanitizeLogParam(name)}: ${sanitizeLogParam(e.message)}`);
     res.status(500).json({ error: e.message });
   }
 }
