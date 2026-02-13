@@ -312,7 +312,6 @@ describe('SelfUpdateOverlay', () => {
       // speed = 1.5 + random, angle = random * 2PI
       // We want x near maxX, y near maxY, with positive dx/dy
       const maxX = window.innerWidth - 120; // 904
-      const maxY = window.innerHeight - 120; // 648
       const randomValues = [
         0.999, // x = 0.999 * maxX ~ maxX
         0.999, // y = 0.999 * maxY ~ maxY
@@ -325,7 +324,6 @@ describe('SelfUpdateOverlay', () => {
       eventHandlers['self-update']();
       await wrapper.vm.$nextTick();
 
-      const xBefore = wrapper.vm.x;
       const hueBefore = wrapper.vm.hue;
 
       // Run enough frames so logo reaches and bounces off the right edge
@@ -515,7 +513,6 @@ describe('SelfUpdateOverlay', () => {
       wrapper.unmount();
 
       // Advancing timers should not cause errors after cleanup
-      const hueBefore = wrapper.vm.hue;
       await vi.advanceTimersByTimeAsync(1000);
     });
   });

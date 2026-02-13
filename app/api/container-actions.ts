@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import { getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import { getContainerActionsCounter } from '../prometheus/container-actions.js';
 import * as registry from '../registry/index.js';
 import * as storeContainer from '../store/container.js';
@@ -68,7 +69,7 @@ async function executeAction(req: Request, res: Response, action: string, method
     res.status(200).json({ message: ACTION_MESSAGES[method], container: updatedContainer });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error performing ${method} on container ${id} (${message})`);
+    log.warn(`Error performing ${sanitizeLogParam(method)} on container ${sanitizeLogParam(id)} (${sanitizeLogParam(message)})`);
 
     recordAuditEvent({
       action,

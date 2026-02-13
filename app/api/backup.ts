@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import * as storeBackup from '../store/backup.js';
 import * as storeContainer from '../store/container.js';
@@ -115,7 +116,7 @@ async function rollbackContainer(req: Request, res: Response) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error rolling back container ${id} (${message})`);
+    log.warn(`Error rolling back container ${sanitizeLogParam(id)} (${sanitizeLogParam(message)})`);
 
     recordAuditEvent({
       action: 'rollback',

@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import * as storeContainer from '../store/container.js';
 import { recordAuditEvent } from './audit-events.js';
@@ -40,7 +41,7 @@ async function previewContainer(req: Request, res: Response) {
     res.status(200).json(preview);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error previewing container ${id} (${message})`);
+    log.warn(`Error previewing container ${sanitizeLogParam(id)} (${sanitizeLogParam(message)})`);
 
     recordAuditEvent({
       action: 'preview',

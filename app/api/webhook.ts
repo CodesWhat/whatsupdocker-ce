@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import nocache from 'nocache';
 import { getWebhookConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
+import { sanitizeLogParam } from '../log/sanitize.js';
 import { getWebhookCounter } from '../prometheus/webhook.js';
 import * as registry from '../registry/index.js';
 import * as storeContainer from '../store/container.js';
@@ -128,7 +129,7 @@ async function watchContainer(req: Request, res: Response) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error watching container ${containerName} (${message})`);
+    log.warn(`Error watching container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`);
 
     recordAuditEvent({
       action: 'webhook-watch-container',
@@ -176,7 +177,7 @@ async function updateContainer(req: Request, res: Response) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error updating container ${containerName} (${message})`);
+    log.warn(`Error updating container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`);
 
     recordAuditEvent({
       action: 'webhook-update',

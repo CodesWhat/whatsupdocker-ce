@@ -273,9 +273,7 @@ export class AgentClient {
   async runRemoteTrigger(container: Container, triggerType: string, triggerName: string) {
     try {
       this.log.debug(
-        `Running remote trigger ${triggerType}.${triggerName} (container=${JSON.stringify(
-          container,
-        )})`,
+        `Running remote trigger ${sanitizeLogParam(triggerType)}.${sanitizeLogParam(triggerName)} (container=${sanitizeLogParam(JSON.stringify(container), 500)})`,
       );
       await axios.post(
         `${this.baseUrl}/api/triggers/${encodeURIComponent(triggerType)}/${encodeURIComponent(triggerName)}`,
@@ -283,7 +281,7 @@ export class AgentClient {
         this.axiosOptions,
       );
     } catch (e: any) {
-      this.log.error(`Error running remote trigger: ${e.message}`);
+      this.log.error(`Error running remote trigger: ${sanitizeLogParam(e.message)}`);
       throw e;
     }
   }
@@ -339,7 +337,7 @@ export class AgentClient {
 
   async deleteContainer(containerId: string) {
     try {
-      this.log.debug(`Deleting container ${containerId} on agent`);
+      this.log.debug(`Deleting container ${sanitizeLogParam(containerId)} on agent`);
       await axios.delete(
         `${this.baseUrl}/api/containers/${encodeURIComponent(containerId)}`,
         this.axiosOptions,
