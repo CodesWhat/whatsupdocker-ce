@@ -11,4 +11,3 @@ Currently, the following strategies are supported:
 ?> [**Basic**](configuration/authentications/basic/)
 
 ?> [**Openid Connect**](configuration/authentications/oidc/)
-

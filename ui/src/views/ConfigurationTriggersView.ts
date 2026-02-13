@@ -1,6 +1,10 @@
-import TriggerDetail from "@/components/TriggerDetail.vue";
-import { getAllTriggers } from "@/services/trigger";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import TriggerDetail from '@/components/TriggerDetail.vue';
+import {
+  getAllTriggers,
+  getTriggerProviderColor,
+  getTriggerProviderIcon,
+} from '@/services/trigger';
 
 export default defineComponent({
   data() {
@@ -15,13 +19,18 @@ export default defineComponent({
   async beforeRouteEnter(to, from, next) {
     try {
       const triggers = await getAllTriggers();
-      next((vm: any) => (vm.triggers = triggers));
+      const triggersWithIcons = triggers.map((t) => ({
+        ...t,
+        icon: getTriggerProviderIcon(t.type),
+        iconColor: getTriggerProviderColor(t.type),
+      }));
+      next((vm: any) => (vm.triggers = triggersWithIcons));
     } catch (e: any) {
       next((vm: any) => {
         vm.$eventBus.emit(
-          "notify",
+          'notify',
           `Error when trying to load the triggers (${e.message})`,
-          "error",
+          'error',
         );
       });
     }

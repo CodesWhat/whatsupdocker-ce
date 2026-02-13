@@ -10,7 +10,7 @@ let user = undefined;
  * @returns {Promise<any>}
  */
 async function getStrategies() {
-  const response = await fetch("/auth/strategies", { credentials: "include" });
+  const response = await fetch('/auth/strategies', { credentials: 'include' });
   return response.json();
 }
 
@@ -20,9 +20,9 @@ async function getStrategies() {
  */
 async function getUser() {
   try {
-    const response = await fetch("/auth/user", {
-      redirect: "manual",
-      credentials: "include",
+    const response = await fetch('/auth/user', {
+      redirect: 'manual',
+      credentials: 'include',
     });
     if (response.ok) {
       user = await response.json();
@@ -31,7 +31,8 @@ async function getUser() {
       user = undefined;
       return undefined;
     }
-  } catch (e) {
+  } catch (e: any) {
+    console.debug(`Unable to fetch current user: ${e?.message || e}`);
     user = undefined;
     return undefined;
   }
@@ -46,11 +47,11 @@ async function getUser() {
 async function loginBasic(username, password) {
   const base64 = btoa(`${username}:${password}`);
   const response = await fetch(`/auth/login`, {
-    method: "POST",
-    credentials: "include",
+    method: 'POST',
+    credentials: 'include',
     headers: {
       Authorization: `Basic ${base64}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       username,
@@ -66,7 +67,7 @@ async function loginBasic(username, password) {
  * @returns {Promise<*>}
  */
 async function getOidcRedirection(name) {
-  const response = await fetch(`/auth/oidc/${name}/redirect`, { credentials: "include" });
+  const response = await fetch(`/auth/oidc/${name}/redirect`, { credentials: 'include' });
   user = await response.json();
   return user;
 }
@@ -77,9 +78,9 @@ async function getOidcRedirection(name) {
  */
 async function logout() {
   const response = await fetch(`/auth/logout`, {
-    method: "POST",
-    credentials: "include",
-    redirect: "manual",
+    method: 'POST',
+    credentials: 'include',
+    redirect: 'manual',
   });
   user = undefined;
   return response.json();

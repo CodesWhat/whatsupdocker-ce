@@ -1,17 +1,22 @@
 import { mount } from '@vue/test-utils';
+import { useDisplay } from 'vuetify';
 import NavigationDrawer from '@/components/NavigationDrawer';
+import { getAppInfos } from '@/services/app';
 
 // Mock all icon services
-vi.mock('@/services/container', () => ({ getContainerIcon: vi.fn(() => 'mdi-docker') }));
-vi.mock('@/services/registry', () => ({ getRegistryIcon: vi.fn(() => 'mdi-database-search') }));
-vi.mock('@/services/trigger', () => ({ getTriggerIcon: vi.fn(() => 'mdi-bell-ring') }));
-vi.mock('@/services/server', () => ({ getServerIcon: vi.fn(() => 'mdi-connection') }));
-vi.mock('@/services/watcher', () => ({ getWatcherIcon: vi.fn(() => 'mdi-update') }));
-vi.mock('@/services/authentication', () => ({ getAuthenticationIcon: vi.fn(() => 'mdi-lock') }));
-vi.mock('@/services/agent', () => ({ getAgentIcon: vi.fn(() => 'mdi-lan') }));
-vi.mock('@/services/log', () => ({ getLogIcon: vi.fn(() => 'mdi-math-log') }));
+vi.mock('@/services/container', () => ({ getContainerIcon: vi.fn(() => 'fab fa-docker') }));
+vi.mock('@/services/registry', () => ({ getRegistryIcon: vi.fn(() => 'fas fa-database') }));
+vi.mock('@/services/trigger', () => ({ getTriggerIcon: vi.fn(() => 'fas fa-bell') }));
+vi.mock('@/services/server', () => ({ getServerIcon: vi.fn(() => 'fas fa-server') }));
+vi.mock('@/services/watcher', () => ({ getWatcherIcon: vi.fn(() => 'fas fa-arrows-rotate') }));
+vi.mock('@/services/authentication', () => ({ getAuthenticationIcon: vi.fn(() => 'fas fa-lock') }));
+vi.mock('@/services/agent', () => ({ getAgentIcon: vi.fn(() => 'fas fa-network-wired') }));
+vi.mock('@/services/log', () => ({ getLogIcon: vi.fn(() => 'fas fa-terminal') }));
+vi.mock('@/services/app', () => ({
+  getAppInfos: vi.fn(() => Promise.resolve({ version: '1.2.3' })),
+}));
 
-// Mock vuetify useTheme
+// Mock vuetify useTheme and useDisplay
 vi.mock('vuetify', async () => {
   const actual = await vi.importActual('vuetify');
   return {
@@ -19,23 +24,47 @@ vi.mock('vuetify', async () => {
     useTheme: vi.fn(() => ({
       global: { name: { value: 'light' } },
     })),
+    useDisplay: vi.fn(() => ({
+      smAndDown: { value: false },
+    })),
   };
 });
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+const stubs = {
+  'v-fade-transition': { template: '<div><slot /></div>' },
+  'v-list-group': {
+    template: '<div class="v-list-group"><slot /><slot name="activator" :props="{}" /></div>',
+  },
+  'router-link': { template: '<a><slot /></a>' },
+  img: true,
+};
 
 describe('NavigationDrawer', () => {
   let wrapper;
 
   beforeEach(() => {
     localStorage.clear();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: { value: false },
+    } as any);
+    vi.mocked(getAppInfos).mockClear();
     wrapper = mount(NavigationDrawer, {
-      global: {
-        stubs: {
-          'v-fade-transition': { template: '<div><slot /></div>' },
-          'v-list-group': { template: '<div class="v-list-group"><slot /><slot name="activator" :props="{}" /></div>' },
-          'router-link': { template: '<a><slot /></a>' },
-          'img': true,
-        },
-      },
+      global: { stubs },
     });
   });
 
@@ -47,58 +76,126 @@ describe('NavigationDrawer', () => {
     expect(wrapper.exists()).toBe(true);
   });
 
-  it('starts with mini mode enabled', () => {
-    expect(wrapper.vm.mini).toBe(true);
+  it('starts with mini mode disabled', () => {
+    expect(wrapper.vm.mini).toBe(false);
   });
 
   it('has configuration items sorted alphabetically', () => {
     const sorted = wrapper.vm.configurationItemsSorted;
-    const names = sorted.map(i => i.name);
-    expect(names).toEqual(['agents', 'auth', 'logs', 'registries', 'server', 'triggers', 'watchers']);
+    const names = sorted.map((i) => i.name);
+    expect(names).toEqual(['agents', 'auth', 'registries', 'servers', 'triggers', 'watchers']);
   });
 
   it('has correct container icon', () => {
-    expect(wrapper.vm.containerIcon).toBe('mdi-docker');
+    expect(wrapper.vm.containerIcon).toBe('fab fa-docker');
   });
 
   it('contains configuration items with correct routes', () => {
     const items = wrapper.vm.configurationItems;
-    const routes = items.map(i => i.to);
+    const routes = items.map((i) => i.to);
     expect(routes).toContain('/configuration/agents');
     expect(routes).toContain('/configuration/registries');
     expect(routes).toContain('/configuration/triggers');
     expect(routes).toContain('/configuration/watchers');
     expect(routes).toContain('/configuration/server');
     expect(routes).toContain('/configuration/authentications');
+  });
+
+  it('has monitoring items with correct routes', () => {
+    const items = wrapper.vm.monitoringItems;
+    const routes = items.map((i) => i.to);
+    expect(routes).toContain('/monitoring/history');
     expect(routes).toContain('/configuration/logs');
   });
 
-  it('starts with darkMode false by default', () => {
-    expect(wrapper.vm.darkMode).toBe(false);
+  it('loads app version on mount', async () => {
+    await wrapper.vm.$nextTick();
+    await Promise.resolve();
+    expect(getAppInfos).toHaveBeenCalled();
+    expect(wrapper.vm.version).toBe('1.2.3');
   });
 
-  it('reads darkMode from localStorage', () => {
-    localStorage.darkMode = 'true';
-    const w = mount(NavigationDrawer, {
-      global: {
-        stubs: {
-          'v-fade-transition': { template: '<div><slot /></div>' },
-          'v-list-group': { template: '<div class="v-list-group"><slot /><slot name="activator" :props="{}" /></div>' },
-          'img': true,
-        },
-      },
+  it('falls back to unknown version when API returns no version field', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(getAppInfos).mockResolvedValueOnce({} as any);
+
+    wrapper = mount(NavigationDrawer, {
+      global: { stubs },
     });
-    expect(w.vm.darkMode).toBe(true);
-    w.unmount();
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.version).toBe('unknown');
   });
 
-  it('toggleDarkMode updates darkMode and localStorage', () => {
-    wrapper.vm.toggleDarkMode(true);
-    expect(wrapper.vm.darkMode).toBe(true);
-    expect(localStorage.darkMode).toBe('true');
+  it('falls back to unknown version when app info call fails', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(getAppInfos).mockRejectedValueOnce(new Error('fetch failed'));
 
-    wrapper.vm.toggleDarkMode(false);
-    expect(wrapper.vm.darkMode).toBe(false);
-    expect(localStorage.darkMode).toBe('false');
+    wrapper = mount(NavigationDrawer, {
+      global: { stubs },
+    });
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.version).toBe('unknown');
+  });
+
+  it('toggleDrawer toggles mini mode on desktop', async () => {
+    expect(wrapper.vm.mini).toBe(false);
+    wrapper.vm.toggleDrawer();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.mini).toBe(true);
+  });
+
+  it('toggleDrawer emits model update on mobile', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: { value: true },
+    } as any);
+
+    wrapper = mount(NavigationDrawer, {
+      props: {
+        modelValue: true,
+      },
+      global: { stubs },
+    });
+
+    wrapper.vm.toggleDrawer();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+  });
+
+  it('drawerModel getter follows modelValue on mobile and forces open on desktop', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: { value: true },
+    } as any);
+    wrapper = mount(NavigationDrawer, {
+      props: {
+        modelValue: false,
+      },
+      global: { stubs },
+    });
+    expect(wrapper.vm.drawerModel).toBe(false);
+
+    if (wrapper) wrapper.unmount();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: { value: false },
+    } as any);
+    wrapper = mount(NavigationDrawer, {
+      props: {
+        modelValue: false,
+      },
+      global: { stubs },
+    });
+    expect(wrapper.vm.drawerModel).toBe(true);
+  });
+
+  it('drawerModel setter emits update:modelValue', () => {
+    wrapper.vm.drawerModel = false;
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
   });
 });

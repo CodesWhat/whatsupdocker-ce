@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue';
-import { getLogEntries } from '@/services/log';
 import { getAgents } from '@/services/agent';
+import { getLogEntries } from '@/services/log';
 
 export default defineComponent({
   props: {
@@ -36,7 +36,10 @@ export default defineComponent({
     },
     formattedLogs(): string {
       return this.entries
-        .map((e) => `${new Date(e.timestamp).toISOString()} [${e.level.toUpperCase().padEnd(5)}] [${e.component}] ${e.msg}`)
+        .map(
+          (e) =>
+            `${new Date(e.timestamp).toISOString()} [${e.level.toUpperCase().padEnd(5)}] [${e.component}] ${e.msg}`,
+        )
         .join('\n');
     },
   },
@@ -69,10 +72,16 @@ export default defineComponent({
     },
     levelColor(level: string): string {
       switch (level) {
-        case 'error': case 'fatal': return '#e06c75';
-        case 'warn': return '#e5c07b';
-        case 'debug': case 'trace': return '#61afef';
-        default: return '#d4d4d4';
+        case 'error':
+        case 'fatal':
+          return '#e06c75';
+        case 'warn':
+          return '#e5c07b';
+        case 'debug':
+        case 'trace':
+          return '#61afef';
+        default:
+          return '#d4d4d4';
       }
     },
   },
@@ -81,8 +90,14 @@ export default defineComponent({
     this.fetchEntries();
   },
   watch: {
-    level() { this.fetchEntries(); },
-    tail() { this.fetchEntries(); },
-    source() { this.fetchEntries(); },
+    level() {
+      this.fetchEntries();
+    },
+    tail() {
+      this.fetchEntries();
+    },
+    source() {
+      this.fetchEntries();
+    },
   },
 });

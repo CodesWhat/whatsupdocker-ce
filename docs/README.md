@@ -9,14 +9,13 @@
 
 Keep your containers up-to-date!
 
-#### Overview
+### Overview
 
 `WATCHERS` scan Docker hosts to discover containers to watch
 
 `REGISTRIES` query remote Docker registries to find update candidates
 
 `TRIGGERS` perform actions when updates are available
-
 
 ## Supported triggers
 
@@ -62,11 +61,14 @@ A Web UI allows to get container insights and to manually run the triggers.
 - ...
 
 ## Ready to go?
+>
 > [**Follow the quick start guide!**](quickstart/)
 
 ## Contact & Support
+
 - Create a [GitHub issue](https://github.com/CodesWhat/drydock/issues) for bug reports, feature requests, or questions
 - Add a [:star: on GitHub](https://github.com/CodesWhat/drydock) to support the project!
 
 ## License
+
 This project is licensed under the [MIT license](https://github.com/CodesWhat/drydock/blob/main/LICENSE).

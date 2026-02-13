@@ -2,9 +2,9 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-|---------|--------------------|
-| latest  | :white_check_mark: |
+| Version | Supported |
+| --------- | -------------------- |
+| latest | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
@@ -12,7 +12,7 @@ If you discover a security vulnerability in drydock, please report it responsibl
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email **security@codeswhat.com** or use [GitHub's private vulnerability reporting](https://github.com/CodesWhat/drydock/security/advisories/new).
+Instead, please email **<security@codeswhat.com>** or use [GitHub's private vulnerability reporting](https://github.com/CodesWhat/drydock/security/advisories/new).
 
 You can expect:
 

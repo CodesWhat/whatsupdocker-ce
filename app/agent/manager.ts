@@ -7,7 +7,7 @@ const clients: AgentClient[] = [];
  * @returns {AgentClient[]} the list of agent clients
  */
 export function getAgents(): AgentClient[] {
-    return clients;
+  return clients;
 }
 
 /**
@@ -16,7 +16,7 @@ export function getAgents(): AgentClient[] {
  * @returns {AgentClient | undefined} the agent client
  */
 export function getAgent(name: string): AgentClient | undefined {
-    return clients.find((client) => client.name === name);
+  return clients.find((client) => client.name === name);
 }
 
 /**
@@ -24,5 +24,5 @@ export function getAgent(name: string): AgentClient | undefined {
  * @param client the agent client
  */
 export function addAgent(client: AgentClient): void {
-    clients.push(client);
+  clients.push(client);
 }

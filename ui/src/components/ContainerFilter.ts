@@ -1,5 +1,5 @@
-import { refreshAllContainers } from "@/services/container";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import { refreshAllContainers } from '@/services/container';
 
 export default defineComponent({
   props: {
@@ -56,49 +56,122 @@ export default defineComponent({
   data() {
     return {
       isRefreshing: false,
-      registrySelected: "",
-      agentSelected: "",
-      watcherSelected: "",
-      updateKindSelected: "",
+      showFilters: false,
+      registrySelected: '',
+      agentSelected: '',
+      watcherSelected: '',
+      updateKindSelected: '',
       updateAvailableLocal: this.updateAvailable,
       oldestFirstLocal: this.oldestFirst,
       groupByLabelLocal: this.groupByLabel,
     };
   },
 
+  computed: {
+    groupLabelItems(): Array<{ title: string; value: string } | string> {
+      return [
+        { title: 'Smart group', value: '__smart__' },
+        ...(Array.isArray(this.groupLabels) ? this.groupLabels : []),
+      ];
+    },
+    activeFilterCount(): number {
+      let count = 0;
+      if (this.agentSelected) count++;
+      if (this.watcherSelected) count++;
+      if (this.registrySelected) count++;
+      if (this.updateKindSelected) count++;
+      if (this.groupByLabelLocal) count++;
+      return count;
+    },
+    activeFilters(): Array<{ label: string; value: string; clear: () => void }> {
+      const filters: Array<{ label: string; value: string; clear: () => void }> = [];
+      if (this.agentSelected) {
+        filters.push({
+          label: 'Agent',
+          value: this.agentSelected,
+          clear: () => {
+            this.agentSelected = '';
+            this.emitAgentChanged();
+          },
+        });
+      }
+      if (this.watcherSelected) {
+        filters.push({
+          label: 'Watcher',
+          value: this.watcherSelected,
+          clear: () => {
+            this.watcherSelected = '';
+            this.emitWatcherChanged();
+          },
+        });
+      }
+      if (this.registrySelected) {
+        filters.push({
+          label: 'Registry',
+          value: this.registrySelected,
+          clear: () => {
+            this.registrySelected = '';
+            this.emitRegistryChanged();
+          },
+        });
+      }
+      if (this.updateKindSelected) {
+        filters.push({
+          label: 'Kind',
+          value: this.updateKindSelected,
+          clear: () => {
+            this.updateKindSelected = '';
+            this.emitUpdateKindChanged();
+          },
+        });
+      }
+      if (this.groupByLabelLocal) {
+        filters.push({
+          label: 'Group',
+          value: this.groupByLabelLocal,
+          clear: () => {
+            this.groupByLabelLocal = '';
+            this.emitGroupByLabelChanged('');
+          },
+        });
+      }
+      return filters;
+    },
+  },
+
   methods: {
     emitRegistryChanged() {
-      this.$emit("registry-changed", this.registrySelected ?? "");
+      this.$emit('registry-changed', this.registrySelected ?? '');
     },
     emitWatcherChanged() {
-      this.$emit("watcher-changed", this.watcherSelected ?? "");
+      this.$emit('watcher-changed', this.watcherSelected ?? '');
     },
     emitAgentChanged() {
-      this.$emit("agent-changed", this.agentSelected ?? "");
+      this.$emit('agent-changed', this.agentSelected ?? '');
     },
     emitUpdateKindChanged() {
-      this.$emit("update-kind-changed", this.updateKindSelected ?? "");
+      this.$emit('update-kind-changed', this.updateKindSelected ?? '');
     },
     emitUpdateAvailableChanged() {
-      this.$emit("update-available-changed");
+      this.$emit('update-available-changed');
     },
     emitOldestFirstChanged() {
-      this.$emit("oldest-first-changed");
+      this.$emit('oldest-first-changed');
     },
     emitGroupByLabelChanged(newLabel: string) {
-      this.$emit("group-by-label-changed", newLabel ?? "");
+      this.$emit('group-by-label-changed', newLabel ?? '');
     },
     async refreshAllContainers() {
       this.isRefreshing = true;
       try {
         const body = await refreshAllContainers();
-        (this as any).$eventBus.emit("notify", "All containers refreshed");
-        this.$emit("refresh-all-containers", body);
+        this.$eventBus.emit('notify', 'All containers refreshed');
+        this.$emit('refresh-all-containers', body);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
-          "notify",
+        this.$eventBus.emit(
+          'notify',
           `Error when trying to refresh all containers (${e.message})`,
-          "error",
+          'error',
         );
       } finally {
         this.isRefreshing = false;

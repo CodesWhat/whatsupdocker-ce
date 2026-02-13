@@ -4,22 +4,22 @@
 
 The `slack` trigger lets you post image update notifications to a Slack channel.
 
-### Variables
+## Variables
 
-| Env var                                    | Required     | Description                      | Supported values | Default value when missing |
-| ------------------------------------------ |:------------:| -------------------------------- | ---------------- | -------------------------- |
-| `DD_TRIGGER_SLACK_{trigger_name}_TOKEN`   | :red_circle: | The Oauth Token of the Slack app |                  |                            |
-| `DD_TRIGGER_SLACK_{trigger_name}_CHANNEL` | :red_circle: | The name of the channel to post  |                  |                            |
-| `DD_TRIGGER_SLACK_{trigger_name}_DISABLETITLE` | :white_circle: | Disable title to have full control over the message formatting | `true`, `false`| `false` |
+| Env var | Required | Description | Supported values | Default value when missing |
+| --- | :---: | --- | --- | --- |
+| `DD_TRIGGER_SLACK_{trigger_name}_TOKEN` | :red_circle: | The Oauth Token of the Slack app | | |
+| `DD_TRIGGER_SLACK_{trigger_name}_CHANNEL` | :red_circle: | The name of the channel to post | | |
+| `DD_TRIGGER_SLACK_{trigger_name}_DISABLETITLE` | :white_circle: | Disable title to have full control over the message formatting | `true`, `false` | `false` |
 
 !> The Slack channel must already exist on the workspace (the trigger won't automatically create it)
 
 ?> This trigger also supports the [common configuration variables](configuration/triggers/?id=common-trigger-configuration).
 
-### Examples
+## Examples
 
 <!-- tabs:start -->
-#### **Docker Compose**
+### **Docker Compose**
 
 ```yaml
 services:
@@ -31,7 +31,7 @@ services:
         - DD_TRIGGER_SLACK_TEST_CHANNEL=drydock
 ```
 
-#### **Docker**
+### **Docker**
 
 ```bash
 docker run \

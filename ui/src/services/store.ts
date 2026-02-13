@@ -1,9 +1,9 @@
 function getStoreIcon() {
-  return "mdi-file-multiple";
+  return 'fas fa-copy';
 }
 
 async function getStore() {
-  const response = await fetch("/api/store", { credentials: "include" });
+  const response = await fetch('/api/store', { credentials: 'include' });
   return response.json();
 }
 

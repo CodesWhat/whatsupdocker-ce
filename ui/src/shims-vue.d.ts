@@ -2,9 +2,10 @@
 
 // 1. Module Definitions (from your old shims-vue and shims-vue-2)
 declare module '*.vue' {
-  import type { DefineComponent } from 'vue'
-  const component: DefineComponent<{}, {}, any>
-  export default component
+  import type { DefineComponent } from 'vue';
+  // biome-ignore lint/complexity/noBannedTypes: standard Vue SFC type declaration
+  const component: DefineComponent<{}, {}, any>;
+  export default component;
 }
 
 declare module '*.svg' {
@@ -23,7 +24,7 @@ declare module '@vue/runtime-core' {
       on: (event: string, callback: (...args: any[]) => void) => void;
       off: (event: string, callback: (...args: any[]) => void) => void;
     };
-    
+
     $filters: {
       short: (str: string, length: number) => string;
       dateTime: (date: string) => string;

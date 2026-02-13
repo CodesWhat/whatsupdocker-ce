@@ -1,4 +1,4 @@
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   props: {
@@ -16,7 +16,7 @@ export default defineComponent({
     },
     level: {
       type: String,
-      default: "info",
+      default: 'info',
     },
   },
 
@@ -29,13 +29,13 @@ export default defineComponent({
         if (!value) {
           this.closeSnackbar();
         }
-      }
-    }
+      },
+    },
   },
 
   methods: {
     closeSnackbar() {
-      (this as any).$eventBus.emit("notify:close");
+      this.$eventBus.emit('notify:close');
     },
   },
 });

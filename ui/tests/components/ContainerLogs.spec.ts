@@ -1,4 +1,4 @@
-import { mount, flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import ContainerLogs from '@/components/ContainerLogs';
 
 const { mockGetContainerLogs } = vi.hoisted(() => ({
@@ -61,6 +61,19 @@ describe('ContainerLogs', () => {
     wrapper.unmount();
   });
 
+  it('stringifies non-Error failures in error state', async () => {
+    mockGetContainerLogs.mockRejectedValue('raw-error');
+
+    const wrapper = mount(ContainerLogs, {
+      props: { container: mockContainer },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('raw-error');
+    wrapper.unmount();
+  });
+
   it('shows empty state when no logs returned', async () => {
     mockGetContainerLogs.mockResolvedValue({ logs: '' });
 
@@ -72,6 +85,19 @@ describe('ContainerLogs', () => {
 
     expect(wrapper.find('pre').exists()).toBe(false);
     expect(wrapper.text()).toContain('No logs available');
+    wrapper.unmount();
+  });
+
+  it('treats non-string logs payload as empty', async () => {
+    mockGetContainerLogs.mockResolvedValue({ logs: 12345 });
+
+    const wrapper = mount(ContainerLogs, {
+      props: { container: mockContainer },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.vm.logs).toBe('');
     wrapper.unmount();
   });
 

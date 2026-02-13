@@ -1,16 +1,19 @@
 // @ts-nocheck
+
+import ConnectLoki from 'connect-loki';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
-import ConnectLoki from 'connect-loki';
+
 const LokiStore = ConnectLoki(session);
+
+import getmac from 'getmac';
 import passport from 'passport';
 import { v5 as uuidV5 } from 'uuid';
-import getmac from 'getmac';
-import * as store from '../store/index.js';
-import * as registry from '../registry/index.js';
-import log from '../log/index.js';
 import { getVersion } from '../configuration/index.js';
+import log from '../log/index.js';
+import * as registry from '../registry/index.js';
+import * as store from '../store/index.js';
 
 const router = express.Router();
 
@@ -25,7 +28,7 @@ const DD_NAMESPACE = 'dee41e92-5fc4-460e-beec-528c9ea7d760';
  * @returns {[]}
  */
 export function getAllIds() {
-    return STRATEGY_IDS;
+  return STRATEGY_IDS;
 }
 
 /**
@@ -36,14 +39,10 @@ export function getAllIds() {
  * @returns {*}
  */
 export function requireAuthentication(req, res, next): any {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    return passport.authenticate(getAllIds(), { session: true })(
-        req,
-        res,
-        next,
-    );
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return passport.authenticate(getAllIds(), { session: true })(req, res, next);
 }
 
 /**
@@ -52,7 +51,7 @@ export function requireAuthentication(req, res, next): any {
  * @returns {number}
  */
 function getCookieMaxAge(days) {
-    return 3600 * 1000 * 24 * days;
+  return 3600 * 1000 * 24 * days;
 }
 
 /**
@@ -60,8 +59,8 @@ function getCookieMaxAge(days) {
  * @returns {string}
  */
 function getSessionSecretKey() {
-    const stringToHash = `dd.${getVersion()}.${getmac()}`;
-    return uuidV5(stringToHash, DD_NAMESPACE);
+  const stringToHash = `dd.${getVersion()}.${getmac()}`;
+  return uuidV5(stringToHash, DD_NAMESPACE);
 }
 
 /**
@@ -70,33 +69,28 @@ function getSessionSecretKey() {
  * @param app
  */
 function useStrategy(authentication, app) {
-    try {
-        const strategy = authentication.getStrategy(app);
-        passport.use(authentication.getId(), strategy);
-        STRATEGY_IDS.push(authentication.getId());
-    } catch (e) {
-        log.warn(
-            `Unable to apply authentication ${authentication.getId()} (${e.message})`,
-        );
-    }
+  try {
+    const strategy = authentication.getStrategy(app);
+    passport.use(authentication.getId(), strategy);
+    STRATEGY_IDS.push(authentication.getId());
+  } catch (e) {
+    log.warn(`Unable to apply authentication ${authentication.getId()} (${e.message})`);
+  }
 }
 
 function getUniqueStrategies() {
-    const strategies = Object.values(registry.getState().authentication).map(
-        (authentication) => authentication.getStrategyDescription(),
-    );
-    const uniqueStrategies = [];
-    strategies.forEach((strategy) => {
-        if (
-            !uniqueStrategies.some(
-                (item) =>
-                    item.type === strategy.type && item.name === strategy.name,
-            )
-        ) {
-            uniqueStrategies.push(strategy);
-        }
-    });
-    return uniqueStrategies.sort((s1, s2) => s1.name.localeCompare(s2.name));
+  const strategies = Object.values(registry.getState().authentication).map((authentication) =>
+    authentication.getStrategyDescription(),
+  );
+  const uniqueStrategies = [];
+  strategies.forEach((strategy) => {
+    if (
+      !uniqueStrategies.some((item) => item.type === strategy.type && item.name === strategy.name)
+    ) {
+      uniqueStrategies.push(strategy);
+    }
+  });
+  return uniqueStrategies.sort((s1, s2) => s1.name.localeCompare(s2.name));
 }
 
 /**
@@ -105,17 +99,15 @@ function getUniqueStrategies() {
  * @param res
  */
 function getStrategies(req, res) {
-    res.json(getUniqueStrategies());
+  res.json(getUniqueStrategies());
 }
 
 function getLogoutRedirectUrl() {
-    const strategyWithRedirectUrl = getUniqueStrategies().find(
-        (strategy) => strategy.logoutUrl,
-    );
-    if (strategyWithRedirectUrl) {
-        return strategyWithRedirectUrl.logoutUrl;
-    }
-    return undefined;
+  const strategyWithRedirectUrl = getUniqueStrategies().find((strategy) => strategy.logoutUrl);
+  if (strategyWithRedirectUrl) {
+    return strategyWithRedirectUrl.logoutUrl;
+  }
+  return undefined;
 }
 
 /**
@@ -124,8 +116,8 @@ function getLogoutRedirectUrl() {
  * @param res
  */
 function getUser(req, res) {
-    const user = req.user || { username: 'anonymous' };
-    res.status(200).json(user);
+  const user = req.user || { username: 'anonymous' };
+  res.status(200).json(user);
 }
 
 /**
@@ -134,7 +126,7 @@ function getUser(req, res) {
  * @param res
  */
 function login(req, res) {
-    return getUser(req, res);
+  return getUser(req, res);
 }
 
 /**
@@ -143,10 +135,10 @@ function login(req, res) {
  * @param res
  */
 function logout(req, res) {
-    req.logout(() => {});
-    res.status(200).json({
-        logoutUrl: getLogoutRedirectUrl(),
-    });
+  req.logout(() => {});
+  res.status(200).json({
+    logoutUrl: getLogoutRedirectUrl(),
+  });
 }
 
 /**
@@ -154,56 +146,61 @@ function logout(req, res) {
  * @returns {*}
  */
 export function init(app) {
-    // Init express session
-    app.use(
-        session({
-            store: new LokiStore({
-                path: `${store.getConfiguration().path}/${store.getConfiguration().file}`,
-                ttl: 604800, // 7 days
-            }),
-            secret: getSessionSecretKey(),
-            resave: false,
-            saveUninitialized: false,
-            cookie: {
-                httpOnly: true,
-                secure: 'auto',
-                maxAge: getCookieMaxAge(7),
-            },
-        }),
-    );
+  // Init express session
+  app.use(
+    session({
+      store: new LokiStore({
+        path: `${store.getConfiguration().path}/${store.getConfiguration().file}`,
+        ttl: 604800, // 7 days
+      }),
+      secret: getSessionSecretKey(),
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: 'auto',
+        maxAge: getCookieMaxAge(7),
+      },
+    }),
+  );
 
-    // Init passport middleware
-    app.use(passport.initialize());
-    app.use(passport.session());
+  // Init passport middleware
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-    // Register all authentications
-    Object.values(registry.getState().authentication).forEach(
-        (authentication) => useStrategy(authentication, app),
-    );
+  // Register all authentications
+  Object.values(registry.getState().authentication).forEach((authentication) =>
+    useStrategy(authentication, app),
+  );
 
-    passport.serializeUser((user, done) => {
-        done(null, JSON.stringify(user));
-    });
+  passport.serializeUser((user, done) => {
+    done(null, JSON.stringify(user));
+  });
 
-    passport.deserializeUser((user, done) => {
-        done(null, JSON.parse(user));
-    });
+  passport.deserializeUser((user, done) => {
+    done(null, JSON.parse(user));
+  });
 
-    const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
-    router.use(authLimiter);
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  router.use(authLimiter);
 
-    // Return strategies
-    router.get('/strategies', getStrategies);
+  // Return strategies
+  router.get('/strategies', getStrategies);
 
-    // Routes to protect after this line
-    router.use(requireAuthentication);
+  // Routes to protect after this line
+  router.use(requireAuthentication);
 
-    // Add login/logout routes
-    router.post('/login', login);
+  // Add login/logout routes
+  router.post('/login', login);
 
-    router.get('/user', getUser);
+  router.get('/user', getUser);
 
-    router.post('/logout', logout);
+  router.post('/logout', logout);
 
-    app.use('/auth', router);
+  app.use('/auth', router);
 }

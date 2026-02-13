@@ -72,6 +72,6 @@ services:
 
 - **Watchers**: Run on the Agent to discover containers.
 - **Registries**: Configured on the Agent to check for updates.
-- **Triggers**: 
-    - `docker` and `dockercompose` triggers are executed **on the Agent** (allowing update of remote containers).
-    - Notification triggers (e.g. `smtp`, `discord`) are executed **on the Controller**.
+- **Triggers**:
+  - `docker` and `dockercompose` triggers are executed **on the Agent** (allowing update of remote containers).
+  - Notification triggers (e.g. `smtp`, `discord`) are executed **on the Controller**.

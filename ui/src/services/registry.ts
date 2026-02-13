@@ -3,7 +3,7 @@
  * @returns {string}
  */
 function getRegistryIcon() {
-  return "mdi-database-search";
+  return 'fas fa-database';
 }
 
 /**
@@ -11,47 +11,53 @@ function getRegistryIcon() {
  * @param provider
  * @returns {string}
  */
+const REGISTRY_PROVIDER_ICONS = {
+  acr: 'fab fa-microsoft',
+  custom: 'fas fa-cubes',
+  ecr: 'fab fa-aws',
+  forgejo: 'fas fa-code-branch',
+  gcr: 'fab fa-google',
+  ghcr: 'fab fa-github',
+  gitea: 'fas fa-code-branch',
+  gitlab: 'fab fa-gitlab',
+  hub: 'fab fa-docker',
+  quay: 'fab fa-redhat',
+  lscr: 'fab fa-linux',
+  codeberg: 'fas fa-mountain',
+  dhi: 'fab fa-docker',
+  docr: 'fab fa-digital-ocean',
+};
+
 function getRegistryProviderIcon(provider) {
-  let icon = "si-linuxcontainers";
-  switch (provider.split(".")[0]) {
-    case "acr":
-      icon = "si-microsoftazure";
-      break;
-    case "custom":
-      icon = "si-opencontainersinitiative";
-      break;
-    case "ecr":
-      icon = "si-amazonaws";
-      break;
-    case "forgejo":
-      icon = "si-forgejo";
-      break;
-    case "gcr":
-      icon = "si-googlecloud";
-      break;
-    case "ghcr":
-      icon = "si-github";
-      break;
-    case "gitea":
-      icon = "si-gitea";
-      break;
-    case "gitlab":
-      icon = "si-gitlab";
-      break;
-    case "hub":
-      icon = "si-docker";
-      break;
-    case "quay":
-      icon = "si-redhat";
-      break;
-    case "lscr":
-      icon = "si-linuxserver";
-      break;
-    case "trueforge":
-      icon = "si-linuxcontainers";
-      break;
-  }
-  return icon;
+  const providerName = `${provider || ''}`.split('.')[0];
+  return REGISTRY_PROVIDER_ICONS[providerName] || 'fas fa-cube';
+}
+
+/**
+ * Get registry provider brand color.
+ * @param provider
+ * @returns {string}
+ */
+const REGISTRY_PROVIDER_COLORS = {
+  acr: '#0078D4',
+  ecr: '#FF9900',
+  forgejo: '#FB923C',
+  gcr: '#4285F4',
+  ghcr: '#8B5CF6',
+  gitea: '#609926',
+  gitlab: '#FC6D26',
+  hub: '#2496ED',
+  quay: '#EE0000',
+  lscr: '#DA3B8A',
+  codeberg: '#2185D0',
+  dhi: '#2496ED',
+  docr: '#0080FF',
+  custom: '#6B7280',
+  trueforge: '#6B7280',
+};
+
+function getRegistryProviderColor(provider) {
+  return REGISTRY_PROVIDER_COLORS[provider.split('.')[0]] || '#6B7280';
 }
 
 /**
@@ -59,8 +65,8 @@ function getRegistryProviderIcon(provider) {
  * @returns {Promise<any>}
  */
 async function getAllRegistries() {
-  const response = await fetch("/api/registries", { credentials: "include" });
+  const response = await fetch('/api/registries', { credentials: 'include' });
   return response.json();
 }
 
-export { getRegistryIcon, getRegistryProviderIcon, getAllRegistries };
+export { getRegistryIcon, getRegistryProviderIcon, getRegistryProviderColor, getAllRegistries };

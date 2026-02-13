@@ -77,6 +77,15 @@ describe('IconRenderer', () => {
     expect(wrapper.vm.customIconUrl).toBe(iconUrl);
   });
 
+  it('treats absolute root-relative paths as custom icon URLs', () => {
+    const wrapper = mount(IconRenderer, {
+      props: { icon: '/assets/custom-logo.png' },
+    });
+
+    expect(wrapper.vm.isCustomIconUrl).toBe(true);
+    expect(wrapper.vm.customIconUrl).toBe('/assets/custom-logo.png');
+  });
+
   it('does not treat non-http values as custom URL icons', () => {
     const wrapper = mount(IconRenderer, {
       props: { icon: 'not-a-url' },
@@ -87,11 +96,11 @@ describe('IconRenderer', () => {
 
   it('normalizes icon prefixes correctly', () => {
     const testCases = [
-      { input: 'mdi:docker', expected: 'mdi-docker' },
+      { input: 'mdi:docker', expected: 'mdi:docker' },
       { input: 'fa:docker', expected: 'fa-docker' },
-      { input: 'fab:docker', expected: 'fab-docker' },
-      { input: 'far:docker', expected: 'far-docker' },
-      { input: 'fas:docker', expected: 'fas-docker' },
+      { input: 'fab:docker', expected: 'fab fa-docker' },
+      { input: 'far:docker', expected: 'far fa-docker' },
+      { input: 'fas:docker', expected: 'fas fa-docker' },
       { input: 'si:docker', expected: 'si-docker' },
     ];
 
@@ -108,9 +117,9 @@ describe('IconRenderer', () => {
       props: { icon: '' },
     });
 
-    expect(wrapper.vm.isHomarrIcon).toBe('');
-    expect(wrapper.vm.isSelfhstIcon).toBe('');
-    expect(wrapper.vm.isSimpleIcon).toBe('');
+    expect(wrapper.vm.isHomarrIcon).toBe(false);
+    expect(wrapper.vm.isSelfhstIcon).toBe(false);
+    expect(wrapper.vm.isSimpleIcon).toBe(false);
     expect(wrapper.vm.normalizedIcon).toBe('');
   });
 
@@ -119,10 +128,23 @@ describe('IconRenderer', () => {
       props: { icon: '' },
     });
 
-    expect(wrapper.vm.isHomarrIcon).toBe('');
-    expect(wrapper.vm.isSelfhstIcon).toBe('');
-    expect(wrapper.vm.isSimpleIcon).toBe('');
+    expect(wrapper.vm.isHomarrIcon).toBe(false);
+    expect(wrapper.vm.isSelfhstIcon).toBe(false);
+    expect(wrapper.vm.isSimpleIcon).toBe(false);
     expect(wrapper.vm.normalizedIcon).toBe('');
+  });
+
+  it('sets image fallback state on image error and resets on icon change', async () => {
+    const wrapper = mount(IconRenderer, {
+      props: { icon: 'si-docker' },
+    });
+
+    expect(wrapper.vm.imgFailed).toBe(false);
+    wrapper.vm.onImgError();
+    expect(wrapper.vm.imgFailed).toBe(true);
+
+    await wrapper.setProps({ icon: 'si-github' });
+    expect(wrapper.vm.imgFailed).toBe(false);
   });
 
   it('applies correct styling based on props', () => {

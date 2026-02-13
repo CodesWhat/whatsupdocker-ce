@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import LoginOidc from '@/components/LoginOidc';
 
 vi.mock('@/services/auth', () => ({
-  getOidcRedirection: vi.fn(() => Promise.resolve({ url: 'http://test.com' }))
+  getOidcRedirection: vi.fn(() => Promise.resolve({ url: 'http://test.com' })),
 }));
 
 describe('LoginOidc', () => {
@@ -27,8 +27,8 @@ describe('LoginOidc', () => {
     try {
       wrapper = mount(LoginOidc, {
         props: {
-          name: 'test-provider'
-        }
+          name: 'test-provider',
+        },
       });
     } catch (e) {
       wrapper = null;

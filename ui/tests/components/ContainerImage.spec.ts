@@ -3,8 +3,12 @@ import ContainerImage from '@/components/ContainerImage';
 
 vi.mock('@/services/registry', () => ({
   getRegistryProviderIcon: vi.fn((name: string) => {
-    const icons: Record<string, string> = { hub: 'si-docker', ghcr: 'si-github', ecr: 'si-amazonaws' };
-    return icons[name] || 'mdi-help';
+    const icons: Record<string, string> = {
+      hub: 'si-docker',
+      ghcr: 'si-github',
+      ecr: 'si-amazonaws',
+    };
+    return icons[name] || 'fas fa-circle-question';
   }),
 }));
 
@@ -98,25 +102,25 @@ describe('ContainerImage', () => {
     await wrapper.setProps({
       image: { ...mockImage, registry: { name: 'custom' } },
     });
-    expect(wrapper.vm.registryIcon).toBe('mdi-help');
+    expect(wrapper.vm.registryIcon).toBe('fas fa-circle-question');
   });
 
   it('computes osIcon for linux', () => {
-    expect(wrapper.vm.osIcon).toBe('mdi-linux');
+    expect(wrapper.vm.osIcon).toBe('fab fa-linux');
   });
 
   it('computes osIcon for windows', async () => {
     await wrapper.setProps({
       image: { ...mockImage, os: 'windows' },
     });
-    expect(wrapper.vm.osIcon).toBe('mdi-microsoft-windows');
+    expect(wrapper.vm.osIcon).toBe('fab fa-windows');
   });
 
   it('computes osIcon for unknown OS', async () => {
     await wrapper.setProps({
       image: { ...mockImage, os: 'freebsd' },
     });
-    expect(wrapper.vm.osIcon).toBe('mdi-help');
+    expect(wrapper.vm.osIcon).toBe('fas fa-circle-question');
   });
 
   it('copies image id to clipboard', async () => {
@@ -128,7 +132,7 @@ describe('ContainerImage', () => {
     await wrapper.vm.copyToClipboard('image digest', 'sha256:deadbeef1234567890');
     expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
       'notify',
-      'image digest copied to clipboard'
+      'image digest copied to clipboard',
     );
   });
 

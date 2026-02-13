@@ -1,7 +1,7 @@
 // @ts-nocheck
 import express from 'express';
-import nocache from 'nocache';
 import healthcheck from 'express-healthcheck';
+import nocache from 'nocache';
 
 /**
  * Healthcheck router.
@@ -14,7 +14,7 @@ const router = express.Router();
  * @returns {*}
  */
 export function init() {
-    router.use(nocache());
-    router.get('/', healthcheck());
-    return router;
+  router.use(nocache());
+  router.get('/', healthcheck());
+  return router;
 }

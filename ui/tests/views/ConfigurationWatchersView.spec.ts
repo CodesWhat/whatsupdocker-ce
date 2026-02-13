@@ -2,10 +2,21 @@ import { mount } from '@vue/test-utils';
 import ConfigurationWatchersView from '@/views/ConfigurationWatchersView';
 
 vi.mock('@/services/watcher', () => ({
-  getAllWatchers: vi.fn(() => Promise.resolve([
-    { name: 'watcher1', type: 'docker', cron: '0 * * * *' },
-    { name: 'watcher2', type: 'docker', cron: '0 0 * * *' },
-  ])),
+  getAllWatchers: vi.fn(() =>
+    Promise.resolve([
+      { name: 'watcher1', type: 'docker', cron: '0 * * * *' },
+      { name: 'watcher2', type: 'docker', cron: '0 0 * * *' },
+    ]),
+  ),
+  getWatcherProviderIcon: vi.fn((type) => {
+    switch (type) {
+      case 'docker':
+        return 'fab fa-docker';
+      default:
+        return 'fas fa-eye';
+    }
+  }),
+  getWatcherProviderColor: vi.fn(() => '#6B7280'),
 }));
 
 describe('ConfigurationWatchersView', () => {
@@ -26,7 +37,7 @@ describe('ConfigurationWatchersView', () => {
   });
 
   it('renders a row for each watcher', () => {
-    const rows = wrapper.findAll('.v-row');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 
@@ -39,9 +50,7 @@ describe('ConfigurationWatchersView', () => {
 describe('ConfigurationWatchersView Route Hook', () => {
   it('fetches watchers on beforeRouteEnter', async () => {
     const next = vi.fn();
-    await ConfigurationWatchersView.beforeRouteEnter.call(
-      ConfigurationWatchersView, {}, {}, next,
-    );
+    await ConfigurationWatchersView.beforeRouteEnter.call(ConfigurationWatchersView, {}, {}, next);
     expect(next).toHaveBeenCalledWith(expect.any(Function));
 
     const vm = { watchers: [] };
@@ -57,9 +66,7 @@ describe('ConfigurationWatchersView Route Hook', () => {
     (getAllWatchers as any).mockRejectedValueOnce(new Error('Watcher error'));
 
     const next = vi.fn();
-    await ConfigurationWatchersView.beforeRouteEnter.call(
-      ConfigurationWatchersView, {}, {}, next,
-    );
+    await ConfigurationWatchersView.beforeRouteEnter.call(ConfigurationWatchersView, {}, {}, next);
 
     const vm = { $eventBus: { emit: vi.fn() } };
     const callback = next.mock.calls[0][0];

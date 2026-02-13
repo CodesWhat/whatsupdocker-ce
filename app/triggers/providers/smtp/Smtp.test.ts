@@ -1,344 +1,344 @@
 // @ts-nocheck
 import joi from 'joi';
-import Smtp from './Smtp.js';
 import log from '../../../log/index.js';
+import Smtp from './Smtp.js';
 
 const smtp = new Smtp();
 
 const configurationValid = {
-    allowcustomtld: false,
-    host: 'smtp.gmail.com',
-    port: '465',
-    user: 'user',
-    pass: 'pass',
-    from: 'from@xx.com',
-    to: 'to@xx.com',
-    threshold: 'all',
-    mode: 'simple',
-    once: true,
-    auto: true,
-    order: 100,
-    simpletitle:
-        'New ${container.updateKind.kind} found for container ${container.name}',
+  allowcustomtld: false,
+  host: 'smtp.gmail.com',
+  port: '465',
+  user: 'user',
+  pass: 'pass',
+  from: 'from@xx.com',
+  to: 'to@xx.com',
+  threshold: 'all',
+  mode: 'simple',
+  once: true,
+  auto: true,
+  order: 100,
+  simpletitle: 'New ${container.updateKind.kind} found for container ${container.name}',
 
-    simplebody:
-        'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
+  simplebody:
+    'Container ${container.name} running with ${container.updateKind.kind} ${container.updateKind.localValue} can be updated to ${container.updateKind.kind} ${container.updateKind.remoteValue}${container.result && container.result.link ? "\\n" + container.result.link : ""}',
 
-    batchtitle: '${containers.length} updates available',
-    resolvenotifications: false,
+  batchtitle: '${containers.length} updates available',
+  resolvenotifications: false,
 };
 
 test('validateConfiguration should return validated configuration when valid', async () => {
-    const validatedConfiguration =
-        smtp.validateConfiguration(configurationValid);
-    expect(validatedConfiguration).toStrictEqual({
-        ...configurationValid,
-        port: 465,
-        tls: {
-            enabled: false,
-            verify: true,
-        },
-    });
+  const validatedConfiguration = smtp.validateConfiguration(configurationValid);
+  expect(validatedConfiguration).toStrictEqual({
+    ...configurationValid,
+    port: 465,
+    tls: {
+      enabled: false,
+      verify: true,
+    },
+  });
 });
 
 test.each([
-    {
-        fromValue: 'This is a display name <from@xx.com>',
-        expectedResult: '"This is a display name" <from@xx.com>',
-    },
-    {
-        fromValue: '"This is a display name" <from@xx.com>',
-        expectedResult: '"This is a display name" <from@xx.com>',
-    },
-    {
-        fromValue: '"This is a display name <from@xx.com>',
-        expectedResult: '"This is a display name" <from@xx.com>',
-    },
-    {
-        fromValue: 'This is a display name" <from@xx.com>',
-        expectedResult: '"This is a display name" <from@xx.com>',
-    },
-    {
-        fromValue: 'This is a display name from@xx.com>',
-        expectedResult: null,
-    },
-    {
-        fromValue: 'This is a display name <from@xx.com',
-        expectedResult: '"This is a display name" <from@xx.com>',
-    },
-    {
-        fromValue: 'from@xx.com',
-        expectedResult: 'from@xx.com',
-    },
-    {
-        fromValue: 'This is a display name <from@@xx.com>',
-        expectedResult: null,
-    },
-    {
-        fromValue: 'This is a display name from@@xx.com',
-        expectedResult: null,
-    },
-    {
-        fromValue: 'from@@xx.com',
-        expectedResult: null,
-    },
-    {
-        fromValue: 'Multiline\nSender <from@xx.com>',
-        expectedResult: null,
-    },
-])(
-    "smtp from value should normalize to '$expectedResult' when configuration is '$fromValue'",
-    async ({ fromValue, expectedResult }) => {
-        const config = {
-            ...configurationValid,
-            from: fromValue,
-        };
+  {
+    fromValue: 'This is a display name <from@xx.com>',
+    expectedResult: '"This is a display name" <from@xx.com>',
+  },
+  {
+    fromValue: '"This is a display name" <from@xx.com>',
+    expectedResult: '"This is a display name" <from@xx.com>',
+  },
+  {
+    fromValue: '"This is a display name <from@xx.com>',
+    expectedResult: '"This is a display name" <from@xx.com>',
+  },
+  {
+    fromValue: 'This is a display name" <from@xx.com>',
+    expectedResult: '"This is a display name" <from@xx.com>',
+  },
+  {
+    fromValue: 'This is a display name from@xx.com>',
+    expectedResult: null,
+  },
+  {
+    fromValue: 'This is a display name <from@xx.com',
+    expectedResult: '"This is a display name" <from@xx.com>',
+  },
+  {
+    fromValue: '"" <from@xx.com>',
+    expectedResult: 'from@xx.com',
+  },
+  {
+    fromValue: 'Display "Name" <from@xx.com>',
+    expectedResult: null,
+  },
+  {
+    fromValue: 'from@xx.com',
+    expectedResult: 'from@xx.com',
+  },
+  {
+    fromValue: 'This is a display name <from@@xx.com>',
+    expectedResult: null,
+  },
+  {
+    fromValue: 'This is a display name from@@xx.com',
+    expectedResult: null,
+  },
+  {
+    fromValue: 'from@@xx.com',
+    expectedResult: null,
+  },
+  {
+    fromValue: 'Multiline\nSender <from@xx.com>',
+    expectedResult: null,
+  },
+])("smtp from value should normalize to '$expectedResult' when configuration is '$fromValue'", async ({
+  fromValue,
+  expectedResult,
+}) => {
+  const config = {
+    ...configurationValid,
+    from: fromValue,
+  };
 
-        if (expectedResult) {
-            let validatedConfiguration;
-            expect(() => {
-                validatedConfiguration = smtp.validateConfiguration(config);
-            }).not.toThrow(joi.ValidationError);
-            expect(validatedConfiguration.from).toStrictEqual(expectedResult);
-        } else {
-            expect(() => {
-                smtp.validateConfiguration(config);
-            }).toThrow(joi.ValidationError);
-        }
-    },
-);
+  if (expectedResult) {
+    let validatedConfiguration;
+    expect(() => {
+      validatedConfiguration = smtp.validateConfiguration(config);
+    }).not.toThrow(joi.ValidationError);
+    expect(validatedConfiguration.from).toStrictEqual(expectedResult);
+  } else {
+    expect(() => {
+      smtp.validateConfiguration(config);
+    }).toThrow(joi.ValidationError);
+  }
+});
 
 test.each([
-    { allowCustomTld: true, field: 'from' },
-    { allowCustomTld: false, field: 'from' },
-    { allowCustomTld: true, field: 'to' },
-    { allowCustomTld: false, field: 'to' },
-    { allowCustomTld: true, field: 'both' },
-    { allowCustomTld: false, field: 'both' },
-])(
-    'trigger should $allowCustomTld allow custom tld for $field field',
-    async ({ allowCustomTld, field }) => {
-        const config = {
-            ...configurationValid,
-            allowcustomtld: allowCustomTld,
-            from:
-                field === 'from' || field === 'both'
-                    ? 'user@domain.lan'
-                    : configurationValid.from,
-            to:
-                field === 'to' || field === 'both'
-                    ? 'user@domain.lan'
-                    : configurationValid.to,
-        };
+  { allowCustomTld: true, field: 'from' },
+  { allowCustomTld: false, field: 'from' },
+  { allowCustomTld: true, field: 'to' },
+  { allowCustomTld: false, field: 'to' },
+  { allowCustomTld: true, field: 'both' },
+  { allowCustomTld: false, field: 'both' },
+])('trigger should $allowCustomTld allow custom tld for $field field', async ({
+  allowCustomTld,
+  field,
+}) => {
+  const config = {
+    ...configurationValid,
+    allowcustomtld: allowCustomTld,
+    from: field === 'from' || field === 'both' ? 'user@domain.lan' : configurationValid.from,
+    to: field === 'to' || field === 'both' ? 'user@domain.lan' : configurationValid.to,
+  };
 
-        if (allowCustomTld) {
-            expect(() => {
-                smtp.validateConfiguration(config);
-            }).not.toThrow(joi.ValidationError);
-        } else {
-            expect(() => {
-                smtp.validateConfiguration(config);
-            }).toThrow(joi.ValidationError);
-        }
-    },
-);
+  if (allowCustomTld) {
+    expect(() => {
+      smtp.validateConfiguration(config);
+    }).not.toThrow(joi.ValidationError);
+  } else {
+    expect(() => {
+      smtp.validateConfiguration(config);
+    }).toThrow(joi.ValidationError);
+  }
+});
 
 test('validateConfiguration should throw error when invalid', async () => {
-    const configuration = {
-        host: 'smtp.gmail..com',
-        port: 'xyz',
-        from: 'from@@xx.com',
-        to: 'to@@xx.com',
-    };
-    expect(() => {
-        smtp.validateConfiguration(configuration);
-    }).toThrow(joi.ValidationError);
+  const configuration = {
+    host: 'smtp.gmail..com',
+    port: 'xyz',
+    from: 'from@@xx.com',
+    to: 'to@@xx.com',
+  };
+  expect(() => {
+    smtp.validateConfiguration(configuration);
+  }).toThrow(joi.ValidationError);
 });
 
 test('init should create a mailer transporter with expected configuration when called', async () => {
-    smtp.configuration = configurationValid;
-    smtp.log = log;
-    smtp.init();
-    expect(smtp.transporter.options).toEqual(
-        expect.objectContaining({
-            host: configurationValid.host,
-            port: configurationValid.port,
-            auth: {
-                user: configurationValid.user,
-                pass: configurationValid.pass,
-            },
-            tls: {
-                rejectUnauthorized: true,
-            },
-        }),
-    );
+  smtp.configuration = configurationValid;
+  smtp.log = log;
+  smtp.init();
+  expect(smtp.transporter.options).toEqual(
+    expect.objectContaining({
+      host: configurationValid.host,
+      port: configurationValid.port,
+      auth: {
+        user: configurationValid.user,
+        pass: configurationValid.pass,
+      },
+      tls: {
+        rejectUnauthorized: true,
+      },
+    }),
+  );
 });
 
 test('maskConfiguration should mask sensitive data', async () => {
-    smtp.configuration = {
-        host: configurationValid.host,
-        port: configurationValid.port,
-        user: configurationValid.user,
-        pass: configurationValid.pass,
-    };
-    expect(smtp.maskConfiguration()).toEqual({
-        host: configurationValid.host,
-        port: configurationValid.port,
-        user: configurationValid.user,
-        pass: 'p**s',
-    });
+  smtp.configuration = {
+    host: configurationValid.host,
+    port: configurationValid.port,
+    user: configurationValid.user,
+    pass: configurationValid.pass,
+  };
+  expect(smtp.maskConfiguration()).toEqual({
+    host: configurationValid.host,
+    port: configurationValid.port,
+    user: configurationValid.user,
+    pass: 'p**s',
+  });
 });
 
 test('init should create transporter without auth when no user/pass', async () => {
-    smtp.configuration = {
-        ...configurationValid,
-        user: undefined,
-        pass: undefined,
-    };
-    smtp.log = log;
-    smtp.initTrigger();
-    expect(smtp.transporter.options.auth).toBeUndefined();
+  smtp.configuration = {
+    ...configurationValid,
+    user: undefined,
+    pass: undefined,
+  };
+  smtp.log = log;
+  smtp.initTrigger();
+  expect(smtp.transporter.options.auth).toBeUndefined();
 });
 
 test('init should create transporter with tls enabled and verify false', async () => {
-    smtp.configuration = {
-        ...configurationValid,
-        tls: {
-            enabled: true,
-            verify: false,
-        },
-    };
-    smtp.log = log;
-    smtp.initTrigger();
-    expect(smtp.transporter.options.secure).toBe(true);
-    expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(false);
+  smtp.configuration = {
+    ...configurationValid,
+    tls: {
+      enabled: true,
+      verify: false,
+    },
+  };
+  smtp.log = log;
+  smtp.initTrigger();
+  expect(smtp.transporter.options.secure).toBe(true);
+  expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(false);
 });
 
 test('init should default tls rejectUnauthorized to true when tls is undefined', async () => {
-    smtp.configuration = {
-        ...configurationValid,
-        tls: undefined,
-    };
-    smtp.log = log;
-    smtp.initTrigger();
-    expect(smtp.transporter.options.secure).toBeFalsy();
-    expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(true);
+  smtp.configuration = {
+    ...configurationValid,
+    tls: undefined,
+  };
+  smtp.log = log;
+  smtp.initTrigger();
+  expect(smtp.transporter.options.secure).toBeFalsy();
+  expect(smtp.transporter.options.tls.rejectUnauthorized).toBe(true);
 });
 
 test('trigger should format mail as expected', async () => {
-    smtp.configuration = configurationValid;
-    smtp.transporter = {
-        sendMail: (conf) => conf,
-    };
-    const response = await smtp.trigger({
-        id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
-        name: 'homeassistant',
-        watcher: 'local',
-        includeTags: '^\\d+\\.\\d+.\\d+$',
-        image: {
-            id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
-            registry: {
-                url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
-            },
-            name: 'test',
-            tag: {
-                value: '2021.6.4',
-                semver: true,
-            },
-            digest: {
-                watch: false,
-                repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
-            },
-            architecture: 'amd64',
-            os: 'linux',
-            created: '2021-06-12T05:33:38.440Z',
-        },
-        result: {
-            link: 'https://test-2.0.0/changelog',
-        },
-        updateKind: {
-            kind: 'tag',
-            localValue: '1.0.0',
-            remoteValue: '2.0.0',
-        },
-    });
-    expect(response.text).toEqual(
-        'Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog',
-    );
+  smtp.configuration = configurationValid;
+  smtp.transporter = {
+    sendMail: (conf) => conf,
+  };
+  const response = await smtp.trigger({
+    id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
+    name: 'homeassistant',
+    watcher: 'local',
+    includeTags: '^\\d+\\.\\d+.\\d+$',
+    image: {
+      id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
+      registry: {
+        url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
+      },
+      name: 'test',
+      tag: {
+        value: '2021.6.4',
+        semver: true,
+      },
+      digest: {
+        watch: false,
+        repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
+      },
+      architecture: 'amd64',
+      os: 'linux',
+      created: '2021-06-12T05:33:38.440Z',
+    },
+    result: {
+      link: 'https://test-2.0.0/changelog',
+    },
+    updateKind: {
+      kind: 'tag',
+      localValue: '1.0.0',
+      remoteValue: '2.0.0',
+    },
+  });
+  expect(response.text).toEqual(
+    'Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog',
+  );
 });
 
 test('triggerBatch should format mail as expected', async () => {
-    smtp.configuration = configurationValid;
-    smtp.transporter = {
-        sendMail: (conf) => conf,
-    };
-    const response = await smtp.triggerBatch([
-        {
-            id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
-            name: 'homeassistant',
-            watcher: 'local',
-            includeTags: '^\\d+\\.\\d+.\\d+$',
-            image: {
-                id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
-                registry: {
-                    url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
-                },
-                name: 'test',
-                tag: {
-                    value: '2021.6.4',
-                    semver: true,
-                },
-                digest: {
-                    watch: false,
-                    repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
-                },
-                architecture: 'amd64',
-                os: 'linux',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                link: 'https://test-2.0.0/changelog',
-            },
-            updateKind: {
-                kind: 'tag',
-                localValue: '1.0.0',
-                remoteValue: '2.0.0',
-            },
+  smtp.configuration = configurationValid;
+  smtp.transporter = {
+    sendMail: (conf) => conf,
+  };
+  const response = await smtp.triggerBatch([
+    {
+      id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
+      name: 'homeassistant',
+      watcher: 'local',
+      includeTags: '^\\d+\\.\\d+.\\d+$',
+      image: {
+        id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
+        registry: {
+          url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
         },
-        {
-            id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
-            name: 'homeassistant',
-            watcher: 'local',
-            includeTags: '^\\d+\\.\\d+.\\d+$',
-            image: {
-                id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
-                registry: {
-                    url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
-                },
-                name: 'test',
-                tag: {
-                    value: '2021.6.4',
-                    semver: true,
-                },
-                digest: {
-                    watch: false,
-                    repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
-                },
-                architecture: 'amd64',
-                os: 'linux',
-                created: '2021-06-12T05:33:38.440Z',
-            },
-            result: {
-                link: 'https://test-2.0.0/changelog',
-            },
-            updateKind: {
-                kind: 'tag',
-                localValue: '1.0.0',
-                remoteValue: '2.0.0',
-            },
+        name: 'test',
+        tag: {
+          value: '2021.6.4',
+          semver: true,
         },
-    ]);
-    expect(response.text).toEqual(
-        '- Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog\n\n- Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog\n',
-    );
+        digest: {
+          watch: false,
+          repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
+        },
+        architecture: 'amd64',
+        os: 'linux',
+        created: '2021-06-12T05:33:38.440Z',
+      },
+      result: {
+        link: 'https://test-2.0.0/changelog',
+      },
+      updateKind: {
+        kind: 'tag',
+        localValue: '1.0.0',
+        remoteValue: '2.0.0',
+      },
+    },
+    {
+      id: '31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816',
+      name: 'homeassistant',
+      watcher: 'local',
+      includeTags: '^\\d+\\.\\d+.\\d+$',
+      image: {
+        id: 'sha256:d4a6fafb7d4da37495e5c9be3242590be24a87d7edcc4f79761098889c54fca6',
+        registry: {
+          url: '123456789.dkr.ecr.eu-west-1.amazonaws.com',
+        },
+        name: 'test',
+        tag: {
+          value: '2021.6.4',
+          semver: true,
+        },
+        digest: {
+          watch: false,
+          repo: 'sha256:ca0edc3fb0b4647963629bdfccbb3ccfa352184b45a9b4145832000c2878dd72',
+        },
+        architecture: 'amd64',
+        os: 'linux',
+        created: '2021-06-12T05:33:38.440Z',
+      },
+      result: {
+        link: 'https://test-2.0.0/changelog',
+      },
+      updateKind: {
+        kind: 'tag',
+        localValue: '1.0.0',
+        remoteValue: '2.0.0',
+      },
+    },
+  ]);
+  expect(response.text).toEqual(
+    '- Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog\n\n- Container homeassistant running with tag 1.0.0 can be updated to tag 2.0.0\nhttps://test-2.0.0/changelog\n',
+  );
 });

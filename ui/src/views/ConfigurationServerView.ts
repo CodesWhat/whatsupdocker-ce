@@ -1,12 +1,14 @@
-import ConfigurationItem from "@/components/ConfigurationItem.vue";
-import { getServer } from "@/services/server";
-import { getLog } from "@/services/log";
-import { getStore } from "@/services/store";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import ConfigurationItem from '@/components/ConfigurationItem.vue';
+import WebhookInfo from '@/components/WebhookInfo.vue';
+import { getLog } from '@/services/log';
+import { getServer } from '@/services/server';
+import { getStore } from '@/services/store';
 
 export default defineComponent({
   components: {
     ConfigurationItem,
+    WebhookInfo,
   },
   data() {
     return {
@@ -18,27 +20,36 @@ export default defineComponent({
   computed: {
     serverConfiguration() {
       return {
-        type: "server",
-        name: "configuration",
-        icon: "mdi-connection",
+        type: 'server',
+        name: 'configuration',
+        icon: 'fas fa-gear',
+        iconColor: '#6B7280',
         configuration: this.server.configuration,
       };
     },
     logConfiguration() {
       return {
-        type: "logs",
-        name: "configuration",
-        icon: "mdi-console",
+        type: 'logs',
+        name: 'configuration',
+        icon: 'fas fa-file-lines',
+        iconColor: '#8B5CF6',
         configuration: this.log,
       };
     },
     storeConfiguration() {
       return {
-        type: "store",
-        name: "configuration",
-        icon: "mdi-file-multiple",
+        type: 'store',
+        name: 'configuration',
+        icon: 'fas fa-copy',
+        iconColor: '#0096C7',
         configuration: this.store.configuration,
       };
+    },
+    webhookEnabled() {
+      return this.server?.configuration?.webhook?.enabled === true;
+    },
+    webhookBaseUrl() {
+      return globalThis.location.origin;
     },
   },
 
@@ -56,9 +67,9 @@ export default defineComponent({
     } catch (e: any) {
       next((vm: any) => {
         vm.$eventBus.emit(
-          "notify",
+          'notify',
           `Error when trying to load the state configuration (${e.message})`,
-          "error",
+          'error',
         );
       });
     }

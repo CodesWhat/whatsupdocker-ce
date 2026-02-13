@@ -1,4 +1,4 @@
-import { mount, flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import ContainerTriggers from '@/components/ContainerTriggers';
 
 const mockGetContainerTriggers = vi.fn();
@@ -38,7 +38,10 @@ describe('ContainerTriggers', () => {
       props: { container: mockContainer },
       global: {
         stubs: {
-          'container-trigger': { template: '<div class="container-trigger-stub"></div>', props: ['trigger', 'updateAvailable', 'containerId'] },
+          'container-trigger': {
+            template: '<div class="container-trigger-stub"></div>',
+            props: ['trigger', 'updateAvailable', 'containerId'],
+          },
           'router-link': { template: '<a><slot /></a>' },
         },
       },

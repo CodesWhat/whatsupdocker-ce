@@ -3,7 +3,7 @@ name: OpenSSF Scorecard
 on:
   branch_protection_rule:
   schedule:
-    - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC
+    - cron: '0 6 * * 1'  # Weekly on Monday at 06:00 UTC
   push:
     branches: [main]
 
@@ -14,24 +14,24 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Checkout code
-      security-events: write # Upload SARIF results
-      id-token: write # Publish results to OpenSSF REST API
+      contents: read  # Checkout code
+      security-events: write  # Upload SARIF results
+      id-token: write  # Publish results to OpenSSF REST API
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
       - name: Run analysis
-        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a  # v2.4.3
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
 
       - name: Upload to code-scanning
-        uses: github/codeql-action/upload-sarif@b5ebac6f4c00c8ccddb7cdcd45fdb248329f808a # v3.32.2
+        uses: github/codeql-action/upload-sarif@b5ebac6f4c00c8ccddb7cdcd45fdb248329f808a  # v3.32.2
         with:
           sarif_file: results.sarif

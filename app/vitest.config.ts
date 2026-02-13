@@ -14,12 +14,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       include: ['**/*.{js,ts}'],
-      exclude: [
-        '**/node_modules/**',
-        '**/dist/**',
-        '**/coverage/**',
-        'vitest.config.ts',
-      ],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'vitest.config.ts'],
       thresholds: {
         lines: 80,
         branches: 75,

@@ -1,4 +1,4 @@
-import { mount, flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import ApplicationLogs from '@/components/ApplicationLogs';
 
 const { mockGetLogEntries, mockGetAgents } = vi.hoisted(() => ({
@@ -9,7 +9,7 @@ const { mockGetLogEntries, mockGetAgents } = vi.hoisted(() => ({
 vi.mock('@/services/log', () => ({
   getLogEntries: mockGetLogEntries,
   getLog: vi.fn(),
-  getLogIcon: vi.fn(() => 'mdi-console'),
+  getLogIcon: vi.fn(() => 'fas fa-terminal'),
 }));
 
 vi.mock('@/services/agent', () => ({
@@ -17,8 +17,18 @@ vi.mock('@/services/agent', () => ({
 }));
 
 const mockEntries = [
-  { timestamp: '2025-01-01T00:00:00.000Z', level: 'info', component: 'server', msg: 'Server started' },
-  { timestamp: '2025-01-01T00:00:01.000Z', level: 'error', component: 'docker', msg: 'Connection failed' },
+  {
+    timestamp: '2025-01-01T00:00:00.000Z',
+    level: 'info',
+    component: 'server',
+    msg: 'Server started',
+  },
+  {
+    timestamp: '2025-01-01T00:00:01.000Z',
+    level: 'error',
+    component: 'docker',
+    msg: 'Connection failed',
+  },
 ];
 
 describe('ApplicationLogs', () => {
@@ -105,7 +115,11 @@ describe('ApplicationLogs', () => {
     await flushPromises();
 
     expect(mockGetLogEntries).toHaveBeenCalledTimes(2);
-    expect(mockGetLogEntries).toHaveBeenLastCalledWith({ level: 'error', tail: 100, agent: undefined });
+    expect(mockGetLogEntries).toHaveBeenLastCalledWith({
+      level: 'error',
+      tail: 100,
+      agent: undefined,
+    });
     wrapper.unmount();
   });
 
@@ -202,7 +216,11 @@ describe('ApplicationLogs', () => {
       const wrapper = mount(ApplicationLogs);
       await flushPromises();
 
-      expect(mockGetLogEntries).toHaveBeenCalledWith({ level: undefined, tail: 100, agent: undefined });
+      expect(mockGetLogEntries).toHaveBeenCalledWith({
+        level: undefined,
+        tail: 100,
+        agent: undefined,
+      });
       wrapper.unmount();
     });
   });
@@ -210,9 +228,7 @@ describe('ApplicationLogs', () => {
   describe('agent source selector', () => {
     it('fetches agents on mount', async () => {
       mockGetLogEntries.mockResolvedValue([]);
-      mockGetAgents.mockResolvedValue([
-        { name: 'agent-1', connected: true },
-      ]);
+      mockGetAgents.mockResolvedValue([{ name: 'agent-1', connected: true }]);
 
       const wrapper = mount(ApplicationLogs);
       await flushPromises();
@@ -229,15 +245,17 @@ describe('ApplicationLogs', () => {
       await flushPromises();
 
       expect(wrapper.vm.source).toBe('server');
-      expect(mockGetLogEntries).toHaveBeenCalledWith({ level: undefined, tail: 100, agent: undefined });
+      expect(mockGetLogEntries).toHaveBeenCalledWith({
+        level: undefined,
+        tail: 100,
+        agent: undefined,
+      });
       wrapper.unmount();
     });
 
     it('passes agent name when agent source is selected', async () => {
       mockGetLogEntries.mockResolvedValue([]);
-      mockGetAgents.mockResolvedValue([
-        { name: 'agent-1', connected: true },
-      ]);
+      mockGetAgents.mockResolvedValue([{ name: 'agent-1', connected: true }]);
 
       const wrapper = mount(ApplicationLogs);
       await flushPromises();
@@ -246,7 +264,11 @@ describe('ApplicationLogs', () => {
       wrapper.vm.source = 'agent-1';
       await flushPromises();
 
-      expect(mockGetLogEntries).toHaveBeenCalledWith({ level: undefined, tail: 100, agent: 'agent-1' });
+      expect(mockGetLogEntries).toHaveBeenCalledWith({
+        level: undefined,
+        tail: 100,
+        agent: 'agent-1',
+      });
       wrapper.unmount();
     });
 
@@ -310,9 +332,7 @@ describe('ApplicationLogs', () => {
   describe('v-select rendering', () => {
     it('renders source selector when agents are present', async () => {
       mockGetLogEntries.mockResolvedValue(mockEntries);
-      mockGetAgents.mockResolvedValue([
-        { name: 'agent-1', connected: true },
-      ]);
+      mockGetAgents.mockResolvedValue([{ name: 'agent-1', connected: true }]);
 
       const wrapper = mount(ApplicationLogs);
       await flushPromises();

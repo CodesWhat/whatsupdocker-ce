@@ -1,6 +1,6 @@
 import { getAppInfos } from '@/services/app';
-import { getServerIcon, getServer } from '@/services/server';
-import { getStoreIcon, getStore } from '@/services/store';
+import { getServer, getServerIcon } from '@/services/server';
+import { getStore, getStoreIcon } from '@/services/store';
 
 describe('App Service', () => {
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe('App Service', () => {
   it('should get app infos', async () => {
     const mockResponse = { name: 'drydock', version: '1.0.0' };
     global.fetch.mockResolvedValue({
-      json: vi.fn().mockResolvedValue(mockResponse)
+      json: vi.fn().mockResolvedValue(mockResponse),
     });
 
     const result = await getAppInfos();
@@ -30,13 +30,13 @@ describe('Server Service', () => {
   });
 
   it('should return server icon', () => {
-    expect(getServerIcon()).toBe('mdi-connection');
+    expect(getServerIcon()).toBe('fas fa-server');
   });
 
   it('should get server data', async () => {
     const mockResponse = { configuration: {} };
     global.fetch.mockResolvedValue({
-      json: vi.fn().mockResolvedValue(mockResponse)
+      json: vi.fn().mockResolvedValue(mockResponse),
     });
 
     const result = await getServer();
@@ -52,13 +52,13 @@ describe('Store Service', () => {
   });
 
   it('should return store icon', () => {
-    expect(getStoreIcon()).toBe('mdi-file-multiple');
+    expect(getStoreIcon()).toBe('fas fa-copy');
   });
 
   it('should get store data', async () => {
     const mockResponse = { data: 'store' };
     global.fetch.mockResolvedValue({
-      json: vi.fn().mockResolvedValue(mockResponse)
+      json: vi.fn().mockResolvedValue(mockResponse),
     });
 
     const result = await getStore();

@@ -1,8 +1,8 @@
-import { inject, defineComponent } from "vue";
-import { getOidcRedirection, getStrategies } from "@/services/auth";
-import LoginBasic from "@/components/LoginBasic.vue";
-import LoginOidc from "@/components/LoginOidc.vue";
-import logo from "@/assets/drydock.png";
+import { defineComponent, inject } from 'vue';
+import logo from '@/assets/drydock.png';
+import LoginBasic from '@/components/LoginBasic.vue';
+import LoginOidc from '@/components/LoginOidc.vue';
+import { getOidcRedirection, getStrategies } from '@/services/auth';
 
 export default defineComponent({
   components: {
@@ -10,7 +10,7 @@ export default defineComponent({
     LoginOidc,
   },
   setup() {
-    const eventBus = inject("eventBus") as any;
+    const eventBus = inject('eventBus') as any;
     return {
       eventBus,
     };
@@ -21,7 +21,40 @@ export default defineComponent({
       strategies: [] as any[],
       strategySelected: 0,
       showDialog: true,
+      themeMode: (localStorage.themeMode || 'system') as string,
     };
+  },
+
+  computed: {
+    currentTheme(): string {
+      if (this.themeMode === 'system') {
+        return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return this.themeMode;
+    },
+    isDark(): boolean {
+      return this.currentTheme === 'dark';
+    },
+    themeIcon(): string {
+      switch (this.themeMode) {
+        case 'light':
+          return 'fas fa-sun';
+        case 'dark':
+          return 'fas fa-moon';
+        default:
+          return 'fas fa-circle-half-stroke';
+      }
+    },
+    themeIconColor(): string | undefined {
+      switch (this.themeMode) {
+        case 'light':
+          return '#F59E0B';
+        case 'dark':
+          return '#60A5FA';
+        default:
+          return undefined;
+      }
+    },
   },
 
   methods: {
@@ -32,20 +65,27 @@ export default defineComponent({
      */
     isSupportedStrategy(strategy: any) {
       switch (strategy.type) {
-        case "basic":
+        case 'basic':
           return true;
-        case "oidc":
+        case 'oidc':
           return true;
         default:
           return false;
       }
     },
 
+    cycleTheme() {
+      const modes = ['light', 'system', 'dark'];
+      const idx = modes.indexOf(this.themeMode);
+      this.themeMode = modes[(idx + 1) % modes.length];
+      localStorage.themeMode = this.themeMode;
+    },
+
     /**
      * Handle authentication success.
      */
     onAuthenticationSuccess() {
-      this.$router.push((this.$route.query.next as string) || "/");
+      this.$router.push((this.$route.query.next as string) || '/');
     },
   },
 
@@ -61,17 +101,17 @@ export default defineComponent({
       const strategies = await getStrategies();
 
       // If anonymous auth is enabled then no need to login => go home
-      if (strategies.find((strategy) => strategy.type === "anonymous")) {
-        next("/");
+      if (strategies.some((strategy) => strategy.type === 'anonymous')) {
+        next('/');
       }
 
       // If oidc strategy supporting redirect
       const oidcWithRedirect = strategies.find(
-        (strategy) => strategy.type === "oidc" && strategy.redirect,
+        (strategy) => strategy.type === 'oidc' && strategy.redirect,
       );
       if (oidcWithRedirect) {
         const redirection = await getOidcRedirection(oidcWithRedirect.name);
-        window.location.href = redirection.url;
+        globalThis.location.href = redirection.url;
       } else {
         // Filter on supported auth for UI
         next(async (vm: any) => {
@@ -83,9 +123,9 @@ export default defineComponent({
       next((vm: any) => {
         if (vm.eventBus) {
           vm.eventBus.emit(
-            "notify",
+            'notify',
             `Error when trying to get the authentication strategies (${e.message})`,
-            "error",
+            'error',
           );
         } else {
           console.error(`Error when trying to get the authentication strategies (${e.message})`);

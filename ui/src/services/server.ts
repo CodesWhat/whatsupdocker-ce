@@ -1,9 +1,9 @@
 function getServerIcon() {
-  return "mdi-connection";
+  return 'fas fa-server';
 }
 
 async function getServer() {
-  const response = await fetch("/api/server", { credentials: "include" });
+  const response = await fetch('/api/server', { credentials: 'include' });
   return response.json();
 }
 

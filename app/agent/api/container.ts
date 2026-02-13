@@ -1,14 +1,14 @@
 import type { Request, Response } from 'express';
-import * as storeContainer from '../../store/container.js';
 import { getServerConfiguration } from '../../configuration/index.js';
 import * as registry from '../../registry/index.js';
+import * as storeContainer from '../../store/container.js';
 
 /**
  * Get Containers (Handshake).
  */
 export function getContainers(req: Request, res: Response) {
-    const containers = storeContainer.getContainers();
-    res.json(containers);
+  const containers = storeContainer.getContainers();
+  res.json(containers);
 }
 
 /**
@@ -16,17 +16,17 @@ export function getContainers(req: Request, res: Response) {
  * Docker uses an 8-byte header per frame: [streamType(1), padding(3), size(4BE)].
  */
 function demuxDockerStream(buffer: Buffer | string): string {
-    const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-    const lines: string[] = [];
-    let offset = 0;
-    while (offset + 8 <= buf.length) {
-        const size = buf.readUInt32BE(offset + 4);
-        offset += 8;
-        if (offset + size > buf.length) break;
-        lines.push(buf.subarray(offset, offset + size).toString('utf-8'));
-        offset += size;
-    }
-    return lines.join('');
+  const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const lines: string[] = [];
+  let offset = 0;
+  while (offset + 8 <= buf.length) {
+    const size = buf.readUInt32BE(offset + 4);
+    offset += 8;
+    if (offset + size > buf.length) break;
+    lines.push(buf.subarray(offset, offset + size).toString('utf-8'));
+    offset += size;
+  }
+  return lines.join('');
 }
 
 /**
@@ -35,37 +35,37 @@ function demuxDockerStream(buffer: Buffer | string): string {
  * @param res
  */
 export async function getContainerLogs(req: Request, res: Response) {
-    const { id } = req.params;
-    const container = storeContainer.getContainer(id);
-    if (!container) {
-        res.sendStatus(404);
-        return;
-    }
+  const { id } = req.params;
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
 
-    const tail = Number.parseInt(req.query.tail as string, 10) || 100;
-    const since = Number.parseInt(req.query.since as string, 10) || 0;
-    const timestamps = req.query.timestamps !== 'false';
+  const tail = Number.parseInt(req.query.tail as string, 10) || 100;
+  const since = Number.parseInt(req.query.since as string, 10) || 0;
+  const timestamps = req.query.timestamps !== 'false';
 
-    const watcherId = `docker.${container.watcher}`;
-    const watcher = (registry.getState() as any).watcher[watcherId];
-    if (!watcher) {
-        res.status(500).json({
-            error: `No watcher found for container ${id}`,
-        });
-        return;
-    }
+  const watcherId = `docker.${container.watcher}`;
+  const watcher = (registry.getState() as any).watcher[watcherId];
+  if (!watcher) {
+    res.status(500).json({
+      error: `No watcher found for container ${id}`,
+    });
+    return;
+  }
 
-    try {
-        const logsBuffer = await watcher.dockerApi
-            .getContainer(container.name)
-            .logs({ stdout: true, stderr: true, tail, since, timestamps, follow: false });
-        const logs = demuxDockerStream(logsBuffer);
-        res.status(200).json({ logs });
-    } catch (e: any) {
-        res.status(500).json({
-            error: `Error fetching container logs (${e.message})`,
-        });
-    }
+  try {
+    const logsBuffer = await watcher.dockerApi
+      .getContainer(container.name)
+      .logs({ stdout: true, stderr: true, tail, since, timestamps, follow: false });
+    const logs = demuxDockerStream(logsBuffer);
+    res.status(200).json({ logs });
+  } catch (e: any) {
+    res.status(500).json({
+      error: `Error fetching container logs (${e.message})`,
+    });
+  }
 }
 
 /**
@@ -74,17 +74,17 @@ export async function getContainerLogs(req: Request, res: Response) {
  * @param res
  */
 export function deleteContainer(req: Request, res: Response) {
-    const serverConfiguration = getServerConfiguration();
-    if (serverConfiguration.feature.delete) {
-        const { id } = req.params;
-        const container = storeContainer.getContainer(id);
-        if (container) {
-            storeContainer.deleteContainer(id);
-            res.sendStatus(204);
-        } else {
-            res.sendStatus(404);
-        }
+  const serverConfiguration = getServerConfiguration();
+  if (serverConfiguration.feature.delete) {
+    const { id } = req.params;
+    const container = storeContainer.getContainer(id);
+    if (container) {
+      storeContainer.deleteContainer(id);
+      res.sendStatus(204);
     } else {
-        res.sendStatus(403);
+      res.sendStatus(404);
     }
+  } else {
+    res.sendStatus(403);
+  }
 }

@@ -1,18 +1,21 @@
 <template>
-  <v-card>
+  <v-card rounded="lg" elevation="1">
     <v-card-title
       @click="collapse()"
       style="cursor: pointer"
-      class="pa-3 d-flex align-center bg-surface"
+      class="pa-4 d-flex align-center bg-surface"
     >
-      <div class="text-body-3">
-        <v-chip label color="info" variant="outlined">{{ trigger.type }}</v-chip>
-        /
-        <v-chip label color="info" variant="outlined">{{ trigger.name }}</v-chip>
+      <div class="d-flex align-center" style="gap: 12px">
+        <div class="d-flex align-center justify-center flex-shrink-0" style="width: 32px">
+          <v-icon :size="24" :color="trigger.iconColor || undefined">{{ trigger.icon }}</v-icon>
+        </div>
+        <div class="d-flex flex-column" style="min-width: 0">
+          <span class="text-body-2 font-weight-medium text-truncate">{{ trigger.name }}</span>
+          <span class="text-caption text-medium-emphasis">{{ trigger.type }}</span>
+        </div>
       </div>
       <v-spacer />
-      <v-icon>{{ trigger.icon }}</v-icon>
-      <v-icon>{{ showDetail ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
+      <v-icon>{{ showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down" }}</v-icon>
     </v-card-title>
     <transition name="expand-transition">
       <v-card-text v-show="showDetail">
@@ -36,7 +39,7 @@
           <v-col cols="4" class="text-right">
             <v-btn variant="outlined" size="small" color="accent" @click="openTestForm">
               Test
-              <v-icon right>mdi-test-tube</v-icon>
+              <v-icon end>fas fa-flask</v-icon>
             </v-btn>
 
             <v-navigation-drawer
@@ -48,7 +51,7 @@
             >
               <div class="pa-3">
                 <div class="text-subtitle-2 mb-2">
-                  <v-icon size="small">mdi-test-tube</v-icon>
+                  <v-icon size="small">fas fa-flask</v-icon>
                   Test trigger
                 </div>
                 <v-select

@@ -6,7 +6,7 @@ describe('ConfigurationItem', () => {
     name: 'my-registry',
     type: 'hub',
     agent: 'node1',
-    icon: 'mdi-docker',
+    icon: 'fab fa-docker',
     configuration: {
       url: 'https://registry.hub.docker.com',
       login: 'admin',

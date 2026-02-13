@@ -1,7 +1,9 @@
 # App API
+
 This API allows to get app informations.
 
 ## Get App informations
+
 This operation lets you get app informations.
 
 ```bash

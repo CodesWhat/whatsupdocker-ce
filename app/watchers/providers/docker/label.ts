@@ -80,3 +80,51 @@ export const wudTriggerInclude = 'wud.trigger.include';
  */
 export const ddTriggerExclude = 'dd.trigger.exclude';
 export const wudTriggerExclude = 'wud.trigger.exclude';
+
+/**
+ * Optional group name for container grouping / stack views.
+ */
+export const ddGroup = 'dd.group';
+export const wudGroup = 'wud.group';
+
+/**
+ * Optional shell command to run before a container update.
+ */
+export const ddHookPre = 'dd.hook.pre';
+export const wudHookPre = 'wud.hook.pre';
+
+/**
+ * Optional shell command to run after a container update.
+ */
+export const ddHookPost = 'dd.hook.post';
+export const wudHookPost = 'wud.hook.post';
+
+/**
+ * Whether to abort the update if the pre-hook fails (default: true).
+ */
+export const ddHookPreAbort = 'dd.hook.pre.abort';
+export const wudHookPreAbort = 'wud.hook.pre.abort';
+
+/**
+ * Timeout in milliseconds for hook execution (default: 60000).
+ */
+export const ddHookTimeout = 'dd.hook.timeout';
+export const wudHookTimeout = 'wud.hook.timeout';
+
+/**
+ * Whether to automatically rollback on health check failure (default: false).
+ */
+export const ddRollbackAuto = 'dd.rollback.auto';
+export const wudRollbackAuto = 'wud.rollback.auto';
+
+/**
+ * Health monitoring window in milliseconds (default: 300000 = 5 min).
+ */
+export const ddRollbackWindow = 'dd.rollback.window';
+export const wudRollbackWindow = 'wud.rollback.window';
+
+/**
+ * Health polling interval in milliseconds (default: 10000 = 10s).
+ */
+export const ddRollbackInterval = 'dd.rollback.interval';
+export const wudRollbackInterval = 'wud.rollback.interval';

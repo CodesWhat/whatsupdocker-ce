@@ -4,88 +4,88 @@ import * as migrate from './migrate.js';
 
 vi.mock('../log', () => ({ default: { child: vi.fn(() => ({ info: vi.fn() })) } }));
 vi.mock('../configuration', () => ({
-    getVersion: () => '2.0.0',
-    getLogLevel: () => 'info',
+  getVersion: () => '2.0.0',
+  getLogLevel: () => 'info',
 }));
 vi.mock('./migrate');
 
 beforeEach(async () => {
-    vi.resetAllMocks();
+  vi.resetAllMocks();
 });
 
 test('createCollections should create collection app when not exist', async () => {
-    const db = {
-        getCollection: () => null,
-        addCollection: () => ({
-            findOne: () => {},
-            insert: () => {},
-        }),
-    };
-    const spy = vi.spyOn(db, 'addCollection');
-    app.createCollections(db);
-    expect(spy).toHaveBeenCalledWith('app');
+  const db = {
+    getCollection: () => null,
+    addCollection: () => ({
+      findOne: () => {},
+      insert: () => {},
+    }),
+  };
+  const spy = vi.spyOn(db, 'addCollection');
+  app.createCollections(db);
+  expect(spy).toHaveBeenCalledWith('app');
 });
 
 test('createCollections should not create collection app when already exist', async () => {
-    const db = {
-        getCollection: () => ({
-            findOne: () => {},
-            insert: () => {},
-        }),
-        addCollection: () => null,
-    };
-    const spy = vi.spyOn(db, 'addCollection');
-    app.createCollections(db);
-    expect(spy).not.toHaveBeenCalled();
+  const db = {
+    getCollection: () => ({
+      findOne: () => {},
+      insert: () => {},
+    }),
+    addCollection: () => null,
+  };
+  const spy = vi.spyOn(db, 'addCollection');
+  app.createCollections(db);
+  expect(spy).not.toHaveBeenCalled();
 });
 
 test('createCollections should call migrate when versions are different', async () => {
-    const db = {
-        getCollection: () => ({
-            findOne: () => ({
-                name: 'drydock',
-                version: '1.0.0',
-            }),
-            insert: () => {},
-            remove: () => {},
-        }),
-        addCollection: () => null,
-    };
-    app.createCollections(db);
-    expect(migrate.migrate).toHaveBeenCalledWith('1.0.0', '2.0.0');
+  const db = {
+    getCollection: () => ({
+      findOne: () => ({
+        name: 'drydock',
+        version: '1.0.0',
+      }),
+      insert: () => {},
+      remove: () => {},
+    }),
+    addCollection: () => null,
+  };
+  app.createCollections(db);
+  expect(migrate.migrate).toHaveBeenCalledWith('1.0.0', '2.0.0');
 });
 
 test('createCollections should not call migrate when versions are identical', async () => {
-    const db = {
-        getCollection: () => ({
-            findOne: () => ({
-                name: 'drydock',
-                version: '2.0.0',
-            }),
-            insert: () => {},
-            remove: () => {},
-        }),
-        addCollection: () => null,
-    };
-    app.createCollections(db);
-    expect(migrate.migrate).not.toHaveBeenCalled();
+  const db = {
+    getCollection: () => ({
+      findOne: () => ({
+        name: 'drydock',
+        version: '2.0.0',
+      }),
+      insert: () => {},
+      remove: () => {},
+    }),
+    addCollection: () => null,
+  };
+  app.createCollections(db);
+  expect(migrate.migrate).not.toHaveBeenCalled();
 });
 
 test('getAppInfos should return collection content', async () => {
-    const db = {
-        getCollection: () => ({
-            findOne: () => ({
-                name: 'drydock',
-                version: '1.0.0',
-            }),
-            insert: () => {},
-            remove: () => {},
-        }),
-        addCollection: () => null,
-    };
-    app.createCollections(db);
-    expect(app.getAppInfos(db)).toStrictEqual({
+  const db = {
+    getCollection: () => ({
+      findOne: () => ({
         name: 'drydock',
         version: '1.0.0',
-    });
+      }),
+      insert: () => {},
+      remove: () => {},
+    }),
+    addCollection: () => null,
+  };
+  app.createCollections(db);
+  expect(app.getAppInfos(db)).toStrictEqual({
+    name: 'drydock',
+    version: '1.0.0',
+  });
 });

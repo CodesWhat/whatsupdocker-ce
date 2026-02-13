@@ -6,6 +6,6 @@ import * as component from './component.js';
  * @returns {*}
  */
 export function init() {
-    const router = component.init('registry');
-    return router;
+  const router = component.init('registry');
+  return router;
 }

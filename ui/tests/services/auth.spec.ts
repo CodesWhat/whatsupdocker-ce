@@ -1,4 +1,4 @@
-import { getUser, loginBasic, logout, getStrategies } from '@/services/auth';
+import { getOidcRedirection, getStrategies, getUser, loginBasic, logout } from '@/services/auth';
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -13,14 +13,14 @@ describe('Auth Service', () => {
       const mockUser = { username: 'testuser', roles: ['admin'] };
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       });
 
       const user = await getUser();
 
       expect(fetch).toHaveBeenCalledWith('/auth/user', {
         redirect: 'manual',
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(user).toEqual(mockUser);
     });
@@ -28,7 +28,7 @@ describe('Auth Service', () => {
     it('returns undefined when not authenticated', async () => {
       fetch.mockResolvedValueOnce({
         ok: false,
-        status: 401
+        status: 401,
       });
 
       const user = await getUser();
@@ -50,7 +50,7 @@ describe('Auth Service', () => {
       const mockUser = { username: 'testuser' };
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       });
 
       const user = await loginBasic('testuser', 'testpass');
@@ -60,12 +60,12 @@ describe('Auth Service', () => {
         credentials: 'include',
         headers: {
           Authorization: 'Basic dGVzdHVzZXI6dGVzdHBhc3M=', // base64 of testuser:testpass
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username: 'testuser',
-          password: 'testpass'
-        })
+          password: 'testpass',
+        }),
       });
       expect(user).toEqual(mockUser);
     });
@@ -74,7 +74,7 @@ describe('Auth Service', () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Invalid credentials' })
+        json: async () => ({ error: 'Invalid credentials' }),
       });
 
       const user = await loginBasic('testuser', 'wrongpass');
@@ -88,7 +88,7 @@ describe('Auth Service', () => {
       const mockResponse = { success: true };
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResponse
+        json: async () => mockResponse,
       });
 
       const result = await logout();
@@ -96,7 +96,7 @@ describe('Auth Service', () => {
       expect(fetch).toHaveBeenCalledWith('/auth/logout', {
         method: 'POST',
         credentials: 'include',
-        redirect: 'manual'
+        redirect: 'manual',
       });
       expect(result).toEqual(mockResponse);
     });
@@ -106,19 +106,36 @@ describe('Auth Service', () => {
     it('returns available authentication strategies', async () => {
       const mockStrategies = [
         { name: 'basic', type: 'basic' },
-        { name: 'oidc', type: 'oidc' }
+        { name: 'oidc', type: 'oidc' },
       ];
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockStrategies
+        json: async () => mockStrategies,
       });
 
       const strategies = await getStrategies();
 
       expect(fetch).toHaveBeenCalledWith('/auth/strategies', {
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(strategies).toEqual(mockStrategies);
+    });
+  });
+
+  describe('getOidcRedirection', () => {
+    it('returns oidc redirection payload', async () => {
+      const mockRedirection = { url: 'https://idp.example.com/authorize?code=abc' };
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRedirection,
+      });
+
+      const result = await getOidcRedirection('main');
+
+      expect(fetch).toHaveBeenCalledWith('/auth/oidc/main/redirect', {
+        credentials: 'include',
+      });
+      expect(result).toEqual(mockRedirection);
     });
   });
 });

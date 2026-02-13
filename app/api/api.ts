@@ -1,63 +1,96 @@
 // @ts-nocheck
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import * as appRouter from './app.js';
-import * as containerRouter from './container.js';
-import * as watcherRouter from './watcher.js';
-import * as triggerRouter from './trigger.js';
-import * as registryRouter from './registry.js';
-import * as authenticationRouter from './authentication.js';
-import * as logRouter from './log.js';
-import * as storeRouter from './store.js';
-import * as serverRouter from './server.js';
-import { requireAuthentication } from './auth.js';
 import * as agentRouter from './agent.js';
+import * as appRouter from './app.js';
+import * as auditRouter from './audit.js';
+import { requireAuthentication } from './auth.js';
+import * as authenticationRouter from './authentication.js';
+import * as backupRouter from './backup.js';
+import * as containerRouter from './container.js';
+import * as containerActionsRouter from './container-actions.js';
+import * as groupRouter from './group.js';
+import * as logRouter from './log.js';
+import * as previewRouter from './preview.js';
+import * as registryRouter from './registry.js';
+import * as serverRouter from './server.js';
+import * as sseRouter from './sse.js';
+import * as storeRouter from './store.js';
+import * as triggerRouter from './trigger.js';
+import * as watcherRouter from './watcher.js';
+import * as webhookRouter from './webhook.js';
 
 /**
  * Init the API router.
  * @returns {*|Router}
  */
 export function init() {
-    const router = express.Router();
+  const router = express.Router();
 
-    const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false });
-    router.use(apiLimiter);
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  router.use(apiLimiter);
 
-    // Mount app router
-    router.use('/app', appRouter.init());
+  // Mount app router
+  router.use('/app', appRouter.init());
 
-    // Routes to protect after this line
-    router.use(requireAuthentication);
+  // Mount webhook router (uses its own bearer token auth)
+  router.use('/webhook', webhookRouter.init());
 
-    // Mount log router
-    router.use('/log', logRouter.init());
+  // Mount SSE events endpoint (before auth so connections persist through updates)
+  router.use('/events/ui', sseRouter.init());
 
-    // Mount store router
-    router.use('/store', storeRouter.init());
+  // Routes to protect after this line
+  router.use(requireAuthentication);
 
-    // Mount server router
-    router.use('/server', serverRouter.init());
+  // Mount log router
+  router.use('/log', logRouter.init());
 
-    // Mount container router
-    router.use('/containers', containerRouter.init());
+  // Mount store router
+  router.use('/store', storeRouter.init());
 
-    // Mount trigger router
-    router.use('/triggers', triggerRouter.init());
+  // Mount server router
+  router.use('/server', serverRouter.init());
 
-    // Mount watcher router
-    router.use('/watchers', watcherRouter.init());
+  // Mount container router
+  router.use('/containers', containerRouter.init());
 
-    // Mount registry router
-    router.use('/registries', registryRouter.init());
+  // Mount preview router (container preview/dry-run)
+  router.use('/containers', previewRouter.init());
 
-    // Mount auth
-    router.use('/authentications', authenticationRouter.init());
+  // Mount backup router (image backup/rollback)
+  router.use('/containers', backupRouter.init());
 
-    // Mount agents
-    router.use('/agents', agentRouter.init());
+  // Mount container actions router (start/stop/restart)
+  router.use('/containers', containerActionsRouter.init());
 
-    // All other API routes => 404
-    router.get('/{*path}', (req, res) => res.sendStatus(404));
+  // Mount container groups router (grouping / stack views)
+  router.use('/containers', groupRouter.init());
 
-    return router;
+  // Mount trigger router
+  router.use('/triggers', triggerRouter.init());
+
+  // Mount watcher router
+  router.use('/watchers', watcherRouter.init());
+
+  // Mount registry router
+  router.use('/registries', registryRouter.init());
+
+  // Mount auth
+  router.use('/authentications', authenticationRouter.init());
+
+  // Mount agents
+  router.use('/agents', agentRouter.init());
+
+  // Mount audit log
+  router.use('/audit', auditRouter.init());
+
+  // All other API routes => 404
+  router.get('/{*path}', (req, res) => res.sendStatus(404));
+
+  return router;
 }

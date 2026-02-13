@@ -1,83 +1,81 @@
 // @ts-nocheck
 import { ClientSecretPost, Configuration } from 'openid-client';
-import OidcStrategy from './OidcStrategy.js';
 import log from '../../../log/index.js';
+import OidcStrategy from './OidcStrategy.js';
 
 const oidcConfig = new Configuration(
-    { issuer: 'https://idp.example.com' },
-    'wud-client',
-    'wud-secret', // NOSONAR - test fixture, not a real credential
-    ClientSecretPost('wud-secret'), // NOSONAR - test fixture
+  { issuer: 'https://idp.example.com' },
+  'wud-client',
+  'wud-secret', // NOSONAR - test fixture, not a real credential
+  ClientSecretPost('wud-secret'), // NOSONAR - test fixture
 );
 const oidcStrategy = new OidcStrategy(
-    {
-        config: oidcConfig,
-        scope: 'openid email profile',
-        name: 'oidc',
-    },
-    () => {},
-    log,
+  {
+    config: oidcConfig,
+    scope: 'openid email profile',
+    name: 'oidc',
+  },
+  () => {},
+  log,
 );
 
 beforeEach(async () => {
-    oidcStrategy.success = vi.fn();
-    oidcStrategy.fail = vi.fn();
+  oidcStrategy.success = vi.fn();
+  oidcStrategy.fail = vi.fn();
 });
 
 test('authenticate should return user from session if so', async () => {
-    oidcStrategy.authenticate({ isAuthenticated: () => true });
-    expect(oidcStrategy.success).toHaveBeenCalled();
+  oidcStrategy.authenticate({ isAuthenticated: () => true });
+  expect(oidcStrategy.success).toHaveBeenCalled();
 });
 
 test('authenticate should call super.authenticate when no existing session', async () => {
-    const fail = vi.spyOn(oidcStrategy, 'fail');
-    oidcStrategy.authenticate({ isAuthenticated: () => false, headers: {} });
-    expect(fail).toHaveBeenCalled();
+  const fail = vi.spyOn(oidcStrategy, 'fail');
+  oidcStrategy.authenticate({ isAuthenticated: () => false, headers: {} });
+  expect(fail).toHaveBeenCalled();
 });
 
 test('authenticate should get & validate Bearer token', async () => {
-    const verify = vi.spyOn(oidcStrategy, 'verify');
-    oidcStrategy.authenticate({
-        isAuthenticated: () => false,
-        headers: {
-            authorization: 'Bearer XXXXX',
-        },
-    });
-    expect(verify).toHaveBeenCalledWith('XXXXX', expect.any(Function));
+  const verify = vi.spyOn(oidcStrategy, 'verify');
+  oidcStrategy.authenticate({
+    isAuthenticated: () => false,
+    headers: {
+      authorization: 'Bearer XXXXX',
+    },
+  });
+  expect(verify).toHaveBeenCalledWith('XXXXX', expect.any(Function));
 });
 
 test('authenticate should fail when bearer token verify returns no user', async () => {
-    oidcStrategy.verify = vi.fn((token, cb) => cb(null, null));
-    oidcStrategy.authenticate({
-        isAuthenticated: () => false,
-        headers: {
-            authorization: 'Bearer invalid-token',
-        },
-    });
-    expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
+  oidcStrategy.verify = vi.fn((token, cb) => cb(null, null));
+  oidcStrategy.authenticate({
+    isAuthenticated: () => false,
+    headers: {
+      authorization: 'Bearer invalid-token',
+    },
+  });
+  expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
 });
 
 test('authenticate should fail when bearer token verify returns error', async () => {
-    oidcStrategy.verify = vi.fn((token, cb) =>
-        cb(new Error('verification error'), null),
-    );
-    oidcStrategy.authenticate({
-        isAuthenticated: () => false,
-        headers: {
-            authorization: 'Bearer bad-token',
-        },
-    });
-    expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
+  oidcStrategy.verify = vi.fn((token, cb) => cb(new Error('verification error'), null));
+  oidcStrategy.authenticate({
+    isAuthenticated: () => false,
+    headers: {
+      authorization: 'Bearer bad-token',
+    },
+  });
+  expect(oidcStrategy.fail).toHaveBeenCalledWith(401);
 });
 
 test('authenticate should succeed when bearer token verify returns valid user', async () => {
-    const user = { username: 'test@example.com' };
-    oidcStrategy.verify = vi.fn((token, cb) => cb(null, user));
-    oidcStrategy.authenticate({
-        isAuthenticated: () => false,
-        headers: {
-            authorization: 'Bearer valid-token',
-        },
-    });
-    expect(oidcStrategy.success).toHaveBeenCalledWith(user);
+  const user = { username: 'test@example.com' };
+  oidcStrategy.verify = vi.fn((token, cb) => cb(null, user));
+  oidcStrategy.authenticate({
+    isAuthenticated: () => false,
+    headers: {
+      authorization: 'Bearer valid-token',
+    },
+  });
+  expect(oidcStrategy.success).toHaveBeenCalledWith(user);
 });

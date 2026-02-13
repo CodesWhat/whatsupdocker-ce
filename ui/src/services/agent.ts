@@ -1,11 +1,11 @@
 const BASE_URL = '/api/agents';
 
 export function getAgentIcon() {
-  return 'mdi-lan';
+  return 'fas fa-robot';
 }
 
 export async function getAgents() {
-  const response = await fetch(BASE_URL, { credentials: "include" });
+  const response = await fetch(BASE_URL, { credentials: 'include' });
   if (!response.ok) {
     throw new Error(`Failed to get agents: ${response.statusText}`);
   }

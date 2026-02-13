@@ -1,7 +1,7 @@
-import ConfigurationItem from "@/components/ConfigurationItem.vue";
-import ApplicationLogs from "@/components/ApplicationLogs.vue";
-import { getLog } from "@/services/log";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import ApplicationLogs from '@/components/ApplicationLogs.vue';
+import ConfigurationItem from '@/components/ConfigurationItem.vue';
+import { getLog } from '@/services/log';
 
 export default defineComponent({
   components: {
@@ -17,9 +17,9 @@ export default defineComponent({
   computed: {
     configurationItem() {
       return {
-        type: "logs",
-        name: "configuration",
-        icon: "mdi-console",
+        type: 'logs',
+        name: 'configuration',
+        icon: 'fas fa-terminal',
         configuration: {
           level: this.log.level,
         },
@@ -34,9 +34,9 @@ export default defineComponent({
     } catch (e: any) {
       next((vm: any) => {
         vm.$eventBus.emit(
-          "notify",
+          'notify',
           `Error when trying to load the log configuration (${e.message})`,
-          "error",
+          'error',
         );
       });
     }

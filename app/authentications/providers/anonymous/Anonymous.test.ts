@@ -2,28 +2,28 @@
 import Anonymous from './Anonymous.js';
 
 describe('Anonymous Authentication', () => {
-    let anonymous;
+  let anonymous;
 
-    beforeEach(async () => {
-        anonymous = new Anonymous();
-    });
+  beforeEach(async () => {
+    anonymous = new Anonymous();
+  });
 
-    test('should create instance', async () => {
-        expect(anonymous).toBeDefined();
-        expect(anonymous).toBeInstanceOf(Anonymous);
-    });
+  test('should create instance', async () => {
+    expect(anonymous).toBeDefined();
+    expect(anonymous).toBeInstanceOf(Anonymous);
+  });
 
-    test('should return anonymous strategy', async () => {
-        const strategy = anonymous.getStrategy();
-        expect(strategy).toBeDefined();
-        expect(strategy.name).toBe('anonymous');
-    });
+  test('should return anonymous strategy', async () => {
+    const strategy = anonymous.getStrategy();
+    expect(strategy).toBeDefined();
+    expect(strategy.name).toBe('anonymous');
+  });
 
-    test('should return strategy description', async () => {
-        const description = anonymous.getStrategyDescription();
-        expect(description).toEqual({
-            type: 'anonymous',
-            name: 'Anonymous',
-        });
+  test('should return strategy description', async () => {
+    const description = anonymous.getStrategyDescription();
+    expect(description).toEqual({
+      type: 'anonymous',
+      name: 'Anonymous',
     });
+  });
 });

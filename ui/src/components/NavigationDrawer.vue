@@ -1,89 +1,79 @@
 <template>
   <v-navigation-drawer
     app
-    :rail="mini"
-    permanent
+    :rail="!smAndDown && mini"
+    :permanent="!smAndDown"
+    :temporary="smAndDown"
+    v-model="drawerModel"
     :disable-route-watcher="true"
-    :clipped="true"
     color="primary"
     theme="dark"
   >
-    <div class="drawer-brand">
+    <div class="drawer-brand" :class="{ 'drawer-brand--rail': !smAndDown && mini }">
       <img :src="logo" alt="drydock logo" class="drawer-logo" />
+      <template v-if="!mini || smAndDown">
+        <span class="drawer-brand-text">DRYDOCK</span>
+        <v-spacer />
+      </template>
+      <v-btn
+        v-if="!smAndDown"
+        icon
+        variant="text"
+        size="small"
+        @click.stop="toggleDrawer"
+        class="drawer-collapse-btn"
+      >
+        <v-icon size="small">{{ mini ? 'fas fa-angles-right' : 'fas fa-angles-left' }}</v-icon>
+      </v-btn>
     </div>
-    <v-toolbar flat class="ma-0 pa-0" color="primary">
-      <v-app-bar-nav-icon class="drawer-toggle" @click.stop="mini = !mini">
-        <v-icon v-if="!mini">mdi-close</v-icon>
-        <v-icon v-else>mdi-menu</v-icon>
-      </v-app-bar-nav-icon>
-    </v-toolbar>
-    <v-list nav class="pt-0 pb-0">
-      <v-fade-transition group hide-on-leave mode="in-out">
-        <v-list-item to="/" key="home" class="mb-0" prepend-icon="mdi-home">
-          <v-list-item-title>Home</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          to="/containers"
-          key="containers"
-          class="mb-0"
-          :prepend-icon="containerIcon"
-        >
-          <v-list-item-title>Containers</v-list-item-title>
-        </v-list-item>
 
-        <v-list-item key="divider" class="mb-0" dense>
-          <v-divider />
-        </v-list-item>
+    <v-divider />
 
-        <v-list-group v-if="!mini" key="configuration" color="white">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-cogs">
-              <v-list-item-title>Configuration</v-list-item-title>
-            </v-list-item>
-          </template>
-          <v-list-item
-            v-for="configurationItem in configurationItemsSorted"
-            :key="configurationItem.to"
-            :to="configurationItem.to"
-            class="mb-0 pl-2"
-            :prepend-icon="configurationItem.icon"
-          >
-            <v-list-item-title class="text-capitalize"
-              >{{ configurationItem.name }}
-            </v-list-item-title>
-          </v-list-item>
-        </v-list-group>
-        <v-list-item
-          v-else
-          v-for="configurationItem in configurationItemsSorted"
-          :key="configurationItem.to"
-          :to="configurationItem.to"
-          class="mb-0"
-          :prepend-icon="configurationItem.icon"
-        >
-          <v-list-item-title class="text-capitalize"
-            >{{ configurationItem.name }}
-          </v-list-item-title>
-        </v-list-item>
-      </v-fade-transition>
+    <v-list nav density="compact" class="pt-1 pb-1">
+      <v-list-item to="/" prepend-icon="fas fa-house">
+        <v-list-item-title>Home</v-list-item-title>
+      </v-list-item>
+      <v-list-item to="/containers" :prepend-icon="containerIcon">
+        <v-list-item-title>Containers</v-list-item-title>
+      </v-list-item>
     </v-list>
 
-    <template v-slot:append v-if="!mini">
-      <v-list>
-        <v-list-item class="ml-2 mb-2">
-          <v-switch
-            hide-details
-            inset
-            label="Dark mode"
-            v-model="darkMode"
-            @update:model-value="toggleDarkMode"
-          >
-            <template v-slot:label>
-              <v-icon>mdi-weather-night</v-icon>
-            </template>
-          </v-switch>
-        </v-list-item>
-      </v-list>
+    <v-divider />
+
+    <v-list nav density="compact" class="pt-2 pb-1">
+      <v-list-subheader v-if="!mini || smAndDown" class="text-uppercase">
+        Monitoring
+      </v-list-subheader>
+      <v-list-item
+        v-for="item in monitoringItemsSorted"
+        :key="item.to"
+        :to="item.to"
+        :prepend-icon="item.icon"
+      >
+        <v-list-item-title class="text-capitalize">{{ item.name }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+
+    <v-divider />
+
+    <v-list nav density="compact" class="pt-2 pb-1">
+      <v-list-subheader v-if="!mini || smAndDown" class="text-uppercase">
+        Configuration
+      </v-list-subheader>
+      <v-list-item
+        v-for="item in configurationItemsSorted"
+        :key="item.to"
+        :to="item.to"
+        :prepend-icon="item.icon"
+      >
+        <v-list-item-title class="text-capitalize">{{ item.name }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+
+    <template v-slot:append v-if="!mini || smAndDown">
+      <div class="drawer-version">
+        v{{ version }}
+      </div>
     </template>
   </v-navigation-drawer>
 </template>
@@ -91,16 +81,72 @@
 <style scoped>
 .drawer-brand {
   display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.drawer-brand--rail {
+  flex-direction: column;
+  padding: 8px 0;
+  gap: 4px;
   justify-content: center;
-  padding-top: 10px;
+  align-items: center;
 }
 
 .drawer-logo {
-  height: 30px;
+  height: 28px;
   width: auto;
+  flex-shrink: 0;
 }
 
-.drawer-toggle {
-  margin-inline: auto;
+.drawer-brand--rail .drawer-logo {
+  height: 32px;
+}
+
+.drawer-brand-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+
+.drawer-collapse-btn {
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+/* Override Vuetify grid to reduce icon-to-text gap */
+::v-deep(.v-list-item) {
+  grid-template-columns: 42px 1fr auto !important;
+  padding-inline-start: 16px !important;
+}
+
+::v-deep(.v-list-item .v-list-item__prepend) {
+  justify-content: center;
+}
+
+::v-deep(.v-list-item .v-list-item__prepend > .v-icon) {
+  margin-inline-end: 0 !important;
+}
+
+/* Rail mode: center icons */
+::v-deep(.v-navigation-drawer--rail .v-list-item) {
+  grid-template-columns: 1fr !important;
+  justify-items: center;
+  padding-inline: 0 !important;
+}
+
+::v-deep(.v-navigation-drawer--rail .v-list-item .v-list-item__prepend) {
+  margin-inline-end: 0 !important;
+}
+
+.drawer-version {
+  padding: 8px 16px 12px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
 }
 </style>

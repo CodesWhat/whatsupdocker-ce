@@ -2,13 +2,19 @@ import { mount } from '@vue/test-utils';
 import ConfigurationRegistriesView from '@/views/ConfigurationRegistriesView';
 
 vi.mock('@/services/registry', () => ({
-  getAllRegistries: vi.fn(() => Promise.resolve([
-    { id: 'registry-b', type: 'hub', name: 'Docker Hub' },
-    { id: 'registry-a', type: 'ghcr', name: 'GitHub' },
-  ])),
+  getAllRegistries: vi.fn(() =>
+    Promise.resolve([
+      { id: 'registry-b', type: 'hub', name: 'Docker Hub' },
+      { id: 'registry-a', type: 'ghcr', name: 'GitHub' },
+    ]),
+  ),
   getRegistryProviderIcon: vi.fn((type) => {
     const icons = { hub: 'si-docker', ghcr: 'si-github' };
     return icons[type] || 'si-linuxcontainers';
+  }),
+  getRegistryProviderColor: vi.fn((type) => {
+    const colors = { hub: '#2496ED', ghcr: '#8B5CF6' };
+    return colors[type] || '#6B7280';
   }),
 }));
 
@@ -19,8 +25,14 @@ describe('ConfigurationRegistriesView', () => {
     wrapper = mount(ConfigurationRegistriesView);
     await wrapper.setData({
       registries: [
-        { id: 'registry-a', type: 'ghcr', name: 'GitHub', icon: 'si-github' },
-        { id: 'registry-b', type: 'hub', name: 'Docker Hub', icon: 'si-docker' },
+        { id: 'registry-a', type: 'ghcr', name: 'GitHub', icon: 'si-github', iconColor: '#8B5CF6' },
+        {
+          id: 'registry-b',
+          type: 'hub',
+          name: 'Docker Hub',
+          icon: 'si-docker',
+          iconColor: '#2496ED',
+        },
       ],
     });
   });
@@ -30,7 +42,7 @@ describe('ConfigurationRegistriesView', () => {
   });
 
   it('renders a row for each registry', () => {
-    const rows = wrapper.findAll('.v-row');
+    const rows = wrapper.findAll('.mb-2');
     expect(rows).toHaveLength(2);
   });
 
@@ -44,7 +56,10 @@ describe('ConfigurationRegistriesView Route Hook', () => {
   it('fetches registries and sorts by id on beforeRouteEnter', async () => {
     const next = vi.fn();
     await ConfigurationRegistriesView.beforeRouteEnter.call(
-      ConfigurationRegistriesView, {}, {}, next,
+      ConfigurationRegistriesView,
+      {},
+      {},
+      next,
     );
     expect(next).toHaveBeenCalledWith(expect.any(Function));
 
@@ -59,6 +74,9 @@ describe('ConfigurationRegistriesView Route Hook', () => {
     // Should have icons
     expect(vm.registries[0].icon).toBe('si-github');
     expect(vm.registries[1].icon).toBe('si-docker');
+    // Should have icon colors
+    expect(vm.registries[0].iconColor).toBe('#8B5CF6');
+    expect(vm.registries[1].iconColor).toBe('#2496ED');
   });
 
   it('emits error notification on failure', async () => {
@@ -67,7 +85,10 @@ describe('ConfigurationRegistriesView Route Hook', () => {
 
     const next = vi.fn();
     await ConfigurationRegistriesView.beforeRouteEnter.call(
-      ConfigurationRegistriesView, {}, {}, next,
+      ConfigurationRegistriesView,
+      {},
+      {},
+      next,
     );
 
     const vm = { $eventBus: { emit: vi.fn() } };

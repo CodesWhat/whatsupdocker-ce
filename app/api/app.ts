@@ -15,14 +15,14 @@ const router = express.Router();
  * @param res the response
  */
 function getAppInfos(req, res) {
-    res.status(200).json(storeApp.getAppInfos());
+  res.status(200).json(storeApp.getAppInfos());
 }
 /**
  * Init Router.
  * @returns {*}
  */
 export function init() {
-    router.use(nocache());
-    router.get('/', getAppInfos);
-    return router;
+  router.use(nocache());
+  router.get('/', getAppInfos);
+  return router;
 }

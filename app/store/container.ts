@@ -4,12 +4,10 @@
  */
 import { byString, byValues } from 'sort-es';
 import * as container from '../model/container.js';
+
 const { validate: validateContainer } = container;
-import {
-    emitContainerAdded,
-    emitContainerUpdated,
-    emitContainerRemoved,
-} from '../event/index.js';
+
+import { emitContainerAdded, emitContainerRemoved, emitContainerUpdated } from '../event/index.js';
 import { initCollection } from './util.js';
 
 let containers;
@@ -19,7 +17,7 @@ let containers;
  * @param db
  */
 export function createCollections(db) {
-    containers = initCollection(db, 'containers');
+  containers = initCollection(db, 'containers');
 }
 
 /**
@@ -27,12 +25,12 @@ export function createCollections(db) {
  * @param container
  */
 export function insertContainer(container) {
-    const containerToSave = validateContainer(container);
-    containers.insert({
-        data: containerToSave,
-    });
-    emitContainerAdded(containerToSave);
-    return containerToSave;
+  const containerToSave = validateContainer(container);
+  containers.insert({
+    data: containerToSave,
+  });
+  emitContainerAdded(containerToSave);
+  return containerToSave;
 }
 
 /**
@@ -40,38 +38,34 @@ export function insertContainer(container) {
  * @param container
  */
 export function updateContainer(container) {
-    const hasUpdatePolicy = Object.hasOwn(
-        container,
-        'updatePolicy',
-    );
-    const containerCurrentDoc =
-        typeof containers?.findOne === 'function'
-            ? containers.findOne({ 'data.id': container.id })
-            : undefined;
-    const containerCurrent = containerCurrentDoc
-        ? validateContainer(containerCurrentDoc.data)
-        : undefined;
-    const containerMerged = {
-        ...container,
-        updatePolicy:
-            hasUpdatePolicy ? container.updatePolicy : containerCurrent?.updatePolicy,
-    };
-    const containerToReturn = validateContainer(containerMerged);
+  const hasUpdatePolicy = Object.hasOwn(container, 'updatePolicy');
+  const containerCurrentDoc =
+    typeof containers?.findOne === 'function'
+      ? containers.findOne({ 'data.id': container.id })
+      : undefined;
+  const containerCurrent = containerCurrentDoc
+    ? validateContainer(containerCurrentDoc.data)
+    : undefined;
+  const containerMerged = {
+    ...container,
+    updatePolicy: hasUpdatePolicy ? container.updatePolicy : containerCurrent?.updatePolicy,
+  };
+  const containerToReturn = validateContainer(containerMerged);
 
-    // Remove existing container
-    containers
-        .chain()
-        .find({
-            'data.id': container.id,
-        })
-        .remove();
+  // Remove existing container
+  containers
+    .chain()
+    .find({
+      'data.id': container.id,
+    })
+    .remove();
 
-    // Insert new one
-    containers.insert({
-        data: containerToReturn,
-    });
-    emitContainerUpdated(containerToReturn);
-    return containerToReturn;
+  // Insert new one
+  containers.insert({
+    data: containerToReturn,
+  });
+  emitContainerUpdated(containerToReturn);
+  return containerToReturn;
 }
 
 /**
@@ -80,23 +74,21 @@ export function updateContainer(container) {
  * @returns {*}
  */
 export function getContainers(query = {}) {
-    const filter = {};
-    Object.keys(query).forEach((key) => {
-        filter[`data.${key}`] = query[key];
-    });
-    if (!containers) {
-        return [];
-    }
-    const containerList = containers
-        .find(filter)
-        .map((item) => validateContainer(item.data));
-    return containerList.sort(
-        byValues([
-            [(container) => container.watcher, byString()],
-            [(container) => container.name, byString()],
-            [(container) => container.image.tag.value, byString()],
-        ]),
-    );
+  const filter = {};
+  Object.keys(query).forEach((key) => {
+    filter[`data.${key}`] = query[key];
+  });
+  if (!containers) {
+    return [];
+  }
+  const containerList = containers.find(filter).map((item) => validateContainer(item.data));
+  return containerList.sort(
+    byValues([
+      [(container) => container.watcher, byString()],
+      [(container) => container.name, byString()],
+      [(container) => container.image.tag.value, byString()],
+    ]),
+  );
 }
 
 /**
@@ -105,14 +97,14 @@ export function getContainers(query = {}) {
  * @returns {null|Image}
  */
 export function getContainer(id) {
-    const container = containers.findOne({
-        'data.id': id,
-    });
+  const container = containers.findOne({
+    'data.id': id,
+  });
 
-    if (container !== null) {
-        return validateContainer(container.data);
-    }
-    return undefined;
+  if (container !== null) {
+    return validateContainer(container.data);
+  }
+  return undefined;
 }
 
 /**
@@ -120,14 +112,14 @@ export function getContainer(id) {
  * @param id
  */
 export function deleteContainer(id) {
-    const container = getContainer(id);
-    if (container) {
-        containers
-            .chain()
-            .find({
-                'data.id': id,
-            })
-            .remove();
-        emitContainerRemoved(container);
-    }
+  const container = getContainer(id);
+  if (container) {
+    containers
+      .chain()
+      .find({
+        'data.id': id,
+      })
+      .remove();
+    emitContainerRemoved(container);
+  }
 }

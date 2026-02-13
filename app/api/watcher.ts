@@ -6,5 +6,5 @@ import * as component from './component.js';
  * @returns {*}
  */
 export function init() {
-    return component.init('watcher');
+  return component.init('watcher');
 }

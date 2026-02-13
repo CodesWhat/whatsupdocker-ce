@@ -1,6 +1,10 @@
-import ConfigurationItem from "@/components/ConfigurationItem.vue";
-import { getAllAuthentications } from "@/services/authentication";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import ConfigurationItem from '@/components/ConfigurationItem.vue';
+import {
+  getAllAuthentications,
+  getAuthProviderColor,
+  getAuthProviderIcon,
+} from '@/services/authentication';
 
 export default defineComponent({
   data() {
@@ -15,13 +19,18 @@ export default defineComponent({
   async beforeRouteEnter(to, from, next) {
     try {
       const authentications = await getAllAuthentications();
-      next((vm: any) => (vm.authentications = authentications));
+      const authsWithIcons = authentications.map((a) => ({
+        ...a,
+        icon: getAuthProviderIcon(a.type),
+        iconColor: getAuthProviderColor(a.type),
+      }));
+      next((vm: any) => (vm.authentications = authsWithIcons));
     } catch (e: any) {
       next((vm: any) => {
         vm.$eventBus.emit(
-          "notify",
+          'notify',
           `Error when trying to load the authentications (${e.message})`,
-          "error",
+          'error',
         );
       });
     }

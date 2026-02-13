@@ -1,3 +1,4 @@
+# checkov:skip=CKV_DOCKER_3: entrypoint uses su-exec for runtime privilege drop
 # Common Stage
 FROM node:24-alpine@sha256:cd6fb7efa6490f039f3471a189214d5f548c11df1ff9e5b181aa49e22c14383e AS base
 WORKDIR /home/node/app
@@ -13,6 +14,7 @@ ENV DD_VERSION=$DD_VERSION
 
 HEALTHCHECK --interval=30s --timeout=5s CMD ["sh", "-c", "if [ -z \"$DD_SERVER_ENABLED\" ] || [ \"$DD_SERVER_ENABLED\" = 'true' ]; then curl --fail http://localhost:${DD_SERVER_PORT:-3000}/health || exit 1; else exit 0; fi"]
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache \
     bash \
     curl \
@@ -22,7 +24,7 @@ RUN apk add --no-cache \
     su-exec \
     tini \
     tzdata \
- && mkdir /store && chown node:node /store
+    && mkdir /store && chown node:node /store
 
 # Build stage for backend app
 FROM base AS app-build
@@ -38,7 +40,7 @@ COPY app/ ./
 
 # Build and remove dev dependencies
 RUN npm run build \
- && npm prune --omit=dev
+    && npm prune --omit=dev
 
 # Build stage for frontend UI
 FROM base AS ui-build
@@ -71,6 +73,3 @@ COPY --from=app-build /home/node/app/package.json ./package.json
 
 # Copy ui
 COPY --from=ui-build /home/node/ui/dist/ ./ui
-
-# No USER directive — entrypoint handles privilege drop via su-exec.
-# See Docker.entrypoint.sh for GID-conditional logic.

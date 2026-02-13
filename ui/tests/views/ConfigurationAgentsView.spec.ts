@@ -3,15 +3,19 @@ import ConfigurationAgentsView from '@/views/ConfigurationAgentsView';
 
 vi.mock('@/services/agent', () => ({
   default: {
-    getAgents: vi.fn(() => Promise.resolve([
+    getAgents: vi.fn(() =>
+      Promise.resolve([
+        { name: 'agent1', host: '192.168.1.1', port: 3000, connected: true },
+        { name: 'agent2', host: '192.168.1.2', port: 3001, connected: false },
+      ]),
+    ),
+  },
+  getAgents: vi.fn(() =>
+    Promise.resolve([
       { name: 'agent1', host: '192.168.1.1', port: 3000, connected: true },
       { name: 'agent2', host: '192.168.1.2', port: 3001, connected: false },
-    ])),
-  },
-  getAgents: vi.fn(() => Promise.resolve([
-    { name: 'agent1', host: '192.168.1.1', port: 3000, connected: true },
-    { name: 'agent2', host: '192.168.1.2', port: 3001, connected: false },
-  ])),
+    ]),
+  ),
 }));
 
 describe('ConfigurationAgentsView', () => {
@@ -26,7 +30,7 @@ describe('ConfigurationAgentsView', () => {
           name: 'agent1',
           agent: 'agent1',
           connected: true,
-          icon: 'mdi-lan-connect',
+          icon: 'fas fa-network-wired',
           configuration: { host: '192.168.1.1', port: 3000, status: 'Connected' },
         },
         {
@@ -34,7 +38,7 @@ describe('ConfigurationAgentsView', () => {
           name: 'agent2',
           agent: 'agent2',
           connected: false,
-          icon: 'mdi-lan-disconnect',
+          icon: 'fas fa-plug-circle-xmark',
           configuration: { host: '192.168.1.2', port: 3001, status: 'Disconnected' },
         },
       ],
@@ -50,7 +54,7 @@ describe('ConfigurationAgentsView', () => {
   });
 
   it('renders a row for each agent', () => {
-    const rows = wrapper.findAll('.v-row');
+    const rows = wrapper.findAll('.mb-3');
     expect(rows).toHaveLength(2);
   });
 
@@ -72,8 +76,8 @@ describe('ConfigurationAgentsView Route Hook', () => {
 
     expect(vm.agents).toHaveLength(2);
     expect(vm.agents[0].name).toBe('agent1');
-    expect(vm.agents[0].icon).toBe('mdi-lan-connect');
-    expect(vm.agents[1].icon).toBe('mdi-lan-disconnect');
+    expect(vm.agents[0].icon).toBe('fas fa-network-wired');
+    expect(vm.agents[1].icon).toBe('fas fa-plug-circle-xmark');
     expect(vm.rawAgents).toHaveLength(2);
   });
 

@@ -3,7 +3,7 @@
  * when the mock is invoked with `new`. Arrow functions cannot be constructors.
  */
 export function mockConstructor<T>(implementation: T) {
-    return function (this: unknown) {
-        return implementation;
-    };
+  return function (this: unknown) {
+    return implementation;
+  };
 }

@@ -1,9 +1,11 @@
 # Trigger API
+
 This API allows to query the state of the triggers.
 
 ?> [Need to add a new Trigger?](/configuration/triggers/)
 
 ## Get all Triggers
+
 This operation lets you get all the configured triggers.
 
 ```bash
@@ -27,6 +29,7 @@ curl http://drydock:3000/api/triggers
 ```
 
 ## Get a Trigger by id
+
 This operation lets you get a specific Trigger.
 
 ```bash
@@ -48,6 +51,7 @@ curl http://drydock:3000/api/triggers/smtp/gmail
 ```
 
 ## Running a trigger
+
 This operation lets you run a specific Trigger with simulated data.
 
 ```bash

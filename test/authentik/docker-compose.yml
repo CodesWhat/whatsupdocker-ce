@@ -4,19 +4,44 @@ version: '3.2'
 services:
   postgresql:
     image: postgres:12-alpine
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       - POSTGRES_PASSWORD=authentik
       - POSTGRES_USER=authentik
       - POSTGRES_DB=authentik
     env_file:
       - .env
+    volumes:
+      - authentik_postgresql_data:/var/lib/postgresql/data
+    tmpfs:
+      - /tmp
+      - /run
 
   redis:
     image: redis:alpine
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - authentik_redis_data:/data
+    tmpfs:
+      - /tmp
+      - /run
 
   server:
     image: goauthentik.io/server:2021.10.2
     command: server
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
@@ -25,6 +50,9 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: authentik
     env_file:
       - .env
+    tmpfs:
+      - /tmp
+      - /run
     ports:
       - "0.0.0.0:9000:9000"
       - "0.0.0.0:9443:9443"
@@ -32,14 +60,26 @@ services:
   worker:
     image: goauthentik.io/server:2021.10.2
     command: worker
+    # NOTE: In production, the worker may need a Docker socket mount
+    # (/var/run/docker.sock) for outpost management. It is intentionally
+    # omitted here to reduce the attack surface in the test environment.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
       AUTHENTIK_POSTGRESQL__PASSWORD: authentik
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - .env
+    tmpfs:
+      - /tmp
+      - /run
+
+volumes:
+  authentik_postgresql_data:
+  authentik_redis_data:

@@ -1,4 +1,4 @@
-import { short, dateTime, date, registerGlobalProperties } from '@/filters/index';
+import { date, dateTime, registerGlobalProperties, short } from '@/filters/index';
 
 describe('Filters', () => {
   describe('short', () => {
@@ -34,12 +34,12 @@ describe('Filters', () => {
     it('should register filters as global properties', () => {
       const mockApp = {
         config: {
-          globalProperties: {}
-        }
+          globalProperties: {},
+        },
       };
-      
+
       registerGlobalProperties(mockApp);
-      
+
       expect(mockApp.config.globalProperties.$filters).toBeDefined();
       expect(mockApp.config.globalProperties.$filters.short).toBe(short);
       expect(mockApp.config.globalProperties.$filters.dateTime).toBe(dateTime);

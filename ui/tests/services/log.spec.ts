@@ -1,4 +1,4 @@
-import { getLogIcon, getLog, getLogEntries } from '@/services/log';
+import { getLog, getLogEntries, getLogIcon } from '@/services/log';
 
 describe('Log Service', () => {
   beforeEach(() => {
@@ -6,13 +6,13 @@ describe('Log Service', () => {
   });
 
   it('should return log icon', () => {
-    expect(getLogIcon()).toBe('mdi-console');
+    expect(getLogIcon()).toBe('fas fa-scroll');
   });
 
   it('should get log', async () => {
     const mockResponse = { logs: [] };
     global.fetch.mockResolvedValue({
-      json: vi.fn().mockResolvedValue(mockResponse)
+      json: vi.fn().mockResolvedValue(mockResponse),
     });
 
     const result = await getLog();
@@ -23,7 +23,9 @@ describe('Log Service', () => {
 
   describe('getLogEntries', () => {
     it('should fetch log entries with default params', async () => {
-      const mockEntries = [{ timestamp: Date.now(), level: 'info', component: 'test', msg: 'hello' }];
+      const mockEntries = [
+        { timestamp: Date.now(), level: 'info', component: 'test', msg: 'hello' },
+      ];
       global.fetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue(mockEntries),
@@ -92,7 +94,9 @@ describe('Log Service', () => {
         statusText: 'Internal Server Error',
       });
 
-      await expect(getLogEntries()).rejects.toThrow('Failed to fetch log entries: Internal Server Error');
+      await expect(getLogEntries()).rejects.toThrow(
+        'Failed to fetch log entries: Internal Server Error',
+      );
     });
 
     it('should fetch from agent endpoint when agent param is provided', async () => {

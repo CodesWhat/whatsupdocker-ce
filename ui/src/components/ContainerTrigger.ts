@@ -1,5 +1,5 @@
-import { runTrigger } from "@/services/container";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import { runTrigger } from '@/services/container';
 
 export default defineComponent({
   props: {
@@ -33,17 +33,12 @@ export default defineComponent({
           triggerName: this.trigger.name,
           triggerAgent: this.trigger.agent,
         });
-        (this as any).$eventBus.emit("notify", "Trigger executed with success");
+        this.$eventBus.emit('notify', 'Trigger executed with success');
       } catch (err: any) {
-        (this as any).$eventBus.emit(
-          "notify",
-          `Trigger executed with error (${err.message}})`,
-          "error",
-        );
+        this.$eventBus.emit('notify', `Trigger executed with error (${err.message})`, 'error');
       } finally {
         this.isTriggering = false;
       }
-      this.isTriggering = false;
     },
   },
 });

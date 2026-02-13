@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
   props: {
@@ -14,34 +14,63 @@ export default defineComponent({
       type: [String, Number],
       default: 8,
     },
+    fallbackIcon: {
+      type: String,
+      default: 'fab fa-docker',
+    },
+    color: {
+      type: String,
+      default: undefined,
+    },
+  },
+
+  setup() {
+    const imgFailed = ref(false);
+    const useFallbackCdn = ref(false);
+    const onImgError = (isSelfhst: boolean) => {
+      if (isSelfhst && !useFallbackCdn.value) {
+        useFallbackCdn.value = true;
+      } else {
+        imgFailed.value = true;
+      }
+    };
+    return { imgFailed, useFallbackCdn, onImgError };
+  },
+
+  watch: {
+    icon() {
+      this.imgFailed = false;
+      this.useFallbackCdn = false;
+    },
   },
 
   computed: {
     normalizedIcon() {
       if (!this.icon) return '';
       return this.icon
-        .replace('mdi:', 'mdi-')
-        .replace('fa:', 'fa-')
-        .replace('fab:', 'fab-')
-        .replace('far:', 'far-')
-        .replace('fas:', 'fas-')
+        .replace(/^fa:/, 'fa-')
+        .replace(/^fab:/, 'fab fa-')
+        .replace(/^far:/, 'far fa-')
+        .replace(/^fas:/, 'fas fa-')
         .replace('si:', 'si-');
     },
 
     isHomarrIcon() {
-      return this.icon && (this.icon.startsWith('hl-') || this.icon.startsWith('hl:'));
+      return Boolean(this.icon?.startsWith('hl-') || this.icon?.startsWith('hl:'));
     },
 
     isSelfhstIcon() {
-      return this.icon && (this.icon.startsWith('sh-') || this.icon.startsWith('sh:'));
+      return Boolean(this.icon?.startsWith('sh-') || this.icon?.startsWith('sh:'));
     },
 
     isSimpleIcon() {
-      return this.normalizedIcon && this.normalizedIcon.startsWith('si-');
+      return this.normalizedIcon?.startsWith('si-');
     },
 
     isCustomIconUrl() {
       if (!this.icon) return false;
+      // Relative paths (e.g. /drydock-logo.png)
+      if (this.icon.startsWith('/')) return true;
       try {
         const iconUrl = new URL(this.icon);
         return iconUrl.protocol === 'http:' || iconUrl.protocol === 'https:';
@@ -57,6 +86,9 @@ export default defineComponent({
 
     selfhstIconUrl() {
       const iconName = this.icon.replace('sh-', '').replace('sh:', '');
+      if (this.useFallbackCdn) {
+        return `https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/${iconName}.png`;
+      }
       return `https://cdn.jsdelivr.net/gh/selfhst/icons/png/${iconName}.png`;
     },
 

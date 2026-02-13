@@ -5,7 +5,7 @@ const mockUpdateKind = {
   kind: 'tag',
   localValue: '1.0.0',
   remoteValue: '2.0.0',
-  semverDiff: 'major'
+  semverDiff: 'major',
 };
 
 const mockResult = {
@@ -25,7 +25,7 @@ describe('ContainerUpdate', () => {
         result: mockResult,
         updateAvailable: true,
         semver: true,
-      }
+      },
     });
   });
 
@@ -78,7 +78,10 @@ describe('ContainerUpdate', () => {
       wrapper.vm.copyToClipboard('update tag', '2.0.0');
 
       expect(writeTextMock).toHaveBeenCalledWith('2.0.0');
-      expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith('notify', 'update tag copied to clipboard');
+      expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
+        'notify',
+        'update tag copied to clipboard',
+      );
     });
 
     it('copies digest to clipboard', () => {

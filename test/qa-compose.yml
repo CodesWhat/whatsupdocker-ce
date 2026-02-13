@@ -1,0 +1,94 @@
+services:
+  drydock:
+    image: drydock:dev
+    container_name: drydock-qa
+    user: root
+    ports:
+      - "3456:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DD_RUN_AS_ROOT=true
+      - DD_LOG_FORMAT=text
+      - DD_WATCHER_LOCAL_WATCHBYDEFAULT=false
+      # Disabled for screenshots — prevents auto-updating test containers
+      # - DD_TRIGGER_DOCKER_LOCAL_PRUNE=true
+      - DD_TRIGGER_HTTP_MYWEBHOOK_URL=http://httpbin.org/post
+      - DD_TRIGGER_HTTP_MYWEBHOOK_METHOD=POST
+      - DD_AUTH_BASIC_ADMIN_USER=admin
+      - "DD_AUTH_BASIC_ADMIN_HASH={SHA}W6ph5Mm5Pz8GgiULbPgzG37mj9g="
+      - DD_SERVER_WEBHOOK_ENABLED=true
+      - DD_SERVER_WEBHOOK_TOKEN=test-token-12345
+      # --- Slack trigger ---
+      - DD_TRIGGER_SLACK_MYSLACK_TOKEN=xoxb-fake-slack-token-for-testing
+      - DD_TRIGGER_SLACK_MYSLACK_CHANNEL=C01FAKECHANNEL
+      # --- SMTP trigger ---
+      - DD_TRIGGER_SMTP_MYEMAIL_HOST=smtp.example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_PORT=587
+      - DD_TRIGGER_SMTP_MYEMAIL_USER=alerts@example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_PASS=fakesmtppassword
+      - DD_TRIGGER_SMTP_MYEMAIL_FROM=alerts@example.com
+      - DD_TRIGGER_SMTP_MYEMAIL_TO=admin@example.com
+      # --- GHCR registry (authenticated) ---
+      - DD_REGISTRY_GHCR_PRIVATE_USERNAME=myghuser
+      - DD_REGISTRY_GHCR_PRIVATE_TOKEN=ghp_fakeGitHubTokenForTesting123
+      # Note: no private Hub registry -- test containers are public images
+      # --- Agent: staging server ---
+      - DD_AGENT_STAGING_HOST=192.168.1.50
+      - DD_AGENT_STAGING_PORT=3000
+      - DD_AGENT_STAGING_SECRET=staging-shared-secret-key
+      # --- Agent: production server ---
+      - DD_AGENT_PRODUCTION_HOST=10.0.0.100
+      - DD_AGENT_PRODUCTION_PORT=3000
+      - DD_AGENT_PRODUCTION_SECRET=production-shared-secret-key
+      # --- Maintenance window (QA) ---
+      # Uncomment to test; adjust cron to match/not-match current time
+      # - DD_WATCHER_LOCAL_MAINTENANCE_WINDOW=0 2-6 * * *
+      # - DD_WATCHER_LOCAL_MAINTENANCE_WINDOW_TZ=UTC
+
+  # Container with updates available and lifecycle hooks
+  nginx-hooked:
+    image: nginx:1.25.5
+    pull_policy: never
+    container_name: nginx-hooked
+    labels:
+      - dd.watch=true
+      - dd.display.name=Nginx (Hooked)
+      - dd.group=web-stack
+      - dd.hook.pre=echo "pre-update check"
+      - dd.hook.post=echo "post-update cleanup"
+      - dd.hook.timeout=30000
+
+  # Container in same group, no hooks
+  redis-cache:
+    image: redis:7.2.0
+    pull_policy: never
+    container_name: redis-cache
+    labels:
+      - dd.watch=true
+      - dd.display.name=Redis Cache
+      - dd.group=web-stack
+
+  # Container with auto-rollback
+  traefik-proxy:
+    image: traefik:v3.0.0
+    pull_policy: never
+    container_name: traefik-proxy
+    labels:
+      - dd.watch=true
+      - dd.display.name=Traefik Proxy
+      - dd.group=infra
+      - dd.rollback.auto=true
+      - dd.rollback.window=120000
+      - dd.rollback.interval=5000
+
+  # Ungrouped container
+  postgres-db:
+    image: postgres:16.0
+    pull_policy: never
+    container_name: postgres-db
+    environment:
+      - POSTGRES_PASSWORD=testpass
+    labels:
+      - dd.watch=true
+      - dd.display.name=PostgreSQL

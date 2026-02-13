@@ -1,18 +1,18 @@
 {
-    "image": {
-        "name": "organization/image",
-        "registry": {
-            "name": "hub"
-        },
-        "tag": {
-            "value": "4.5",
-            "semver": true
-        },
-        "digest": {
-            "watch": true,
-            "value": "xxx"
-        },
-        "architecture": "arch",
-        "os": "os"
-    }
+  "image": {
+    "name": "organization/image",
+    "registry": {
+      "name": "hub"
+    },
+    "tag": {
+      "value": "4.5",
+      "semver": true
+    },
+    "digest": {
+      "watch": true,
+      "value": "xxx"
+    },
+    "architecture": "arch",
+    "os": "os"
+  }
 }

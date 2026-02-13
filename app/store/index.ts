@@ -1,26 +1,31 @@
 // @ts-nocheck
+
+import fs from 'node:fs';
+import path from 'node:path';
 import joi from 'joi';
 import Loki from 'lokijs';
-import fs from 'node:fs';
 import logger from '../log/index.js';
+import { resolveConfiguredPath, resolveConfiguredPathWithinBase } from '../runtime/paths.js';
+
 const log = logger.child({ component: 'store' });
+
 import { getStoreConfiguration } from '../configuration/index.js';
 
 import * as app from './app.js';
+import * as audit from './audit.js';
+import * as backup from './backup.js';
 import * as container from './container.js';
 
 // Store Configuration Schema
 const configurationSchema = joi.object().keys({
-    path: joi.string().default('/store'),
-    file: joi.string().default('dd.json'),
+  path: joi.string().default('/store'),
+  file: joi.string().default('dd.json'),
 });
 
 // Validate Configuration
-const configurationToValidate = configurationSchema.validate(
-    getStoreConfiguration() || {},
-);
+const configurationToValidate = configurationSchema.validate(getStoreConfiguration() || {});
 if (configurationToValidate.error) {
-    throw configurationToValidate.error;
+  throw configurationToValidate.error;
 }
 const configuration = configurationToValidate.value;
 
@@ -28,8 +33,10 @@ const configuration = configurationToValidate.value;
 let db;
 
 function createCollections() {
-    app.createCollections(db);
-    container.createCollections(db);
+  app.createCollections(db);
+  audit.createCollections(db);
+  backup.createCollections(db);
+  container.createCollections(db);
 }
 
 /**
@@ -40,13 +47,13 @@ function createCollections() {
  * @returns {Promise<void>}
  */
 async function loadDb(err, resolve, reject) {
-    if (err) {
-        reject(err);
-    } else {
-        // Create collections
-        createCollections();
-        resolve();
-    }
+  if (err) {
+    reject(err);
+  } else {
+    // Create collections
+    createCollections();
+    resolve();
+  }
 }
 
 /**
@@ -55,33 +62,42 @@ async function loadDb(err, resolve, reject) {
  * @returns {Promise<unknown>}
  */
 export async function init(options = {}) {
-    const isMemory = options.memory || false;
-    db = new Loki(`${configuration.path}/${configuration.file}`, {
-        autosave: !isMemory,
-    });
+  const isMemory = options.memory || false;
+  const storeDirectory = resolveConfiguredPath(configuration.path, {
+    label: 'DD_STORE_PATH',
+  });
+  const storePath = resolveConfiguredPathWithinBase(storeDirectory, configuration.file, {
+    label: 'DD_STORE_FILE',
+  });
+  if (storePath === storeDirectory) {
+    throw new Error('DD_STORE_FILE must reference a file path, not a directory');
+  }
 
-    if (isMemory) {
-        log.info('Init store in memory mode');
-        createCollections();
-        return Promise.resolve();
-    }
+  db = new Loki(storePath, {
+    autosave: !isMemory,
+  });
 
-    // Migrate from wud.json if dd.json doesn't exist yet
-    const storePath = `${configuration.path}/${configuration.file}`;
-    const legacyPath = `${configuration.path}/wud.json`;
-    if (!fs.existsSync(storePath) && fs.existsSync(legacyPath)) {
-        log.info(`Migrating store from ${legacyPath} to ${storePath}`);
-        fs.renameSync(legacyPath, storePath);
-    }
+  if (isMemory) {
+    log.info('Init store in memory mode');
+    createCollections();
+    return;
+  }
 
-    log.info(`Load store from (${storePath})`);
-    if (!fs.existsSync(configuration.path)) {
-        log.info(`Create folder ${configuration.path}`);
-        fs.mkdirSync(configuration.path);
-    }
-    return new Promise((resolve, reject) => {
-        db.loadDatabase({}, (err) => loadDb(err, resolve, reject));
-    });
+  // Migrate from wud.json if dd.json doesn't exist yet
+  const legacyPath = path.resolve(storeDirectory, 'wud.json');
+  if (!fs.existsSync(storePath) && fs.existsSync(legacyPath)) {
+    log.info(`Migrating store from ${legacyPath} to ${storePath}`);
+    fs.renameSync(legacyPath, storePath);
+  }
+
+  log.info(`Load store from (${storePath})`);
+  if (!fs.existsSync(storeDirectory)) {
+    log.info(`Create folder ${storeDirectory}`);
+    fs.mkdirSync(storeDirectory);
+  }
+  return new Promise((resolve, reject) => {
+    db.loadDatabase({}, (err) => loadDb(err, resolve, reject));
+  });
 }
 
 /**
@@ -89,5 +105,5 @@ export async function init(options = {}) {
  * @returns {*}
  */
 export function getConfiguration() {
-    return configuration;
+  return configuration;
 }

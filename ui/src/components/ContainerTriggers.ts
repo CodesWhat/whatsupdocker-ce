@@ -1,6 +1,6 @@
-import ContainerTrigger from "@/components/ContainerTrigger.vue";
-import { getContainerTriggers } from "@/services/container";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import ContainerTrigger from '@/components/ContainerTrigger.vue';
+import { getContainerTriggers } from '@/services/container';
 
 export default defineComponent({
   components: {

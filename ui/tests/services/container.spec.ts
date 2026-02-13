@@ -1,11 +1,11 @@
 import {
+  deleteContainer,
   getAllContainers,
   getContainerIcon,
   getContainerLogs,
+  getContainerTriggers,
   refreshAllContainers,
   refreshContainer,
-  deleteContainer,
-  getContainerTriggers,
   runTrigger,
   updateContainerPolicy,
 } from '@/services/container';
@@ -20,7 +20,7 @@ describe('Container Service', () => {
 
   describe('getContainerIcon', () => {
     it('returns the docker icon', () => {
-      expect(getContainerIcon()).toBe('mdi-docker');
+      expect(getContainerIcon()).toBe('fab fa-docker');
     });
   });
 
@@ -28,17 +28,17 @@ describe('Container Service', () => {
     it('fetches all containers successfully', async () => {
       const mockContainers = [
         { id: '1', name: 'container1' },
-        { id: '2', name: 'container2' }
+        { id: '2', name: 'container2' },
       ];
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockContainers
+        json: async () => mockContainers,
       } as any);
 
       const containers = await getAllContainers();
 
       expect(fetch).toHaveBeenCalledWith('/api/containers', {
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(containers).toEqual(mockContainers);
     });
@@ -49,14 +49,14 @@ describe('Container Service', () => {
       const mockResult = { refreshed: 10 };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResult
+        json: async () => mockResult,
       } as any);
 
       const result = await refreshAllContainers();
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/watch', {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(result).toEqual(mockResult);
     });
@@ -67,7 +67,9 @@ describe('Container Service', () => {
         statusText: 'Service Unavailable',
       } as any);
 
-      await expect(refreshAllContainers()).rejects.toThrow('Failed to refresh all containers: Service Unavailable');
+      await expect(refreshAllContainers()).rejects.toThrow(
+        'Failed to refresh all containers: Service Unavailable',
+      );
     });
   });
 
@@ -77,14 +79,14 @@ describe('Container Service', () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => mockResult
+        json: async () => mockResult,
       } as any);
 
       const result = await refreshContainer('container1');
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/container1/watch', {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(result).toEqual(mockResult);
     });
@@ -106,21 +108,23 @@ describe('Container Service', () => {
         statusText: 'Internal Server Error',
       } as any);
 
-      await expect(refreshContainer('c1')).rejects.toThrow('Failed to refresh container c1: Internal Server Error');
+      await expect(refreshContainer('c1')).rejects.toThrow(
+        'Failed to refresh container c1: Internal Server Error',
+      );
     });
   });
 
   describe('deleteContainer', () => {
     it('deletes container successfully', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true
+        ok: true,
       } as any);
 
       const result = await deleteContainer('container1');
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/container1', {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(result).toBeDefined();
     });
@@ -131,7 +135,9 @@ describe('Container Service', () => {
         statusText: 'Forbidden',
       } as any);
 
-      await expect(deleteContainer('c1')).rejects.toThrow('Failed to delete container c1: Forbidden');
+      await expect(deleteContainer('c1')).rejects.toThrow(
+        'Failed to delete container c1: Forbidden',
+      );
     });
   });
 
@@ -139,17 +145,17 @@ describe('Container Service', () => {
     it('fetches container triggers successfully', async () => {
       const mockTriggers = [
         { type: 'webhook', name: 'trigger1' },
-        { type: 'email', name: 'trigger2' }
+        { type: 'email', name: 'trigger2' },
       ];
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockTriggers
+        json: async () => mockTriggers,
       } as any);
 
       const triggers = await getContainerTriggers('container1');
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/container1/triggers', {
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(triggers).toEqual(mockTriggers);
     });
@@ -160,7 +166,9 @@ describe('Container Service', () => {
         statusText: 'Not Found',
       } as any);
 
-      await expect(getContainerTriggers('c1')).rejects.toThrow('Failed to get triggers for container c1: Not Found');
+      await expect(getContainerTriggers('c1')).rejects.toThrow(
+        'Failed to get triggers for container c1: Not Found',
+      );
     });
   });
 
@@ -169,23 +177,20 @@ describe('Container Service', () => {
       const mockResult = { success: true };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResult
+        json: async () => mockResult,
       } as any);
 
       const result = await runTrigger({
         containerId: 'container1',
         triggerType: 'webhook',
-        triggerName: 'trigger1'
+        triggerName: 'trigger1',
       });
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/containers/container1/triggers/webhook/trigger1',
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      expect(fetch).toHaveBeenCalledWith('/api/containers/container1/triggers/webhook/trigger1', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
       expect(result).toEqual(mockResult);
     });
 
@@ -193,7 +198,7 @@ describe('Container Service', () => {
       const mockResult = { success: true };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResult
+        json: async () => mockResult,
       } as any);
 
       const result = await runTrigger({
@@ -208,8 +213,8 @@ describe('Container Service', () => {
         {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        }
+          headers: { 'Content-Type': 'application/json' },
+        },
       );
       expect(result).toEqual(mockResult);
     });
@@ -220,11 +225,13 @@ describe('Container Service', () => {
         statusText: 'Bad Request',
       } as any);
 
-      await expect(runTrigger({
-        containerId: 'c1',
-        triggerType: 'webhook',
-        triggerName: 't1',
-      })).rejects.toThrow('Failed to run trigger webhook/t1: Bad Request');
+      await expect(
+        runTrigger({
+          containerId: 'c1',
+          triggerType: 'webhook',
+          triggerName: 't1',
+        }),
+      ).rejects.toThrow('Failed to run trigger webhook/t1: Bad Request');
     });
   });
 
@@ -270,19 +277,35 @@ describe('Container Service', () => {
         json: async () => ({ error: 'Invalid action' }),
       } as any);
 
-      await expect(updateContainerPolicy('c1', 'invalid'))
-        .rejects.toThrow('Failed to update container policy invalid: Bad Request (Invalid action)');
+      await expect(updateContainerPolicy('c1', 'invalid')).rejects.toThrow(
+        'Failed to update container policy invalid: Bad Request (Invalid action)',
+      );
+    });
+
+    it('throws without detail when response body has no error field', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Bad Request',
+        json: async () => ({}),
+      } as any);
+
+      await expect(updateContainerPolicy('c1', 'invalid')).rejects.toThrow(
+        'Failed to update container policy invalid: Bad Request',
+      );
     });
 
     it('throws without detail when response body parsing fails', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
-        json: async () => { throw new Error('parse error'); },
+        json: async () => {
+          throw new Error('parse error');
+        },
       } as any);
 
-      await expect(updateContainerPolicy('c1', 'enable'))
-        .rejects.toThrow('Failed to update container policy enable: Internal Server Error');
+      await expect(updateContainerPolicy('c1', 'enable')).rejects.toThrow(
+        'Failed to update container policy enable: Internal Server Error',
+      );
     });
   });
 
@@ -291,13 +314,13 @@ describe('Container Service', () => {
       const mockLogs = { logs: 'line1\nline2\nline3' };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockLogs
+        json: async () => mockLogs,
       } as any);
 
       const result = await getContainerLogs('container1');
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/container1/logs?tail=100', {
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(result).toEqual(mockLogs);
     });
@@ -306,13 +329,13 @@ describe('Container Service', () => {
       const mockLogs = { logs: 'line1' };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockLogs
+        json: async () => mockLogs,
       } as any);
 
       const result = await getContainerLogs('container1', 50);
 
       expect(fetch).toHaveBeenCalledWith('/api/containers/container1/logs?tail=50', {
-        credentials: 'include'
+        credentials: 'include',
       });
       expect(result).toEqual(mockLogs);
     });
@@ -323,7 +346,9 @@ describe('Container Service', () => {
         statusText: 'Internal Server Error',
       } as any);
 
-      await expect(getContainerLogs('c1')).rejects.toThrow('Failed to get logs for container c1: Internal Server Error');
+      await expect(getContainerLogs('c1')).rejects.toThrow(
+        'Failed to get logs for container c1: Internal Server Error',
+      );
     });
   });
 });

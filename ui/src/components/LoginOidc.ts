@@ -1,11 +1,15 @@
-import { getOidcRedirection } from "@/services/auth";
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import { getOidcRedirection } from '@/services/auth';
 
 export default defineComponent({
   props: {
     name: {
       type: String,
       required: true,
+    },
+    dark: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
@@ -19,7 +23,7 @@ export default defineComponent({
      */
     async redirect() {
       const redirection = await getOidcRedirection(this.name);
-      window.location.href = redirection.url;
+      globalThis.location.href = redirection.url;
     },
   },
 });

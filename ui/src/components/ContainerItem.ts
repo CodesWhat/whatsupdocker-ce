@@ -1,9 +1,11 @@
+import { defineComponent } from 'vue';
 import { useDisplay } from 'vuetify';
-import { getRegistryProviderIcon } from '@/services/registry';
 import ContainerDetail from '@/components/ContainerDetail.vue';
 import ContainerError from '@/components/ContainerError.vue';
 import ContainerImage from '@/components/ContainerImage.vue';
 import ContainerLogs from '@/components/ContainerLogs.vue';
+import ContainerPreview from '@/components/ContainerPreview.vue';
+import ContainerRollback from '@/components/ContainerRollback.vue';
 import ContainerTriggers from '@/components/ContainerTriggers.vue';
 import ContainerUpdate from '@/components/ContainerUpdate.vue';
 import IconRenderer from '@/components/IconRenderer.vue';
@@ -13,7 +15,9 @@ import {
   runTrigger,
   updateContainerPolicy,
 } from '@/services/container';
-import { defineComponent } from 'vue';
+import { restartContainer, startContainer, stopContainer } from '@/services/container-actions';
+import { getEffectiveDisplayIcon } from '@/services/image-icon';
+import { getRegistryProviderIcon } from '@/services/registry';
 
 export default defineComponent({
   setup() {
@@ -25,6 +29,8 @@ export default defineComponent({
     ContainerError,
     ContainerImage,
     ContainerLogs,
+    ContainerPreview,
+    ContainerRollback,
     ContainerTriggers,
     ContainerUpdate,
     IconRenderer,
@@ -56,22 +62,31 @@ export default defineComponent({
   data() {
     return {
       showDetail: false,
+      showPreview: false,
+      showRollback: false,
       dialogDelete: false,
       tab: 0,
       deleteEnabled: false,
       isRefreshingContainer: false,
       isUpdatingContainer: false,
+      isStarting: false,
+      isStopping: false,
+      isRestarting: false,
+      containerActionsEnabled: false,
     };
   },
   computed: {
     agentStatusColor() {
-      const agent = (this.agents as any[]).find(
-        (a) => a.name === this.container.agent,
-      );
+      const agents = Array.isArray(this.agents) ? this.agents : [];
+      const agent = agents.find((a) => a.name === this.container.agent);
       if (agent) {
-        return agent.connected ? "success" : "error";
+        return agent.connected ? 'success' : 'error';
       }
-      return "info";
+      return 'info';
+    },
+
+    effectiveDisplayIcon() {
+      return getEffectiveDisplayIcon(this.container.displayIcon, this.container.image.name);
     },
 
     registryIcon() {
@@ -79,13 +94,13 @@ export default defineComponent({
     },
 
     osIcon() {
-      let icon = 'mdi-help';
+      let icon = 'fas fa-circle-question';
       switch (this.container.image.os) {
         case 'linux':
-          icon = 'mdi-linux';
+          icon = 'fab fa-linux';
           break;
         case 'windows':
-          icon = 'mdi-microsoft-windows';
+          icon = 'fab fa-windows';
           break;
       }
       return icon;
@@ -93,30 +108,25 @@ export default defineComponent({
 
     newVersion() {
       let newVersion = 'unknown';
-      if (
-        this.container.result.created &&
-        this.container.image.created !== this.container.result.created
-      ) {
-        newVersion = (this as any).$filters.dateTime(this.container.result.created);
+      const resultCreated = this.container.result?.created;
+      if (resultCreated && this.container.image.created !== resultCreated) {
+        newVersion = this.$filters.dateTime(resultCreated);
       }
-      if (this.container.updateKind) {
+      if (this.container.updateKind?.remoteValue) {
         newVersion = this.container.updateKind.remoteValue;
       }
-      if (this.container.updateKind.kind === 'digest') {
-        newVersion = (this as any).$filters.short(newVersion, 15);
+      if (this.container.updateKind?.kind === 'digest') {
+        newVersion = this.$filters.short(newVersion, 15);
       }
       return newVersion;
     },
 
     newVersionClass() {
       let color = 'warning';
-      if (this.container.updateKind && this.container.updateKind.kind === 'tag') {
+      if (this.container.updateKind?.kind === 'tag') {
         switch (this.container.updateKind.semverDiff) {
           case 'major':
             color = 'error';
-            break;
-          case 'minor':
-            color = 'warning';
             break;
           case 'patch':
             color = 'success';
@@ -197,26 +207,22 @@ export default defineComponent({
   },
 
   methods: {
-    async applyContainerUpdatePolicy(action: string, payload = {}, successMessage = 'Update policy saved') {
+    async applyContainerUpdatePolicy(
+      action: string,
+      payload = {},
+      successMessage = 'Update policy saved',
+    ) {
       try {
         const containerUpdated = await updateContainerPolicy(this.container.id, action, payload);
         this.$emit('container-refreshed', containerUpdated);
-        (this as any).$eventBus.emit('notify', successMessage);
+        this.$eventBus.emit('notify', successMessage);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
-          'notify',
-          `Error when trying to update policy (${e.message})`,
-          'error',
-        );
+        this.$eventBus.emit('notify', `Error when trying to update policy (${e.message})`, 'error');
       }
     },
 
     async skipCurrentUpdate() {
-      await this.applyContainerUpdatePolicy(
-        'skip-current',
-        {},
-        'Current update skipped',
-      );
+      await this.applyContainerUpdatePolicy('skip-current', {}, 'Current update skipped');
     },
 
     async snoozeUpdates(days: number) {
@@ -244,16 +250,16 @@ export default defineComponent({
       try {
         const containerRefreshed = await refreshContainer(this.container.id);
         if (!containerRefreshed) {
-          (this as any).$eventBus.emit('notify', 'Container no longer found in Docker', 'warning');
+          this.$eventBus.emit('notify', 'Container no longer found in Docker', 'warning');
           this.$emit('container-missing', this.container.id);
           return;
         }
         this.$emit('container-refreshed', containerRefreshed);
         if (notifyOnSuccess) {
-          (this as any).$eventBus.emit('notify', 'Container refreshed');
+          this.$eventBus.emit('notify', 'Container refreshed');
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to refresh container (${e.message})`,
           'error',
@@ -268,11 +274,7 @@ export default defineComponent({
       try {
         const triggers = await getContainerTriggers(this.container.id);
         if (!Array.isArray(triggers) || triggers.length === 0) {
-          (this as any).$eventBus.emit(
-            'notify',
-            'No triggers associated to this container',
-            'warning',
-          );
+          this.$eventBus.emit('notify', 'No triggers associated to this container', 'warning');
           return;
         }
 
@@ -293,13 +295,13 @@ export default defineComponent({
           throw new Error(`some triggers failed (${triggerErrors.join(', ')})`);
         }
 
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Update triggered (${triggers.length} trigger${triggers.length > 1 ? 's' : ''})`,
         );
         await this.refreshContainerNow(false);
       } catch (e: any) {
-        (this as any).$eventBus.emit(
+        this.$eventBus.emit(
           'notify',
           `Error when trying to update container (${e.message})`,
           'error',
@@ -309,29 +311,82 @@ export default defineComponent({
       }
     },
 
+    async onRollbackSuccess() {
+      this.$eventBus.emit('notify', 'Container rolled back successfully');
+      await this.refreshContainerNow(false);
+    },
+
+    async startContainerAction() {
+      this.isStarting = true;
+      try {
+        const result = await startContainer(this.container.id);
+        this.$eventBus.emit('notify', 'Container started');
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
+      } catch (e: any) {
+        this.$eventBus.emit('notify', `Error starting container (${e.message})`, 'error');
+      } finally {
+        this.isStarting = false;
+      }
+    },
+
+    async stopContainerAction() {
+      this.isStopping = true;
+      try {
+        const result = await stopContainer(this.container.id);
+        this.$eventBus.emit('notify', 'Container stopped');
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
+      } catch (e: any) {
+        this.$eventBus.emit('notify', `Error stopping container (${e.message})`, 'error');
+      } finally {
+        this.isStopping = false;
+      }
+    },
+
+    async restartContainerAction() {
+      this.isRestarting = true;
+      try {
+        const result = await restartContainer(this.container.id);
+        this.$eventBus.emit('notify', 'Container restarted');
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
+        }
+      } catch (e: any) {
+        this.$eventBus.emit('notify', `Error restarting container (${e.message})`, 'error');
+      } finally {
+        this.isRestarting = false;
+      }
+    },
+
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit('notify', `${kind} copied to clipboard`);
+      this.$eventBus.emit('notify', `${kind} copied to clipboard`);
     },
 
     collapseDetail() {
       // Prevent collapse when selecting text only
-      if (window.getSelection()?.type !== 'Range') {
+      if (globalThis.getSelection()?.type !== 'Range') {
         this.showDetail = !this.showDetail;
       }
 
       // Hack because of a render bug on tabs inside a collapsible element
-      if ((this.$refs.tabs as any) && (this.$refs.tabs as any).onResize) {
-        (this.$refs.tabs as any).onResize();
+      const tabs = this.$refs.tabs as { onResize?: () => void } | undefined;
+      if (tabs?.onResize) {
+        tabs.onResize();
       }
     },
 
     normalizeFontawesome(iconString: string, prefix: string) {
-      return `${prefix} fa-${iconString.replace(`${prefix}:`, '')}`;
+      const prefixToStrip = `${prefix}:`;
+      return `${prefix} fa-${iconString.replace(prefixToStrip, '')}`;
     },
   },
 
   mounted() {
-    this.deleteEnabled = (this as any).$serverConfig?.feature?.delete || false;
+    this.deleteEnabled = this.$serverConfig?.feature?.delete || false;
+    this.containerActionsEnabled = this.$serverConfig?.feature?.containeractions ?? true;
   },
 });

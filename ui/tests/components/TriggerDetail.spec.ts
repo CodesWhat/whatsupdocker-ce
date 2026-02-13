@@ -13,7 +13,7 @@ vi.mock('@/services/trigger', () => ({
 const mockTrigger = {
   type: 'smtp',
   name: 'email-alert',
-  icon: 'mdi-email',
+  icon: 'fas fa-envelope',
   configuration: {
     threshold: 'all',
     host: 'smtp.example.com',
@@ -36,6 +36,7 @@ describe('TriggerDetail', () => {
     wrapper = mount(TriggerDetail, {
       props: { trigger: mockTrigger },
     });
+    wrapper.vm.$eventBus.emit.mockClear();
   });
 
   afterEach(() => {
@@ -74,6 +75,13 @@ describe('TriggerDetail', () => {
   it('returns empty configurationItems when configuration is empty', async () => {
     await wrapper.setProps({
       trigger: { ...mockTrigger, configuration: {} },
+    });
+    expect(wrapper.vm.configurationItems).toEqual([]);
+  });
+
+  it('returns empty configurationItems when configuration is missing', async () => {
+    await wrapper.setProps({
+      trigger: { ...mockTrigger, configuration: undefined },
     });
     expect(wrapper.vm.configurationItems).toEqual([]);
   });
@@ -123,7 +131,7 @@ describe('TriggerDetail', () => {
       expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
         'notify',
         'Failed to load containers for trigger test (network fail)',
-        'error'
+        'error',
       );
     });
 
@@ -146,7 +154,7 @@ describe('TriggerDetail', () => {
       expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
         'notify',
         expect.stringContaining('Select a container'),
-        'error'
+        'error',
       );
     });
 
@@ -156,7 +164,7 @@ describe('TriggerDetail', () => {
       expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
         'notify',
         expect.stringContaining('no longer available'),
-        'error'
+        'error',
       );
     });
 
@@ -177,7 +185,7 @@ describe('TriggerDetail', () => {
       await wrapper.vm.runTrigger();
       expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
         'notify',
-        'Trigger executed with success'
+        'Trigger executed with success',
       );
     });
 
@@ -187,18 +195,22 @@ describe('TriggerDetail', () => {
       await wrapper.vm.runTrigger();
       expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
         'notify',
-        'Trigger executed with error (send failed})',
-        'error'
+        'Trigger executed with error (send failed)',
+        'error',
       );
     });
 
     it('sets isTriggering during execution', async () => {
       wrapper.vm.selectedContainerId = 'c1';
-      let resolvePromise: () => void;
-      mockRunTrigger.mockReturnValue(new Promise<void>((r) => { resolvePromise = r; }));
+      let resolvePromise: (() => void) | undefined;
+      mockRunTrigger.mockReturnValue(
+        new Promise<void>((r) => {
+          resolvePromise = r;
+        }),
+      );
       const promise = wrapper.vm.runTrigger();
       expect(wrapper.vm.isTriggering).toBe(true);
-      resolvePromise!();
+      resolvePromise?.();
       await promise;
       expect(wrapper.vm.isTriggering).toBe(false);
     });

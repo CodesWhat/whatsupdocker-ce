@@ -5,6 +5,7 @@ The Agent exposes specific endpoints for the Controller to synchronize state and
 Authentication is required for all endpoints via the `X-Dd-Agent-Secret` header.
 
 ## Get State
+
 Returns a snapshot of the Agent's current state (containers, watchers, triggers).
 
 ```bash
@@ -19,6 +20,7 @@ curl -H "X-Dd-Agent-Secret: <SECRET>" http://agent:3000/api/triggers
 ```
 
 ## Watch Resources
+
 Trigger a manual watch on a specific watcher or container hosted by the Agent.
 
 ```bash
@@ -34,6 +36,7 @@ curl -X POST \
 ```
 
 ## Delete a Container
+
 Delete a container from the Agent's state.
 > **Note**: This operation requires `DD_SERVER_FEATURE_DELETE` to be enabled on the Agent.
 
@@ -44,17 +47,21 @@ curl -X DELETE \
 ```
 
 ## Real-time Events (SSE)
+
 Subscribes to real-time updates from the Agent using Server-Sent Events (SSE).
 
 The Agent pushes events when containers are added, updated, or removed.
 
 ### Endpoint
+
 ```bash
 curl -N -H "X-Dd-Agent-Secret: <SECRET>" -H "Accept: text/event-stream" http://agent:3000/api/events
 ```
 
 ### Protocol
+
 Events are sent as JSON objects with the following structure:
+
 ```json
 data: {
   "type": "event_type",
@@ -65,7 +72,9 @@ data: {
 ### Supported Events
 
 #### `dd:ack`
+
 Sent immediately upon connection to confirm the handshake.
+
 ```json
 {
   "type": "dd:ack",
@@ -76,7 +85,9 @@ Sent immediately upon connection to confirm the handshake.
 ```
 
 #### `dd:container-added`
+
 Sent when a new container is discovered.
+
 ```json
 {
   "type": "dd:container-added",
@@ -85,7 +96,9 @@ Sent when a new container is discovered.
 ```
 
 #### `dd:container-updated`
+
 Sent when an existing container is updated (e.g. status change, new image tag).
+
 ```json
 {
   "type": "dd:container-updated",
@@ -94,7 +107,9 @@ Sent when an existing container is updated (e.g. status change, new image tag).
 ```
 
 #### `dd:container-removed`
+
 Sent when a container is removed (e.g. stopped and pruned).
+
 ```json
 {
   "type": "dd:container-removed",
@@ -105,6 +120,7 @@ Sent when a container is removed (e.g. stopped and pruned).
 ```
 
 ## Execute Remote Trigger
+
 Executes a specific trigger on the Agent (e.g., to update a container).
 
 ```bash

@@ -1,4 +1,4 @@
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   props: {
@@ -17,7 +17,7 @@ export default defineComponent({
   },
   computed: {
     updateKindFormatted() {
-      let kind = "Unknown";
+      let kind = 'Unknown';
       if (this.updateKind) {
         kind = this.updateKind.kind;
       }
@@ -30,7 +30,7 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", `${kind} copied to clipboard`);
+      this.$eventBus.emit('notify', `${kind} copied to clipboard`);
     },
   },
 });

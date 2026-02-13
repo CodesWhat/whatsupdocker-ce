@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref } from 'vue';
 
 // Global event bus using reactive refs
 const events = ref({});
