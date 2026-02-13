@@ -109,8 +109,9 @@ describe('HomeView', () => {
   });
 
   it('displays update warning when updates are available', () => {
-    expect(wrapper.text()).toContain('1 update');
     expect(wrapper.vm.containersWithUpdates).toHaveLength(1);
+    expect(wrapper.find('.stat-badge--warning').exists()).toBe(true);
+    expect(wrapper.find('.stat-badge--warning').text()).toBe('1');
   });
 
   it('displays success message when no updates are available', async () => {
