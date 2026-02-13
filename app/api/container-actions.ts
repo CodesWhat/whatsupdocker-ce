@@ -1,5 +1,4 @@
-// @ts-nocheck
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import { getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
@@ -22,7 +21,9 @@ const ACTION_MESSAGES = {
   restart: 'Container restarted successfully',
 };
 
-async function executeAction(req, res, action, method) {
+type ContainerAction = keyof typeof ACTION_MESSAGES;
+
+async function executeAction(req: Request, res: Response, action: string, method: ContainerAction) {
   const serverConfiguration = getServerConfiguration();
   if (!serverConfiguration.feature.containeractions) {
     res.sendStatus(403);
@@ -65,19 +66,20 @@ async function executeAction(req, res, action, method) {
     getContainerActionsCounter()?.inc({ action });
 
     res.status(200).json({ message: ACTION_MESSAGES[method], container: updatedContainer });
-  } catch (e) {
-    log.warn(`Error performing ${method} on container ${id} (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error performing ${method} on container ${id} (${message})`);
 
     recordAuditEvent({
       action,
       container,
       status: 'error',
-      details: e.message,
+      details: message,
     });
     getContainerActionsCounter()?.inc({ action });
 
     res.status(500).json({
-      error: `Error performing ${method} on container (${e.message})`,
+      error: `Error performing ${method} on container (${message})`,
     });
   }
 }
@@ -85,21 +87,21 @@ async function executeAction(req, res, action, method) {
 /**
  * Start a stopped container.
  */
-async function startContainer(req, res) {
+async function startContainer(req: Request, res: Response) {
   await executeAction(req, res, 'container-start', 'start');
 }
 
 /**
  * Stop a running container.
  */
-async function stopContainer(req, res) {
+async function stopContainer(req: Request, res: Response) {
   await executeAction(req, res, 'container-stop', 'stop');
 }
 
 /**
  * Restart a container.
  */
-async function restartContainer(req, res) {
+async function restartContainer(req: Request, res: Response) {
   await executeAction(req, res, 'container-restart', 'restart');
 }
 

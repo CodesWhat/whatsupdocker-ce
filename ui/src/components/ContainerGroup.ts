@@ -1,6 +1,12 @@
-import { defineComponent } from 'vue';
+import { defineComponent, type PropType } from 'vue';
 import ContainerItem from '@/components/ContainerItem.vue';
 import { getContainerTriggers, refreshContainer, runTrigger } from '@/services/container';
+
+interface ContainerSummary {
+  id: string;
+  name: string;
+  updateAvailable: boolean;
+}
 
 export default defineComponent({
   components: {
@@ -13,11 +19,11 @@ export default defineComponent({
       default: null,
     },
     containers: {
-      type: Array,
+      type: Array as PropType<ContainerSummary[]>,
       required: true,
     },
     agents: {
-      type: Array,
+      type: Array as PropType<string[]>,
       required: false,
       default: () => [],
     },
@@ -41,10 +47,10 @@ export default defineComponent({
       return this.groupName || 'Ungrouped';
     },
     containerCount(): number {
-      return (this.containers as any[]).length;
+      return this.containers.length;
     },
     updateCount(): number {
-      return (this.containers as any[]).filter((c) => c.updateAvailable).length;
+      return this.containers.filter((c) => c.updateAvailable).length;
     },
     hasUpdates(): boolean {
       return this.updateCount > 0;
@@ -55,10 +61,10 @@ export default defineComponent({
     toggleExpand() {
       this.expanded = !this.expanded;
     },
-    onDeleteContainer(container: any) {
+    onDeleteContainer(container: ContainerSummary) {
       this.$emit('delete-container', container);
     },
-    onContainerRefreshed(container: any) {
+    onContainerRefreshed(container: ContainerSummary) {
       this.$emit('container-refreshed', container);
     },
     onContainerMissing(containerId: string) {
@@ -66,7 +72,7 @@ export default defineComponent({
     },
     async updateAllInGroup() {
       this.isUpdatingAll = true;
-      const updatableContainers = (this.containers as any[]).filter((c) => c.updateAvailable);
+      const updatableContainers = this.containers.filter((c) => c.updateAvailable);
       let errorCount = 0;
 
       for (const container of updatableContainers) {

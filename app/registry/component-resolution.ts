@@ -45,8 +45,9 @@ export function getAvailableProviders(
         return fs.statSync(filePath).isDirectory();
       })
       .sort();
-  } catch (e: any) {
-    onError?.(`Unable to load providers under ${basePath}: ${e.message}`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    onError?.(`Unable to load providers under ${basePath}: ${message}`);
     return [];
   }
 }

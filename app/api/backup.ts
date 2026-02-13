@@ -1,5 +1,4 @@
-// @ts-nocheck
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import logger from '../log/index.js';
 import * as registry from '../registry/index.js';
@@ -15,10 +14,10 @@ const router = express.Router();
 /**
  * Get all backups, optionally filtered by containerId query param.
  */
-function getBackups(req, res) {
+function getBackups(req: Request, res: Response) {
   const { containerId } = req.query;
   if (containerId) {
-    res.status(200).json(storeBackup.getBackups(containerId));
+    res.status(200).json(storeBackup.getBackups(containerId as string));
   } else {
     res.status(200).json(storeBackup.getAllBackups());
   }
@@ -27,7 +26,7 @@ function getBackups(req, res) {
 /**
  * Get backups for a specific container.
  */
-function getContainerBackups(req, res) {
+function getContainerBackups(req: Request, res: Response) {
   const { id } = req.params;
 
   const container = storeContainer.getContainer(id);
@@ -42,7 +41,7 @@ function getContainerBackups(req, res) {
 /**
  * Rollback a container to its latest backup image.
  */
-async function rollbackContainer(req, res) {
+async function rollbackContainer(req: Request, res: Response) {
   const { id } = req.params;
 
   const container = storeContainer.getContainer(id);
@@ -114,18 +113,19 @@ async function rollbackContainer(req, res) {
       message: 'Container rolled back successfully',
       backup: latestBackup,
     });
-  } catch (e) {
-    log.warn(`Error rolling back container ${id} (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error rolling back container ${id} (${message})`);
 
     recordAuditEvent({
       action: 'rollback',
       container,
       status: 'error',
-      details: e.message,
+      details: message,
     });
 
     res.status(500).json({
-      error: `Error rolling back container (${e.message})`,
+      error: `Error rolling back container (${message})`,
     });
   }
 }

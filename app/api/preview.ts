@@ -1,5 +1,4 @@
-// @ts-nocheck
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import logger from '../log/index.js';
 import * as registry from '../registry/index.js';
@@ -14,7 +13,7 @@ const router = express.Router();
 /**
  * Preview what an update would do for a container.
  */
-async function previewContainer(req, res) {
+async function previewContainer(req: Request, res: Response) {
   const { id } = req.params;
 
   const container = storeContainer.getContainer(id);
@@ -39,18 +38,19 @@ async function previewContainer(req, res) {
     });
 
     res.status(200).json(preview);
-  } catch (e) {
-    log.warn(`Error previewing container ${id} (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error previewing container ${id} (${message})`);
 
     recordAuditEvent({
       action: 'preview',
       container,
       status: 'error',
-      details: e.message,
+      details: message,
     });
 
     res.status(500).json({
-      error: `Error previewing container update (${e.message})`,
+      error: `Error previewing container update (${message})`,
     });
   }
 }

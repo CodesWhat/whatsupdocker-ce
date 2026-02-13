@@ -1,5 +1,4 @@
-// @ts-nocheck
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import nocache from 'nocache';
 import * as storeContainer from '../store/container.js';
 
@@ -10,9 +9,14 @@ const router = express.Router();
  *
  * Priority: dd.group > wud.group > com.docker.compose.project > null (ungrouped)
  */
-function getGroups(req, res) {
+function getGroups(req: Request, res: Response) {
   const containers = storeContainer.getContainers();
-  const groups = {};
+  const groups: Record<string, {
+    name: string | null;
+    containers: { id: string; name: string; displayName: string; updateAvailable: boolean }[];
+    containerCount: number;
+    updatesAvailable: number;
+  }> = {};
 
   for (const container of containers) {
     const groupName =

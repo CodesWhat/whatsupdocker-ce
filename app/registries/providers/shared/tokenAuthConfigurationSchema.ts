@@ -1,5 +1,6 @@
-// @ts-nocheck
-export function getTokenAuthConfigurationSchema(joi) {
+import type Joi from 'joi';
+
+export function getTokenAuthConfigurationSchema(joi: typeof Joi): Joi.AlternativesSchema {
   return joi.alternatives([
     joi.string().allow(''),
     joi.object().keys({

@@ -1,15 +1,14 @@
-// @ts-nocheck
 import crypto from 'node:crypto';
 import type { ImageBackup } from '../model/backup.js';
 import { initCollection } from './util.js';
 
-let backupCollection;
+let backupCollection: ReturnType<typeof initCollection> | undefined;
 
 /**
  * Create backup collections.
  * @param db
  */
-export function createCollections(db) {
+export function createCollections(db: InstanceType<typeof import('lokijs')>): void {
   backupCollection = initCollection(db, 'backups');
 }
 

@@ -1,19 +1,20 @@
-// @ts-nocheck
 import { Counter, register } from 'prom-client';
 
-let auditCounter;
+const METRIC_NAME = 'dd_audit_entries_total';
 
-export function init() {
+let auditCounter: Counter<string> | undefined;
+
+export function init(): void {
   if (auditCounter) {
-    register.removeSingleMetric(auditCounter.name);
+    register.removeSingleMetric(METRIC_NAME);
   }
   auditCounter = new Counter({
-    name: 'dd_audit_entries_total',
+    name: METRIC_NAME,
     help: 'Total count of audit log entries',
     labelNames: ['action'],
   });
 }
 
-export function getAuditCounter() {
+export function getAuditCounter(): Counter<string> | undefined {
   return auditCounter;
 }

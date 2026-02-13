@@ -60,6 +60,7 @@ class SseService {
     }
     this.eventBus = undefined;
     this.selfUpdateMode = false;
+    return;
   }
 }
 

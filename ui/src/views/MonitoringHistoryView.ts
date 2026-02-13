@@ -2,6 +2,26 @@ import { defineComponent } from 'vue';
 import { useDisplay } from 'vuetify';
 import { getAuditLog } from '@/services/audit';
 
+interface AuditEntry {
+  id: string;
+  timestamp: string;
+  action: string;
+  containerName: string;
+  containerImage?: string;
+  fromVersion?: string;
+  toVersion?: string;
+  triggerName?: string;
+  status: 'success' | 'error' | 'info';
+  details?: string;
+}
+
+interface AuditLogParams {
+  page: number;
+  limit: number;
+  action?: string;
+  container?: string;
+}
+
 export default defineComponent({
   setup() {
     const { mdAndUp } = useDisplay();
@@ -11,7 +31,7 @@ export default defineComponent({
     return {
       loading: false,
       error: '',
-      entries: [] as any[],
+      entries: [] as AuditEntry[],
       total: 0,
       currentPage: 1,
       pageSize: 20,
@@ -58,7 +78,7 @@ export default defineComponent({
       this.loading = true;
       this.error = '';
       try {
-        const params: any = {
+        const params: AuditLogParams = {
           page: this.currentPage,
           limit: this.pageSize,
         };
@@ -67,8 +87,8 @@ export default defineComponent({
         const result = await getAuditLog(params);
         this.entries = result.entries || [];
         this.total = result.total || 0;
-      } catch (e: any) {
-        this.error = e.message || 'Failed to fetch audit log';
+      } catch (e: unknown) {
+        this.error = e instanceof Error ? e.message : 'Failed to fetch audit log';
       } finally {
         this.loading = false;
       }

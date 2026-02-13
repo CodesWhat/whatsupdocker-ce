@@ -3,6 +3,30 @@ import { previewContainer } from '@/services/preview';
 
 type PreviewDialogState = 'opened' | 'closed';
 
+interface ContainerUpdateKind {
+  kind: 'tag' | 'digest' | 'unknown';
+  localValue?: string;
+  remoteValue?: string;
+  semverDiff?: 'major' | 'minor' | 'patch' | 'prerelease' | 'unknown';
+}
+
+interface ContainerPreviewResult {
+  containerName?: string;
+  currentImage?: string;
+  newImage?: string;
+  updateKind?: ContainerUpdateKind;
+  isRunning?: boolean;
+  networks?: string[];
+  changes?: string[];
+  error?: string;
+}
+
+interface ContainerPreviewData {
+  loading: boolean;
+  error: string;
+  preview: ContainerPreviewResult | null;
+}
+
 export default defineComponent({
   props: {
     containerId: {
@@ -15,11 +39,11 @@ export default defineComponent({
     },
   },
   emits: ['update:modelValue', 'update-confirmed'],
-  data() {
+  data(): ContainerPreviewData {
     return {
       loading: false,
       error: '',
-      preview: null as any,
+      preview: null,
     };
   },
   computed: {
@@ -79,8 +103,8 @@ export default defineComponent({
       this.preview = null;
       try {
         this.preview = await previewContainer(this.containerId);
-      } catch (e: any) {
-        this.error = e.message || 'Failed to load preview';
+      } catch (e: unknown) {
+        this.error = e instanceof Error ? e.message : 'Failed to load preview';
       } finally {
         this.loading = false;
       }

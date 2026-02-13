@@ -41,7 +41,7 @@ function broadcastSelfUpdate(): void {
   }
 }
 
-export function init() {
+export function init(): express.Router {
   // Register for self-update events from the trigger system
   registerSelfUpdateStarting(() => {
     broadcastSelfUpdate();

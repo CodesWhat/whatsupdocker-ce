@@ -1,19 +1,20 @@
-// @ts-nocheck
 import { Counter, register } from 'prom-client';
 
-let webhookCounter;
+const METRIC_NAME = 'dd_webhook_total';
 
-export function init() {
+let webhookCounter: Counter<string> | undefined;
+
+export function init(): void {
   if (webhookCounter) {
-    register.removeSingleMetric(webhookCounter.name);
+    register.removeSingleMetric(METRIC_NAME);
   }
   webhookCounter = new Counter({
-    name: 'dd_webhook_total',
+    name: METRIC_NAME,
     help: 'Total count of webhook operations',
     labelNames: ['action'],
   });
 }
 
-export function getWebhookCounter() {
+export function getWebhookCounter(): Counter<string> | undefined {
   return webhookCounter;
 }

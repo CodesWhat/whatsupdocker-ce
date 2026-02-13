@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { Buffer } from 'node:buffer';
 import { timingSafeEqual } from 'node:crypto';
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import nocache from 'nocache';
 import { getWebhookConfiguration } from '../configuration/index.js';
@@ -19,7 +18,7 @@ const router = express.Router();
 /**
  * Authenticate webhook requests via Bearer token.
  */
-function authenticateToken(req, res, next) {
+function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const webhookConfig = getWebhookConfiguration();
   if (!webhookConfig.enabled) {
     res.status(403).json({ error: 'Webhooks are disabled' });
@@ -56,7 +55,7 @@ function authenticateToken(req, res, next) {
 /**
  * Find a container by name from the store.
  */
-function findContainerByName(containerName) {
+function findContainerByName(containerName: string) {
   const containers = storeContainer.getContainers();
   return containers.find((c) => c.name === containerName);
 }
@@ -64,7 +63,7 @@ function findContainerByName(containerName) {
 /**
  * POST /watch — trigger full watch cycle on ALL watchers.
  */
-async function watchAll(req, res) {
+async function watchAll(req: Request, res: Response) {
   const watchers = registry.getState().watcher;
   const watcherEntries = Object.entries(watchers);
 
@@ -83,14 +82,15 @@ async function watchAll(req, res) {
       message: 'Watch cycle triggered',
       watchers: watcherEntries.length,
     });
-  } catch (e) {
-    log.warn(`Error triggering watch cycle (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error triggering watch cycle (${message})`);
 
     recordAuditEvent({
       action: 'webhook-watch',
       containerName: '*',
       status: 'error',
-      details: e.message,
+      details: message,
     });
     getWebhookCounter()?.inc({ action: 'watch-all' });
 
@@ -101,7 +101,7 @@ async function watchAll(req, res) {
 /**
  * POST /watch/:containerName — watch a specific container by name.
  */
-async function watchContainer(req, res) {
+async function watchContainer(req: Request, res: Response) {
   const { containerName } = req.params;
   const container = findContainerByName(containerName);
 
@@ -126,14 +126,15 @@ async function watchContainer(req, res) {
       message: `Watch triggered for container ${containerName}`,
       container: containerName,
     });
-  } catch (e) {
-    log.warn(`Error watching container ${containerName} (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error watching container ${containerName} (${message})`);
 
     recordAuditEvent({
       action: 'webhook-watch-container',
       container,
       status: 'error',
-      details: e.message,
+      details: message,
     });
     getWebhookCounter()?.inc({ action: 'watch-container' });
 
@@ -144,7 +145,7 @@ async function watchContainer(req, res) {
 /**
  * POST /update/:containerName — trigger update on a specific container by name.
  */
-async function updateContainer(req, res) {
+async function updateContainer(req: Request, res: Response) {
   const { containerName } = req.params;
   const container = findContainerByName(containerName);
 
@@ -173,14 +174,15 @@ async function updateContainer(req, res) {
       message: `Update triggered for container ${containerName}`,
       container: containerName,
     });
-  } catch (e) {
-    log.warn(`Error updating container ${containerName} (${e.message})`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log.warn(`Error updating container ${containerName} (${message})`);
 
     recordAuditEvent({
       action: 'webhook-update',
       container,
       status: 'error',
-      details: e.message,
+      details: message,
     });
     getWebhookCounter()?.inc({ action: 'update-container' });
 
