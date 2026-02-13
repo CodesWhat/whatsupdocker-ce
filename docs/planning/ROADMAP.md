@@ -1,20 +1,21 @@
 # Roadmap
 
-Last updated: 2026-02-12
+Last updated: 2026-02-13
 
 This file is the canonical planning roadmap.
 Completed work has been intentionally removed.
 
 ## Current State
 
-`feature/v1.2.0` remains active with one roadmap item pending:
-
-- Maintenance windows final QA sign-off (manual validation still pending; automated run partially blocked by baseline lint/type debt)
+`feature/v1.2.0` is complete -- all CI checks passing, PR #45 open for merge.
 
 Next release targets:
 
-- `v1.3.0`: Security Integration
-- `v1.4.0`: UI stack modernization (PrimeVue migration + UX refresh)
+- `v1.3.0`: Security Integration (Trivy scanning, image signing)
+- `v1.4.0`: UI Stack Modernization (PrimeVue migration + Composition API)
+- `v1.5.0`: Real-Time Detection + Notifications (webhooks, MS Teams, Matrix, release notes)
+- `v1.6.0`: Fleet Management & Live Configuration (YAML config foundation, parallel updates, dependency ordering, static image monitoring, UI config panels)
+- `v2.0.0`: Platform Expansion (Docker Swarm, Kubernetes)
 
 ## Prioritized Backlog (Competitive Analysis)
 
@@ -22,32 +23,32 @@ Based on analysis of Watchtower, Diun, Dozzle, Portainer, Yacht, Shepherd, Renov
 
 ### Tier 1 -- High-value, builds on existing strengths
 
-| Feature | Competitor(s) | Complexity | Notes |
+| Feature | Competitor(s) | Complexity | Status |
 | --------- | --------------- | ------------ | ------- |
-| Lifecycle hooks (pre/post-update) | Watchtower | Medium | Labels like `dd.lifecycle.pre-update` to run commands before/after updates (e.g. DB backup before Postgres update) |
-| Dependency-aware update ordering | Watchtower | Medium | Detect `depends_on` / network links, topological sort, update dependencies first |
-| Automatic rollback on failure | Shepherd | Medium | Health check after update (HTTP probe, TCP, exec), auto-rollback to backup if unhealthy |
-| Container actions (start/stop/restart) | Dozzle, Portainer | Small | Opt-in via env var, respect OIDC roles |
-| HTTP API for on-demand triggers | Watchtower | Small | `POST /api/update` endpoint for CI/CD webhook integration |
+| Lifecycle hooks (pre/post-update) | Watchtower | Medium | **Shipped** (v1.2.0 -- `dd.hook.pre`, `dd.hook.post` labels) |
+| Dependency-aware update ordering | Watchtower | Medium | **Scheduled** -- Phase 5.5 |
+| Automatic rollback on failure | Shepherd | Medium | **Shipped** (v1.2.0 -- `dd.rollback.auto` label, image backup + health check rollback) |
+| Container actions (start/stop/restart) | Dozzle, Portainer | Small | **Shipped** (v1.2.0 -- `DD_SERVER_FEATURE_CONTAINERACTIONS`) |
+| HTTP API for on-demand triggers | Watchtower | Small | **Shipped** (v1.2.0 -- webhook API with token auth) |
 
 ### Tier 2 -- Strategic differentiators
 
-| Feature | Competitor(s) | Complexity | Notes |
+| Feature | Competitor(s) | Complexity | Status |
 | --------- | --------------- | ------------ | ------- |
-| Image vulnerability / CVE scanning | Renovate, Portainer | Medium | Trivy integration, severity badges in UI, prioritize security updates in notifications |
-| Tag regex include/exclude filters | Diun | Small | `dd.tag.include` / `dd.tag.exclude` with regex, `watch_repo` mode |
-| Container grouping / stack views | Dozzle | Small-Medium | Auto-group by Compose project, collapsible groups, per-stack actions |
-| Changelog / release notes in notifications | Renovate | Medium | Map images to source repos, fetch GitHub/GitLab release notes for new tags |
+| Image vulnerability / CVE scanning | Renovate, Portainer | Medium | **Scheduled** -- Phase 2.1 |
+| Tag regex include/exclude filters | Diun | Small | **Shipped** (v1.2.0 -- `dd.tag.include` / `dd.tag.exclude` with RE2) |
+| Container grouping / stack views | Dozzle | Small-Medium | **Shipped** (v1.2.0 -- auto-group by Compose project) |
+| Changelog / release notes in notifications | Renovate | Medium | **Scheduled** -- Phase 4.3 |
 
 ### Tier 3 -- Platform expansion
 
-| Feature | Competitor(s) | Complexity | Notes |
+| Feature | Competitor(s) | Complexity | Status |
 | --------- | --------------- | ------------ | ------- |
-| Kubernetes provider | Diun, Portainer, Dozzle | Large | Watch pods/deployments, check images, biggest addressable market gap |
-| Docker Swarm service provider | Shepherd, Diun | Medium | Detect services, `docker service update --image` |
-| Watch non-running / static images | Diun | Small-Medium | File provider for YAML image lists, Dockerfile extraction |
-| Web terminal / container shell | Dozzle, Portainer | Medium | xterm.js WebSocket terminal, opt-in |
-| Digest pinning advisory | Renovate | Small | Warn on `:latest` usage, offer one-click pin to current digest |
+| Kubernetes provider | Diun, Portainer, Dozzle | Large | **Scheduled** -- Phase 6.2 |
+| Docker Swarm service provider | Shepherd, Diun | Medium | **Scheduled** -- Phase 6.1 |
+| Watch non-running / static images | Diun | Small-Medium | **Scheduled** -- Phase 5.6 |
+| Web terminal / container shell | Dozzle, Portainer | Medium | Backlog |
+| Digest pinning advisory | Renovate | Small | Backlog |
 
 ## Phased Plan (Open Work Only)
 
@@ -176,22 +177,54 @@ Accept push webhooks from registries for instant update detection.
 **Competitors with this:** Keel (DockerHub, Quay, Azure, GCR webhooks)  
 **Effort:** Medium
 
-### 4.2 Notification Channels (Matrix, Ntfy Improvements)
+### 4.2 Notification Channels (MS Teams, Matrix, Ntfy Improvements)
 
 Expand notification coverage based on user demand.
 
+- **MS Teams trigger provider** -- incoming webhook format, follows existing Slack/Discord pattern
 - Matrix trigger provider
 - Ntfy enhancements (topic routing, priority levels, action buttons)
 - Webhook trigger template customization for arbitrary integrations
 
+**Competitors with this:** Watchtower (Shoutrrr), Diun (Teams, Matrix)
 **Effort:** Low per provider
 
-## Phase 5: Fleet Management
+### 4.3 Release Notes in Notifications
 
-**Goal:** Better UX for managing many containers across many hosts.
+Automatically fetch and embed release notes / changelogs in update notifications.
+
+- Map container images to source repositories (GHCR -> GitHub repo, Docker Hub source URL metadata)
+- Fetch GitHub/GitLab Releases API for new tags
+- Include release notes summary in trigger notification payloads (Slack, Discord, Teams, email, etc.)
+- `dd.source.repo=github.com/org/repo` label for manual mapping when auto-detection fails
+- UI: show release notes in container detail panel alongside update info
+- Start with GitHub Releases, expand to GitLab/Gitea/Forgejo
+
+**Competitors with this:** Renovate (in PR body), Dependabot (in PR body)
+**Effort:** Medium
+
+## Phase 5: Fleet Management & Live Configuration
+
+**Goal:** Better UX for managing many containers across many hosts, and eliminate the "edit env vars + restart" workflow for common configuration changes.
 **Timeline target:** v1.6.0
 
-### 5.1 Aggregated Multi-Agent Dashboard
+### 5.1 YAML Configuration File + Config API (Foundation)
+
+This is the foundation for all UI-writable configuration. Must ship before 5.7.
+
+- Load `drydock.yml` at startup alongside env vars
+- Precedence: env vars > config file > defaults (env vars are immutable overrides for Docker Compose deployments)
+- Map to existing Joi-validated internal config schema
+- Config API: `GET /api/config` (read merged config), `PUT /api/config/{section}` (write to YAML file)
+- Hot-reload: file watcher on `drydock.yml` applies changes to triggers, watchers, image lists, and thresholds without container restart
+- Sections that require restart (server port, TLS, auth providers) return a "restart required" flag in the API response
+- Config file is mounted as a volume (e.g. `-v ./drydock.yml:/config/drydock.yml`)
+- Document migration path from env vars to config file
+
+**Competitors with this:** Diun (YAML), Renovate (JSON/JSON5), Portainer (UI-driven config persistence)
+**Effort:** Medium-Large (foundation investment)
+
+### 5.2 Aggregated Multi-Agent Dashboard
 
 Unified view across all agents without requiring source selection.
 
@@ -200,10 +233,10 @@ Unified view across all agents without requiring source selection.
 - Bulk actions: "Update all" with confirmation, "Snooze all patch updates"
 - Agent health overview: connected/disconnected/last-seen status bar
 
-**Competitors with this:** Komodo (aggregated multi-host view)  
+**Competitors with this:** Komodo (aggregated multi-host view)
 **Effort:** Medium
 
-### 5.2 Container Groups / Labels
+### 5.3 Container Groups / Labels
 
 Organize containers into user-defined groups.
 
@@ -213,12 +246,116 @@ Organize containers into user-defined groups.
 
 **Effort:** Medium
 
-## Phase 6: Kubernetes Watcher
+### 5.4 Parallel / Concurrent Container Updates
 
-**Goal:** Monitor Kubernetes deployments for image updates.
+Process updates concurrently instead of sequentially for large fleets.
+
+- `DD_TRIGGER_CONCURRENCY=4` -- max simultaneous trigger executions (default: 1 for backward compat)
+- Semaphore/pool pattern around trigger execution
+- Per-trigger concurrency override: `DD_TRIGGER_{name}_CONCURRENCY`
+- Progress reporting in UI for batch operations
+
+**Effort:** Small
+
+### 5.5 Container Dependency Ordering
+
+Update containers in safe dependency order within a stack.
+
+- Auto-detect `depends_on` relationships from Docker Compose files
+- Manual override via `dd.depends_on=container_a,container_b` labels
+- Topological sort for update execution order (databases before apps, apps before proxies)
+- Cycle detection with warning
+- Respect dependency order in batch and compose trigger operations
+
+**Competitors with this:** Tugtainer (linked containers), Portainer (stack-aware)
+**Effort:** Medium
+
+### 5.6 Static Image List Monitoring
+
+Watch images that aren't tied to running containers.
+
+- New watcher provider type: `DD_WATCHER_{name}_PROVIDER=file`
+- `DD_WATCHER_{name}_FILE=/config/images.yml` -- YAML list of images to monitor
+- Synthetic container representation for downstream compatibility
+- Use cases: pre-pull staging images, CI pipeline base images, Dockerfile FROM monitoring
+- Supports all existing tag filtering, registry auth, and trigger routing
+
+**Competitors with this:** Diun (file provider, Dockerfile provider)
+**Effort:** Medium
+
+### 5.7 Live UI Configuration Panels
+
+**Depends on:** 5.1 (YAML config + Config API)
+
+Turn the existing read-only Configuration pages into live editors that write back to `drydock.yml`. This is the single biggest UX leap -- adding a Slack webhook becomes "click Add Trigger, fill form, save" instead of "stop container, add env var, restart."
+
+#### UI-configurable (hot-reloadable, no restart needed)
+
+These settings are written to `drydock.yml` via the Config API and take effect immediately:
+
+| Setting | UI Component | Notes |
+| --------- | -------------- | ------- |
+| Triggers / notifications | Add/edit/delete form (webhook URL, channel, threshold) | Add a Teams or Slack channel without restarting |
+| Maintenance windows | Cron schedule picker with visual calendar | Drag to select time windows, timezone dropdown |
+| Per-container trigger routing | Checkbox/dropdown in container detail panel | Assign triggers and thresholds per container |
+| Per-container update thresholds | Dropdown: all / major / minor / patch | Override from container detail panel |
+| Container dependency ordering | Visual tree/graph editor in stack view | Drag to reorder, auto-detect from compose |
+| Static image watch list | CRUD table: image, tag filter, registry | Add/remove images to monitor without labels |
+| Container display names / icons | Inline edit in container list | Override `dd.display.name` / `dd.display.icon` |
+| Watcher poll intervals | Slider or number input | Change poll frequency without restart |
+
+#### Env-var / config-file only (restart required)
+
+These settings are displayed read-only in the UI with a note that changes require a restart:
+
+| Setting | Reason |
+| --------- | -------- |
+| Docker socket path / remote host connections | Security-sensitive infrastructure |
+| Registry credentials (tokens, passwords) | Secrets must not round-trip through browser; use `__FILE` or env vars |
+| Auth provider config (OIDC discovery URL, client secret) | Misconfiguration locks you out of the UI itself |
+| TLS/HTTPS, server port, bind address | Requires listener restart |
+| Agent configuration (remote agent URLs, auth) | Infrastructure-level, changed rarely |
+| Concurrency limits | Operational tuning, low-frequency change |
+
+#### Architecture
+
+```
+UI Panel --POST--> /api/config/triggers --> validate (Joi) --> write drydock.yml --> hot-reload triggers
+                                                           --> return { success: true, restart: false }
+
+UI Panel --POST--> /api/config/server  --> validate (Joi) --> write drydock.yml --> return { success: true, restart: true }
+                                                           --> UI shows "Restart required" banner
+```
+
+- All writes go through the same Joi validation used at startup
+- Config API is gated by authentication (same as all other API routes)
+- Audit log entry for every config change (who changed what, when)
+- `drydock.yml` changes are atomic (write temp file, rename) to prevent corruption
+- Secrets are never returned in `GET /api/config` responses -- masked or omitted
+
+**Competitors with this:** Portainer (full UI config), Tugtainer (per-container UI config)
+**Effort:** Large (but high-impact, Portainer's #1 UX advantage)
+
+## Phase 6: Platform Expansion
+
+**Goal:** Extend beyond single-host Docker to Swarm and Kubernetes.
 **Timeline target:** v2.0.0
 
-### 6.1 Kubernetes Watcher Provider
+### 6.1 Docker Swarm Native Support
+
+Swarm-aware service discovery and update mechanism.
+
+- New watcher provider: `DD_WATCHER_{name}_PROVIDER=swarm`
+- Discover Swarm services and their image specs via Docker Swarm API
+- Service-level update trigger: `docker service update --image` instead of container recreation
+- Support replicated and global service modes
+- Detect service labels for `dd.*` configuration (in addition to container labels)
+- Multi-node awareness without needing per-node agents
+
+**Competitors with this:** Shepherd, Diun (Swarm provider), Portainer
+**Effort:** Medium
+
+### 6.2 Kubernetes Watcher Provider
 
 New watcher provider alongside Docker watcher.
 
@@ -228,14 +365,14 @@ New watcher provider alongside Docker watcher.
 - Watch Deployments, StatefulSets, DaemonSets, CronJobs for container images
 - Use K8s watch API for real-time container changes
 
-### 6.2 Kubernetes Update Triggers
+### 6.3 Kubernetes Update Triggers
 
 - `DD_TRIGGER_{name}_PROVIDER=kubernetes` -- patch Deployment image field
 - Rolling update strategy controls (maxSurge, maxUnavailable)
 - Helm upgrade trigger (`DD_TRIGGER_{name}_PROVIDER=helm`)
 - Kustomize image override support
 
-**Competitors with this:** Keel, Flux CD, Argo CD  
+**Competitors with this:** Keel, Flux CD, Argo CD
 **Effort:** High
 
 ## Phase 7: Advanced Deployment Patterns
@@ -270,8 +407,14 @@ Progressive traffic shifting for Kubernetes workloads.
 | Feature | Reason |
 | --------- | -------- |
 | Git PR workflow | Renovate's domain; drydock is runtime monitoring, not source-dependency management |
+| RBAC / multi-user roles | Enterprise feature, not our target audience; OIDC + basic auth covers access control |
 | 90+ package managers | Out of scope for a container-focused product |
 | Docker run to compose converter | Dockge/compose management domain |
 | Interactive compose editor | Dockge/Portainer territory |
-| Podman/containerd support | Reassess after Kubernetes watcher ships |
-| Self-update | Users should control update mechanism |
+| Podman/containerd support | Reassess after Kubernetes watcher ships (Phase 6); Podman's Docker-compat API may work with minimal changes |
+
+## Already Functional (Documentation Needed)
+
+| Feature | Status |
+| --------- | -------- |
+| Self-update | The Docker trigger can already update drydock's own container. The UI has a self-update overlay with auto-reconnect. Needs documentation and explicit testing to confirm end-to-end reliability. |
