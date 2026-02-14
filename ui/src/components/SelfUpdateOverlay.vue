@@ -9,7 +9,7 @@
   >
     <!-- Desktop: DVD bounce -->
     <img
-      v-if="active && !smAndDown"
+      v-show="active && !smAndDown"
       src="@/assets/whale-logo.png"
       alt="drydock"
       class="bouncing-logo"
@@ -33,7 +33,7 @@
     >
       <!-- Mobile: static centered with fade-in -->
       <img
-        v-if="active && smAndDown"
+        v-show="active && smAndDown"
         src="@/assets/whale-logo.png"
         alt="drydock"
         class="mobile-logo mb-6"

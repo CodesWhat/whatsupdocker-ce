@@ -2,7 +2,7 @@
   <v-container class="dashboard-container">
     <!-- Row 1: Stat cards -->
     <v-row class="mb-2">
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="stat-card" to="/containers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--containers">
@@ -25,7 +25,7 @@
           </div>
         </v-card>
       </v-col>
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="stat-card" to="/configuration/triggers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--triggers">
@@ -38,7 +38,7 @@
           </div>
         </v-card>
       </v-col>
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="stat-card" to="/configuration/watchers" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--watchers">
@@ -62,7 +62,7 @@
           </div>
         </v-card>
       </v-col>
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="stat-card" to="/configuration/registries" rounded="lg">
           <div class="d-flex align-center pa-4" style="gap: 14px">
             <div class="stat-icon stat-icon--registries">
@@ -292,6 +292,17 @@
 .stat-badge--success { background: rgb(var(--v-theme-success)); }
 .stat-badge--info { background: rgb(var(--v-theme-info)); }
 .stat-badge--grey { background: #9e9e9e; }
+
+.stat-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .dashboard-container .v-row > .v-col {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+}
 
 /* Tab count circles */
 .tab-count {
