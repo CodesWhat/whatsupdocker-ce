@@ -388,11 +388,12 @@ test('callback should reject when pending check guard reports a missing entry', 
   });
   const req = createCallbackReq('/auth/oidc/default/cb?code=abc&state=unknown-state', session);
   const res = createRes();
+  const originalHasOwn = Object.hasOwn;
   const hasOwnSpy = vi.spyOn(Object, 'hasOwn').mockImplementation((value: any, key: PropertyKey) => {
     if (key === 'unknown-state') {
       return true;
     }
-    return Object.prototype.hasOwnProperty.call(value, key);
+    return originalHasOwn(value, key);
   });
 
   try {
