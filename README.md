@@ -138,16 +138,32 @@ Accepted values: `false` (default — no proxy), `true` (trust all), a number (h
 
 <table>
 <tr>
-<td><img src="docs/assets/drydock-login.png" alt="Login" width="400"></td>
+<th align="center">Light</th>
+<th align="center">Dark</th>
+</tr>
+<tr>
+<td><img src="docs/assets/drydock-login-light.png" alt="Login (light)" width="400"></td>
+<td><img src="docs/assets/drydock-login-dark.png" alt="Login (dark)" width="400"></td>
+</tr>
+<tr>
 <td><img src="docs/assets/drydock-dashboard-light.png" alt="Dashboard (light)" width="400"></td>
-</tr>
-<tr>
 <td><img src="docs/assets/drydock-dashboard-dark.png" alt="Dashboard (dark)" width="400"></td>
-<td><img src="docs/assets/drydock-containers.png" alt="Containers" width="400"></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/assets/drydock-mobile-dashboard.png" alt="Mobile dashboard" width="200"></td>
-<td align="center"><img src="docs/assets/drydock-mobile-containers.png" alt="Mobile containers" width="200"></td>
+<td><img src="docs/assets/drydock-containers-light.png" alt="Containers (light)" width="400"></td>
+<td><img src="docs/assets/drydock-containers-dark.png" alt="Containers (dark)" width="400"></td>
+</tr>
+<tr>
+<td><img src="docs/assets/drydock-container-detail-light.png" alt="Container detail (light)" width="400"></td>
+<td><img src="docs/assets/drydock-container-detail-dark.png" alt="Container detail (dark)" width="400"></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/assets/drydock-mobile-dashboard-light.png" alt="Mobile dashboard (light)" width="200"></td>
+<td align="center"><img src="docs/assets/drydock-mobile-dashboard-dark.png" alt="Mobile dashboard (dark)" width="200"></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/assets/drydock-mobile-containers-light.png" alt="Mobile containers (light)" width="200"></td>
+<td align="center"><img src="docs/assets/drydock-mobile-containers-dark.png" alt="Mobile containers (dark)" width="200"></td>
 </tr>
 </table>
 
