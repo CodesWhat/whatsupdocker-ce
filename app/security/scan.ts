@@ -9,7 +9,12 @@ import {
 import log from '../log/index.js';
 import { sanitizeLogParam } from '../log/sanitize.js';
 
-export { SECURITY_SEVERITIES, SECURITY_SBOM_FORMATS, type SecuritySeverity, type SecuritySbomFormat };
+export {
+  SECURITY_SEVERITIES,
+  SECURITY_SBOM_FORMATS,
+  type SecuritySeverity,
+  type SecuritySbomFormat,
+};
 export type SecurityScanStatus = 'passed' | 'blocked' | 'error';
 export type SecuritySignatureStatus = 'verified' | 'unverified' | 'error';
 export type SecuritySbomStatus = 'generated' | 'error';
@@ -111,20 +116,29 @@ let trivyQueue: Promise<void> = Promise.resolve();
 function enqueueTrivy<T>(operation: () => Promise<T>): Promise<T> {
   const previousTail = trivyQueue;
   let resolve: () => void;
-  const gate = new Promise<void>((r) => { resolve = r; });
-  trivyQueue = gate;
-  return previousTail.catch(() => undefined).then(async () => {
-    try {
-      return await operation();
-    } finally {
-      resolve!();
-    }
+  const gate = new Promise<void>((r) => {
+    resolve = r;
   });
+  trivyQueue = gate;
+  return previousTail
+    .catch(() => undefined)
+    .then(async () => {
+      try {
+        return await operation();
+      } finally {
+        resolve?.();
+      }
+    });
 }
 
 /** @internal — test-only reset */
 export function _resetTrivyQueueForTesting(): void {
   trivyQueue = Promise.resolve();
+}
+
+/** @internal — test-only reject queue to exercise defensive recovery path */
+export function _setTrivyQueueRejectedForTesting(): void {
+  trivyQueue = Promise.reject(new Error('forced queue rejection'));
 }
 
 function createEmptySummary(): ContainerVulnerabilitySummary {
@@ -173,7 +187,9 @@ function parseTrivyOutput(trivyOutput: string): ContainerVulnerability[] {
   const results = Array.isArray(parsedOutput?.Results) ? parsedOutput.Results : [];
   const vulnerabilities = results.flatMap((result) => {
     const target = typeof result?.Target === 'string' ? result.Target : undefined;
-    const targetVulnerabilities = Array.isArray(result?.Vulnerabilities) ? result.Vulnerabilities : [];
+    const targetVulnerabilities = Array.isArray(result?.Vulnerabilities)
+      ? result.Vulnerabilities
+      : [];
     return targetVulnerabilities.map((vulnerability) => ({
       id: vulnerability?.VulnerabilityID || 'unknown-vulnerability',
       target,
@@ -198,7 +214,7 @@ function runCommand(options: {
   args: string[];
   timeout: number;
   maxBuffer: number;
-  env?: NodeJS.ProcessEnv;
+  env: NodeJS.ProcessEnv;
   commandName: string;
 }): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -208,7 +224,7 @@ function runCommand(options: {
       {
         maxBuffer: options.maxBuffer,
         timeout: options.timeout,
-        env: options.env || process.env,
+        env: options.env,
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -354,7 +370,8 @@ function getBlockingCount(
   blockSeverities: SecuritySeverity[],
 ): number {
   const blockSeveritySet = new Set(blockSeverities);
-  return vulnerabilities.filter((vulnerability) => blockSeveritySet.has(vulnerability.severity)).length;
+  return vulnerabilities.filter((vulnerability) => blockSeveritySet.has(vulnerability.severity))
+    .length;
 }
 
 function mapToErrorResult(
@@ -413,9 +430,10 @@ function resolveSbomFormats(
   requestedFormats: SecuritySbomFormat[] | undefined,
   configuredFormats: SecuritySbomFormat[],
 ): SecuritySbomFormat[] {
-  const source = Array.isArray(requestedFormats) && requestedFormats.length > 0
-    ? requestedFormats
-    : configuredFormats;
+  const source =
+    Array.isArray(requestedFormats) && requestedFormats.length > 0
+      ? requestedFormats
+      : configuredFormats;
   const deduplicated = Array.from(new Set(source));
   const validFormats = deduplicated.filter((format): format is SecuritySbomFormat =>
     SECURITY_SBOM_FORMATS.includes(format as SecuritySbomFormat),
@@ -444,7 +462,10 @@ function parseCosignSignaturesCount(rawOutput: string): number {
     // Cosign can emit JSON objects per line; parse line by line as a fallback.
   }
 
-  const lines = output.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   let signaturesCount = 0;
   lines.forEach((line) => {
     try {
@@ -569,7 +590,11 @@ export async function generateImageSbom(
   const formats = resolveSbomFormats(options.formats, configuration.sbom.formats);
 
   if (!configuration.enabled || configuration.scanner !== 'trivy') {
-    return mapToSbomErrorResult(options.image, formats, 'Security scanner is disabled or misconfigured');
+    return mapToSbomErrorResult(
+      options.image,
+      formats,
+      'Security scanner is disabled or misconfigured',
+    );
   }
 
   const logSecurity = log.child({
@@ -579,22 +604,25 @@ export async function generateImageSbom(
     formats: formats.join(','),
   });
 
-  const generatedDocuments: Partial<Record<SecuritySbomFormat, unknown>> = {};
+  const documentMap = new Map<SecuritySbomFormat, unknown>();
   const generatedFormats: SecuritySbomFormat[] = [];
   const errors: string[] = [];
 
   for (const format of formats) {
     try {
       const sbomOutput = await runTrivySbomCommand(options, configuration, format);
-      generatedDocuments[format] = JSON.parse(sbomOutput);
+      documentMap.set(format, JSON.parse(sbomOutput));
       generatedFormats.push(format);
     } catch (error: any) {
       errors.push(`${format}: ${error?.message || 'Unknown SBOM generation error'}`);
     }
   }
 
+  const generatedDocuments: Partial<Record<SecuritySbomFormat, unknown>> =
+    Object.fromEntries(documentMap);
+
   if (generatedFormats.length === 0) {
-    const errorMessage = errors.join('; ') || 'SBOM generation failed';
+    const errorMessage = errors.join('; ');
     logSecurity.warn(sanitizeLogParam(errorMessage));
     return mapToSbomErrorResult(options.image, formats, errorMessage);
   }

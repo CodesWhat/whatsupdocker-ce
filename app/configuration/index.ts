@@ -349,7 +349,11 @@ export function getSecurityConfiguration() {
       .object({
         command: joi.string().default('cosign'),
         timeout: joi.number().integer().min(1000).default(60000),
-        key: joi.string().allow('').default('').pattern(/^(?!.*\.\.)/, 'no path traversal'),
+        key: joi
+          .string()
+          .allow('')
+          .default('')
+          .pattern(/^(?!.*\.\.)/, 'no path traversal'),
         identity: joi.string().allow('').default(''),
         issuer: joi.string().allow('').default(''),
       })

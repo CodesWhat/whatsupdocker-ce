@@ -65,4 +65,9 @@ export function init(): express.Router {
 }
 
 // For testing
-export { clients as _clients, broadcastSelfUpdate as _broadcastSelfUpdate, broadcastScanStarted as _broadcastScanStarted, broadcastScanCompleted as _broadcastScanCompleted };
+export {
+  clients as _clients,
+  broadcastSelfUpdate as _broadcastSelfUpdate,
+  broadcastScanStarted as _broadcastScanStarted,
+  broadcastScanCompleted as _broadcastScanCompleted,
+};

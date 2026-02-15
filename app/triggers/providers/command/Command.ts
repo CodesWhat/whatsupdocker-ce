@@ -62,10 +62,7 @@ class Command extends Trigger {
       timeout: this.configuration.timeout,
     };
     try {
-      const { stdout, stderr } = await exec(
-        this.configuration.cmd,
-        commandOptions,
-      );
+      const { stdout, stderr } = await exec(this.configuration.cmd, commandOptions);
       if (stdout) {
         this.log.info(`Command ${this.configuration.cmd} \nstdout ${stdout}`);
       }

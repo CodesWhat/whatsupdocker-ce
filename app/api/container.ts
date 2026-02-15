@@ -1,6 +1,7 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
+import rateLimit from 'express-rate-limit';
 import { getAgent } from '../agent/manager.js';
 import { getSecurityConfiguration, getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
@@ -8,15 +9,15 @@ import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import {
   generateImageSbom,
-  scanImageForVulnerabilities,
-  verifyImageSignature,
   SECURITY_SBOM_FORMATS,
   type SecuritySbomFormat,
+  scanImageForVulnerabilities,
+  verifyImageSignature,
 } from '../security/scan.js';
 import * as storeContainer from '../store/container.js';
-import { broadcastScanStarted, broadcastScanCompleted } from './sse.js';
 import Trigger from '../triggers/providers/Trigger.js';
 import { mapComponentsToList } from './component.js';
+import { broadcastScanCompleted, broadcastScanStarted } from './sse.js';
 
 const log = logger.child({ component: 'container' });
 
@@ -745,7 +746,17 @@ export function init() {
   router.post('/:id/watch', watchContainer);
   router.get('/:id/vulnerabilities', getContainerVulnerabilities);
   router.get('/:id/sbom', getContainerSbom);
-  router.post('/:id/scan', scanContainer);
+  router.post(
+    '/:id/scan',
+    rateLimit({
+      windowMs: 60_000,
+      max: 5,
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.ip ?? 'unknown',
+    }),
+    scanContainer,
+  );
   router.get('/:id/logs', getContainerLogs);
   return router;
 }

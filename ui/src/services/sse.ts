@@ -1,4 +1,9 @@
-type SseBusEvent = 'sse:connected' | 'self-update' | 'connection-lost' | 'scan-started' | 'scan-completed';
+type SseBusEvent =
+  | 'sse:connected'
+  | 'self-update'
+  | 'connection-lost'
+  | 'scan-started'
+  | 'scan-completed';
 
 interface SseEventBus {
   emit: (event: SseBusEvent) => void;

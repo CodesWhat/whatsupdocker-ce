@@ -129,7 +129,9 @@ async function watchContainer(req: Request, res: Response) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error watching container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`);
+    log.warn(
+      `Error watching container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`,
+    );
 
     recordAuditEvent({
       action: 'webhook-watch-container',
@@ -177,7 +179,9 @@ async function updateContainer(req: Request, res: Response) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error updating container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`);
+    log.warn(
+      `Error updating container ${sanitizeLogParam(containerName)} (${sanitizeLogParam(message)})`,
+    );
 
     recordAuditEvent({
       action: 'webhook-update',

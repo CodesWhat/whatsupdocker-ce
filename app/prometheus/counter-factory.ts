@@ -5,11 +5,7 @@ interface CounterModule {
   getCounter(): Counter<string> | undefined;
 }
 
-export function createCounter(
-  name: string,
-  help: string,
-  labelNames: string[],
-): CounterModule {
+export function createCounter(name: string, help: string, labelNames: string[]): CounterModule {
   let counter: Counter<string> | undefined;
 
   return {

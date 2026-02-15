@@ -324,7 +324,9 @@ class Oidc extends Authentication {
         this.log.warn(
           `OIDC checks are missing from session for strategy ${sessionKey}; ask user to restart authentication`,
         );
-        res.status(401).json({ error: 'OIDC session is missing or expired. Please retry authentication.' });
+        res
+          .status(401)
+          .json({ error: 'OIDC session is missing or expired. Please retry authentication.' });
         return;
       }
 
@@ -332,7 +334,9 @@ class Oidc extends Authentication {
       const callbackState = callbackUrl.searchParams.get('state');
       if (!isValidStateToken(callbackState)) {
         this.log.warn(`OIDC callback is missing state parameter for strategy ${sessionKey}`);
-        res.status(401).json({ error: 'OIDC callback is missing state. Please retry authentication.' });
+        res
+          .status(401)
+          .json({ error: 'OIDC callback is missing state. Please retry authentication.' });
         return;
       }
 
