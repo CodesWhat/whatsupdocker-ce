@@ -39,6 +39,7 @@ export function insertContainer(container) {
  */
 export function updateContainer(container) {
   const hasUpdatePolicy = Object.hasOwn(container, 'updatePolicy');
+  const hasSecurity = Object.hasOwn(container, 'security');
   const containerCurrentDoc =
     typeof containers?.findOne === 'function'
       ? containers.findOne({ 'data.id': container.id })
@@ -49,6 +50,7 @@ export function updateContainer(container) {
   const containerMerged = {
     ...container,
     updatePolicy: hasUpdatePolicy ? container.updatePolicy : containerCurrent?.updatePolicy,
+    security: hasSecurity ? container.security : containerCurrent?.security,
   };
   const containerToReturn = validateContainer(containerMerged);
 

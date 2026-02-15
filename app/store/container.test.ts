@@ -131,6 +131,54 @@ test('updateContainer should clear updatePolicy when explicitly set to undefined
   expect(updated.updatePolicy).toBeUndefined();
 });
 
+test('updateContainer should preserve security scan when omitted from payload', async () => {
+  const existingContainer = {
+    data: createContainerFixture({
+      security: {
+        scan: {
+          scanner: 'trivy',
+          image: 'registry/image:1.2.3',
+          scannedAt: new Date().toISOString(),
+          status: 'blocked',
+          blockSeverities: ['CRITICAL', 'HIGH'],
+          blockingCount: 1,
+          summary: {
+            unknown: 0,
+            low: 0,
+            medium: 0,
+            high: 1,
+            critical: 0,
+          },
+          vulnerabilities: [
+            {
+              id: 'CVE-123',
+              severity: 'HIGH',
+            },
+          ],
+        },
+      },
+    }),
+  };
+  const collection = {
+    findOne: () => existingContainer,
+    insert: () => {},
+    chain: () => ({
+      find: () => ({
+        remove: () => ({}),
+      }),
+    }),
+  };
+  const db = {
+    getCollection: () => collection,
+    addCollection: () => null,
+  };
+  const containerToSave = createContainerFixture();
+
+  container.createCollections(db);
+  const updated = container.updateContainer(containerToSave);
+  expect(updated.security).toEqual(existingContainer.data.security);
+});
+
 test('getContainers should return all containers sorted by name', async () => {
   const containerExample = createContainerFixture();
   const containers = [

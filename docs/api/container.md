@@ -208,6 +208,15 @@ curl -X PATCH http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7e
   -d '{"action":"snooze","days":7}'
 ```
 
+## Get latest vulnerability scan result
+
+This operation returns the latest persisted vulnerability scan (safe-pull gate result) for a container.
+When no scan was run yet, it returns `status: "not-scanned"` with an empty result set.
+
+```bash
+curl http://drydock:3000/api/containers/31a61a8305ef1fc9a71fa4f20a68d7ec88b28e32303bbc4a5f192e851165b816/vulnerabilities
+```
+
 ## Delete a Container
 
 This operation lets you delete a container by id.

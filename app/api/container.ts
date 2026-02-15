@@ -121,6 +121,43 @@ function getContainer(req, res) {
   }
 }
 
+function getEmptyVulnerabilityResponse() {
+  return {
+    scanner: undefined,
+    scannedAt: undefined,
+    status: 'not-scanned',
+    blockSeverities: [],
+    blockingCount: 0,
+    summary: {
+      unknown: 0,
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+    vulnerabilities: [],
+  };
+}
+
+/**
+ * Get latest vulnerability scan result for a container.
+ * @param req
+ * @param res
+ */
+export function getContainerVulnerabilities(req, res) {
+  const { id } = req.params;
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
+  if (!container.security?.scan) {
+    res.status(200).json(getEmptyVulnerabilityResponse());
+    return;
+  }
+  res.status(200).json(container.security.scan);
+}
+
 /**
  * Delete a container by id.
  * @param req
@@ -522,6 +559,7 @@ export function init() {
   router.post('/:id/triggers/:triggerAgent/:triggerType/:triggerName', runTrigger);
   router.patch('/:id/update-policy', patchContainerUpdatePolicy);
   router.post('/:id/watch', watchContainer);
+  router.get('/:id/vulnerabilities', getContainerVulnerabilities);
   router.get('/:id/logs', getContainerLogs);
   return router;
 }

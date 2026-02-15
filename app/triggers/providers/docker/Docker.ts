@@ -1,6 +1,7 @@
 // @ts-nocheck
 import crypto from 'node:crypto';
 import parse from 'parse-docker-image-name';
+import { getSecurityConfiguration } from '../../../configuration/index.js';
 import {
   emitContainerUpdateApplied,
   emitContainerUpdateFailed,
@@ -9,8 +10,10 @@ import {
 import { fullName } from '../../../model/container.js';
 import { getAuditCounter } from '../../../prometheus/audit.js';
 import { getState } from '../../../registry/index.js';
+import { scanImageForVulnerabilities } from '../../../security/scan.js';
 import * as auditStore from '../../../store/audit.js';
 import * as backupStore from '../../../store/backup.js';
+import * as storeContainer from '../../../store/container.js';
 import { runHook } from '../../hooks/HookRunner.js';
 import Trigger from '../Trigger.js';
 import { startHealthMonitor } from './HealthMonitor.js';
@@ -617,6 +620,19 @@ class Docker extends Trigger {
     getAuditCounter()?.inc({ action });
   }
 
+  recordSecurityAudit(action, container, status, details) {
+    auditStore.insertAudit({
+      id: '',
+      timestamp: new Date().toISOString(),
+      action,
+      containerName: fullName(container),
+      containerImage: container.image.name,
+      status,
+      details,
+    });
+    getAuditCounter()?.inc({ action });
+  }
+
   isHookFailure(hookResult) {
     return hookResult.exitCode !== 0 || hookResult.timedOut;
   }
@@ -694,6 +710,57 @@ class Docker extends Trigger {
     emitSelfUpdateStarting();
     // Brief delay to allow SSE to deliver the event to connected clients
     await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  async persistSecurityScanResult(container, scanResult, logContainer) {
+    try {
+      const containerWithSecurity = {
+        ...container,
+        security: {
+          ...(container.security || {}),
+          scan: scanResult,
+        },
+      };
+      storeContainer.updateContainer(containerWithSecurity);
+    } catch (e: any) {
+      logContainer.warn(`Unable to persist security scan result (${e.message})`);
+    }
+  }
+
+  async maybeScanAndGateUpdate(context, container, logContainer) {
+    const securityConfiguration = getSecurityConfiguration();
+    if (!securityConfiguration.enabled || securityConfiguration.scanner !== 'trivy') {
+      return;
+    }
+
+    logContainer.info(`Running security scan for candidate image ${context.newImage}`);
+    const scanResult = await scanImageForVulnerabilities({
+      image: context.newImage,
+      auth: context.auth,
+    });
+    await this.persistSecurityScanResult(container, scanResult, logContainer);
+
+    if (scanResult.status === 'error') {
+      const details = `Security scan failed: ${scanResult.error || 'unknown scanner error'}`;
+      this.recordSecurityAudit('security-scan-failed', container, 'error', details);
+      throw new Error(details);
+    }
+
+    const summary = scanResult.summary;
+    const details = `critical=${summary.critical}, high=${summary.high}, medium=${summary.medium}, low=${summary.low}, unknown=${summary.unknown}`;
+
+    if (scanResult.status === 'blocked') {
+      const blockedDetails = `Security scan blocked update (${scanResult.blockingCount} vulnerabilities matched block severities: ${scanResult.blockSeverities.join(', ')}). Summary: ${details}`;
+      this.recordSecurityAudit('security-scan-blocked', container, 'error', blockedDetails);
+      throw new Error(blockedDetails);
+    }
+
+    this.recordSecurityAudit(
+      'security-scan-passed',
+      container,
+      'success',
+      `Security scan passed. Summary: ${details}`,
+    );
   }
 
   async createTriggerContext(container, logContainer) {
@@ -840,6 +907,8 @@ class Docker extends Trigger {
       if (!context) {
         return;
       }
+
+      await this.maybeScanAndGateUpdate(context, container, logContainer);
 
       const hookConfig = this.buildHookConfig(container);
       await this.runPreUpdateHook(container, hookConfig, logContainer);

@@ -155,6 +155,7 @@ describe('Container Router', () => {
       );
       expect(router.patch).toHaveBeenCalledWith('/:id/update-policy', expect.any(Function));
       expect(router.post).toHaveBeenCalledWith('/:id/watch', expect.any(Function));
+      expect(router.get).toHaveBeenCalledWith('/:id/vulnerabilities', expect.any(Function));
       expect(router.get).toHaveBeenCalledWith('/:id/logs', expect.any(Function));
     });
   });
@@ -199,6 +200,49 @@ describe('Container Router', () => {
       handler({ params: { id: 'missing' } }, res);
 
       expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+  });
+
+  describe('getContainerVulnerabilities', () => {
+    test('should return 404 when container not found', async () => {
+      storeContainer.getContainer.mockReturnValue(undefined);
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'missing' } }, res);
+      expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    test('should return empty payload when container has no scan result', async () => {
+      storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'c1' } }, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'not-scanned',
+          vulnerabilities: [],
+          blockingCount: 0,
+        }),
+      );
+    });
+
+    test('should return scan payload when available', async () => {
+      const scan = {
+        scanner: 'trivy',
+        status: 'blocked',
+        blockingCount: 2,
+        vulnerabilities: [{ id: 'CVE-123', severity: 'HIGH' }],
+      };
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        security: { scan },
+      });
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'c1' } }, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(scan);
     });
   });
 

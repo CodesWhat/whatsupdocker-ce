@@ -250,6 +250,83 @@ test('replaceSecrets must read secret in file', async () => {
   });
 });
 
+describe('getSecurityConfiguration', () => {
+  test('should return disabled scanner by default', () => {
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER;
+    const result = configuration.getSecurityConfiguration();
+    expect(result).toEqual({
+      enabled: false,
+      scanner: '',
+      blockSeverities: ['CRITICAL', 'HIGH'],
+      trivy: {
+        server: '',
+        command: 'trivy',
+        timeout: 120000,
+      },
+    });
+  });
+
+  test('should parse trivy security config', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = 'critical,medium';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER = 'http://trivy:4954';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_COMMAND = '/usr/local/bin/trivy';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT = '60000';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result).toEqual({
+      enabled: true,
+      scanner: 'trivy',
+      blockSeverities: ['CRITICAL', 'MEDIUM'],
+      trivy: {
+        server: 'http://trivy:4954',
+        command: '/usr/local/bin/trivy',
+        timeout: 60000,
+      },
+    });
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_COMMAND;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT;
+  });
+
+  test('should fallback to default block severities when configured list is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = 'foo,bar';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.blockSeverities).toEqual(['CRITICAL', 'HIGH']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+  });
+
+  test('should fallback to default block severities when list is empty after normalization', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = ' ,  , ';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.blockSeverities).toEqual(['CRITICAL', 'HIGH']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+  });
+
+  test('should throw when trivy timeout is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT = 'not-a-number';
+
+    expect(() => configuration.getSecurityConfiguration()).toThrow();
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT;
+  });
+});
+
 describe('WUD_ legacy dual-prefix support', () => {
   test('WUD_ env vars should be remapped to DD_ keys in ddEnvVars', () => {
     // Simulate WUD_ var being set at module init time by directly inserting

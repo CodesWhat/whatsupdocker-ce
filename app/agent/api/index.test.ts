@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const { mockApp, mockServerConfig } = vi.hoisted(() => {
   const mockApp = {
+    disable: vi.fn(),
     use: vi.fn(),
     get: vi.fn(),
     post: vi.fn(),

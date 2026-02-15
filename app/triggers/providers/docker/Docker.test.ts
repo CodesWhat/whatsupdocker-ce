@@ -24,6 +24,26 @@ const docker = new Docker();
 docker.configuration = configurationValid;
 docker.log = log;
 
+const mockGetSecurityConfiguration = vi.hoisted(() => vi.fn());
+vi.mock('../../../configuration/index.js', async () => {
+  const actual = await vi.importActual<typeof import('../../../configuration/index.js')>(
+    '../../../configuration/index.js',
+  );
+  return {
+    ...actual,
+    getSecurityConfiguration: (...args: any[]) => mockGetSecurityConfiguration(...args),
+  };
+});
+
+const mockScanImageForVulnerabilities = vi.hoisted(() => vi.fn());
+vi.mock('../../../security/scan.js', () => ({
+  scanImageForVulnerabilities: mockScanImageForVulnerabilities,
+}));
+
+vi.mock('../../../store/container.js', () => ({
+  updateContainer: vi.fn((container) => container),
+}));
+
 vi.mock('../../../store/backup', () => ({
   insertBackup: vi.fn(),
   pruneOldBackups: vi.fn(),
@@ -167,6 +187,26 @@ function createTriggerContainer(overrides = {}) {
   };
 }
 
+function createSecurityScanResult(overrides = {}) {
+  return {
+    scanner: 'trivy',
+    image: 'my-registry/test/test:4.5.6',
+    scannedAt: new Date().toISOString(),
+    status: 'passed',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    blockingCount: 0,
+    summary: {
+      unknown: 0,
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+    vulnerabilities: [],
+    ...overrides,
+  };
+}
+
 /** Spy on all Docker methods needed for trigger flow (non-dryrun, non-running) */
 function stubTriggerFlow(opts = {}) {
   const { running = false, autoRemove = false, inspectOverrides = {} } = opts;
@@ -212,6 +252,19 @@ beforeEach(async () => {
   vi.resetAllMocks();
   docker.configuration = configurationValid;
   docker.log = log;
+  mockGetSecurityConfiguration.mockReturnValue({
+    enabled: false,
+    scanner: '',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: {
+      server: '',
+      command: 'trivy',
+      timeout: 120000,
+    },
+  });
+  mockScanImageForVulnerabilities.mockResolvedValue({
+    ...createSecurityScanResult(),
+  });
 });
 
 // --- Configuration validation ---
@@ -649,6 +702,96 @@ test('trigger should not throw when container does not exist', async () => {
   await expect(
     docker.trigger(createTriggerContainer({ name: 'test-container' })),
   ).resolves.toBeUndefined();
+});
+
+test('trigger should block update when security scan is blocked', async () => {
+  mockGetSecurityConfiguration.mockReturnValue({
+    enabled: true,
+    scanner: 'trivy',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: { server: '', command: 'trivy', timeout: 120000 },
+  });
+  mockScanImageForVulnerabilities.mockResolvedValue(
+    createSecurityScanResult({
+      status: 'blocked',
+      blockingCount: 2,
+      summary: {
+        unknown: 0,
+        low: 0,
+        medium: 0,
+        high: 2,
+        critical: 0,
+      },
+      vulnerabilities: [
+        { id: 'CVE-1', severity: 'HIGH' },
+        { id: 'CVE-2', severity: 'HIGH' },
+      ],
+    }),
+  );
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Security scan blocked update',
+  );
+
+  expect(mockScanImageForVulnerabilities).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).not.toHaveBeenCalled();
+});
+
+test('trigger should block update when security scan errors', async () => {
+  mockGetSecurityConfiguration.mockReturnValue({
+    enabled: true,
+    scanner: 'trivy',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: { server: '', command: 'trivy', timeout: 120000 },
+  });
+  mockScanImageForVulnerabilities.mockResolvedValue(
+    createSecurityScanResult({
+      status: 'error',
+      error: 'Trivy command failed',
+    }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Security scan failed: Trivy command failed',
+  );
+});
+
+test('trigger should continue update when security scan passes', async () => {
+  mockGetSecurityConfiguration.mockReturnValue({
+    enabled: true,
+    scanner: 'trivy',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: { server: '', command: 'trivy', timeout: 120000 },
+  });
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockScanImageForVulnerabilities).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).toHaveBeenCalled();
+});
+
+test('persistSecurityScanResult should warn when container store update fails', async () => {
+  const storeContainer = await import('../../../store/container.js');
+  storeContainer.updateContainer.mockImplementationOnce(() => {
+    throw new Error('store unavailable');
+  });
+  const logContainer = createMockLog('warn');
+
+  await docker.persistSecurityScanResult(
+    createTriggerContainer(),
+    createSecurityScanResult(),
+    logContainer,
+  );
+
+  expect(logContainer.warn).toHaveBeenCalledWith(
+    expect.stringContaining('Unable to persist security scan result (store unavailable)'),
+  );
 });
 
 // --- triggerBatch ---

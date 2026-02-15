@@ -5,6 +5,10 @@ import setValue from 'set-value';
 import { resolveConfiguredPath } from '../runtime/paths.js';
 
 const VAR_FILE_SUFFIX = '__FILE';
+const SECURITY_SEVERITY_VALUES = ['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+const DEFAULT_SECURITY_BLOCK_SEVERITY = 'CRITICAL,HIGH';
+
+type SecuritySeverity = (typeof SECURITY_SEVERITY_VALUES)[number];
 
 /*
  * Get a prop by path from environment variables.
@@ -267,6 +271,72 @@ export function getWebhookConfiguration() {
     throw configurationToValidate.error;
   }
   return configurationToValidate.value;
+}
+
+function parseSecuritySeverityList(rawValue: string | undefined): SecuritySeverity[] {
+  const defaultBlockSeverities = DEFAULT_SECURITY_BLOCK_SEVERITY.split(',').map(
+    (severity) => severity.trim() as SecuritySeverity,
+  );
+  if (!rawValue) {
+    return defaultBlockSeverities;
+  }
+  const configuredSeverities = rawValue
+    .split(',')
+    .map((severity) => severity.trim().toUpperCase())
+    .filter((severity) => severity !== '');
+  if (configuredSeverities.length === 0) {
+    return defaultBlockSeverities;
+  }
+  const deduplicated = Array.from(new Set(configuredSeverities));
+  const severitiesParsed = deduplicated.filter((severity): severity is SecuritySeverity =>
+    SECURITY_SEVERITY_VALUES.includes(severity as SecuritySeverity),
+  );
+  if (severitiesParsed.length === 0) {
+    return defaultBlockSeverities;
+  }
+  return severitiesParsed;
+}
+
+export function getSecurityConfiguration() {
+  const configurationFromEnv = get('dd.security', ddEnvVars);
+  const configurationSchema = joi.object().keys({
+    scanner: joi.string().insensitive().valid('trivy').allow('').default(''),
+    block: joi
+      .object({
+        severity: joi.string().allow('').default(DEFAULT_SECURITY_BLOCK_SEVERITY),
+      })
+      .default({}),
+    trivy: joi
+      .object({
+        server: joi.string().allow('').default(''),
+        command: joi.string().default('trivy'),
+        timeout: joi.number().integer().min(1000).default(120000),
+      })
+      .default({}),
+  });
+
+  const configurationToValidate = configurationSchema.validate(configurationFromEnv, {
+    allowUnknown: true,
+    stripUnknown: true,
+  });
+  if (configurationToValidate.error) {
+    throw configurationToValidate.error;
+  }
+
+  const configuration = configurationToValidate.value;
+  const scanner = configuration.scanner ? configuration.scanner.toLowerCase() : '';
+  const blockSeverities = parseSecuritySeverityList(configuration.block?.severity);
+
+  return {
+    enabled: scanner !== '',
+    scanner,
+    blockSeverities,
+    trivy: {
+      server: configuration.trivy?.server || '',
+      command: configuration.trivy?.command || 'trivy',
+      timeout: configuration.trivy?.timeout || 120000,
+    },
+  };
 }
 
 export function getPublicUrl(req) {

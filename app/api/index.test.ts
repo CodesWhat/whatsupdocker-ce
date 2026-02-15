@@ -1,6 +1,7 @@
 // @ts-nocheck
 const { mockApp, mockFs, mockHttps, mockGetServerConfiguration } = vi.hoisted(() => ({
   mockApp: {
+    disable: vi.fn(),
     set: vi.fn(),
     use: vi.fn(),
     listen: vi.fn((port, cb) => cb()),
@@ -77,6 +78,7 @@ vi.mock('../configuration', () => ({
 describe('API Index', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockApp.disable.mockClear();
     mockApp.set.mockClear();
     mockApp.use.mockClear();
     mockApp.listen.mockClear();
