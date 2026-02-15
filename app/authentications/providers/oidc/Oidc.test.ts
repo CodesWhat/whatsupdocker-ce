@@ -8,7 +8,7 @@ const app = express();
 
 const configurationValid = {
   clientid: '123465798',
-  clientsecret: 'secret', // NOSONAR - test fixture, not a real credential
+  clientsecret: 'secret',
   discovery: 'https://idp/.well-known/openid-configuration',
   redirect: false,
   timeout: 5000,
@@ -63,7 +63,7 @@ function createCallbackReq(
 
 /** Set up a successful grant + userInfo mock on the openidClientMock */
 function mockSuccessfulGrant(mock: any) {
-  mock.authorizationCodeGrant = vi.fn().mockResolvedValue({ access_token: 'token' }); // NOSONAR - test fixture, not a real credential
+  mock.authorizationCodeGrant = vi.fn().mockResolvedValue({ access_token: 'token' });
   mock.fetchUserInfo = vi.fn().mockResolvedValue({ email: 'user@example.com' });
 }
 
@@ -109,8 +109,8 @@ beforeEach(() => {
   oidc.client = new Configuration(
     { issuer: 'https://idp.example.com' },
     'dd-client',
-    'dd-secret', // NOSONAR - test fixture, not a real credential
-    ClientSecretPost('dd-secret'), // NOSONAR - test fixture, not a real credential
+    'dd-secret',
+    ClientSecretPost('dd-secret'),
   );
   oidc.name = '';
   oidc.log = {

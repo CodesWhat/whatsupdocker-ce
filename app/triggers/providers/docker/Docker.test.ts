@@ -966,7 +966,7 @@ test('sanitizeEndpointConfig should return empty object for undefined config', (
 
 test('sanitizeEndpointConfig should copy IPAMConfig, Links, DriverOpts, MacAddress', () => {
   const config = {
-    IPAMConfig: { IPv4Address: '10.0.0.5' }, // NOSONAR - test fixture IP
+    IPAMConfig: { IPv4Address: '10.0.0.5' },
     Links: ['link1'],
     DriverOpts: { opt: 'val' },
     MacAddress: '02:42:ac:11:00:02',

@@ -3,7 +3,7 @@ import Custom from './Custom.js';
 
 // Test fixture credentials - not real secrets
 const TEST_LOGIN = 'login';
-const TEST_PASSWORD = 'password'; // NOSONAR
+const TEST_PASSWORD = 'password';
 
 const custom = new Custom();
 custom.configuration = {
@@ -59,7 +59,7 @@ test('validatedConfiguration should throw error when auth and login/password are
       url: 'http://localhost:5000',
       login: TEST_LOGIN,
       password: TEST_PASSWORD,
-      auth: 'dXNlcm5hbWU6cGFzc3dvcmQ=', // NOSONAR - test fixture, not a real credential
+      auth: 'dXNlcm5hbWU6cGFzc3dvcmQ=',
     });
   }).toThrow();
 });
@@ -112,13 +112,13 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should add basic auth', async () => {
   await expect(custom.authenticate(undefined, { headers: {} })).resolves.toEqual({
     headers: {
-      Authorization: 'Basic bG9naW46cGFzc3dvcmQ=', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Basic bG9naW46cGFzc3dvcmQ=',
     },
   });
 });
 
 test('getAuthCredentials should return base64 creds when set in configuration', async () => {
-  custom.configuration.auth = 'dXNlcm5hbWU6cGFzc3dvcmQ='; // NOSONAR - test fixture, not a real credential
+  custom.configuration.auth = 'dXNlcm5hbWU6cGFzc3dvcmQ=';
   expect(custom.getAuthCredentials()).toEqual('dXNlcm5hbWU6cGFzc3dvcmQ=');
 });
 

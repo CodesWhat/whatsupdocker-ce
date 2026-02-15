@@ -2,7 +2,7 @@
 import Docr from './Docr.js';
 
 // Test fixture credentials - not real secrets
-const TEST_TOKEN = 'dop_v1_abcdef'; // NOSONAR
+const TEST_TOKEN = 'dop_v1_abcdef';
 
 const docr = new Docr();
 
@@ -97,7 +97,7 @@ test('authenticate should add basic auth from token alias', async () => {
 
   expect(docr.authenticate(undefined, { headers: {} })).resolves.toEqual({
     headers: {
-      Authorization: 'Basic ZG9jdGw6ZG9wX3YxX2FiY2RlZg==', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Basic ZG9jdGw6ZG9wX3YxX2FiY2RlZg==',
     },
   });
 });

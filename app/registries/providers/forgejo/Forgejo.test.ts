@@ -4,8 +4,8 @@ import Forgejo from './Forgejo.js';
 
 // Test fixture credentials - not real secrets
 const TEST_LOGIN = 'login';
-const TEST_PASSWORD = 'password'; // NOSONAR
-const TEST_PASS = 'pass'; // NOSONAR
+const TEST_PASSWORD = 'password';
+const TEST_PASS = 'pass';
 
 // Verify the Forgejo class is properly a subclass of Gitea
 test('Forgejo should be an instance of Gitea', async () => {

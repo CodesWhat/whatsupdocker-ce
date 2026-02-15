@@ -8,7 +8,7 @@ describe('GitHub Container Registry', () => {
     ghcr = new Ghcr();
     await ghcr.register('registry', 'ghcr', 'test', {
       username: 'testuser',
-      token: 'testtoken', // NOSONAR - test fixture, not a real credential
+      token: 'testtoken',
     });
   });
 
@@ -39,18 +39,18 @@ describe('GitHub Container Registry', () => {
   });
 
   test('should mask configuration token', async () => {
-    ghcr.configuration = { username: 'testuser', token: 'secret_token' }; // NOSONAR - test fixture, not a real credential
+    ghcr.configuration = { username: 'testuser', token: 'secret_token' };
     const masked = ghcr.maskConfiguration();
     expect(masked.username).toBe('testuser');
     expect(masked.token).toBe('s**********n');
   });
 
   test('should return auth pull credentials', async () => {
-    ghcr.configuration = { username: 'testuser', token: 'testtoken' }; // NOSONAR - test fixture, not a real credential
+    ghcr.configuration = { username: 'testuser', token: 'testtoken' };
     const auth = await ghcr.getAuthPull();
     expect(auth).toEqual({
       username: 'testuser',
-      password: 'testtoken', // NOSONAR - test fixture, not a real credential
+      password: 'testtoken',
     });
   });
 
@@ -61,7 +61,7 @@ describe('GitHub Container Registry', () => {
   });
 
   test('should authenticate with token', async () => {
-    ghcr.configuration = { token: 'test-token' }; // NOSONAR - test fixture, not a real credential
+    ghcr.configuration = { token: 'test-token' };
     const image = { name: 'user/repo' };
     const requestOptions = { headers: {} };
 
@@ -88,7 +88,7 @@ describe('GitHub Container Registry', () => {
   });
 
   test('should return undefined auth pull when missing username', async () => {
-    ghcr.configuration = { token: 'test-token' }; // NOSONAR - test fixture, not a real credential
+    ghcr.configuration = { token: 'test-token' };
     const auth = await ghcr.getAuthPull();
     expect(auth).toBeUndefined();
   });

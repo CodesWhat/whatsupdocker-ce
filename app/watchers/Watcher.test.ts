@@ -71,6 +71,6 @@ test('maskConfiguration should return the configuration when called without args
 
 test('maskConfiguration should return passed configuration when provided', () => {
   const watcher = new ConcreteWatcher();
-  const config = { token: 'secret' }; // NOSONAR - test fixture, not a real credential
+  const config = { token: 'secret' };
   expect(watcher.maskConfiguration(config)).toStrictEqual(config);
 });

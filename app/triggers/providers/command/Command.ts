@@ -63,7 +63,6 @@ class Command extends Trigger {
     };
     try {
       const { stdout, stderr } = await exec(
-        // NOSONAR - cmd is from trusted admin configuration, not user input
         this.configuration.cmd,
         commandOptions,
       );

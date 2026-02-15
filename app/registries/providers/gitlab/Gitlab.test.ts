@@ -3,7 +3,7 @@ import axios from 'axios';
 import Gitlab from './Gitlab.js';
 
 // Test fixture credentials - not real secrets
-const TEST_TOKEN = 'abcdef'; // NOSONAR
+const TEST_TOKEN = 'abcdef';
 
 const gitlab = new Gitlab();
 gitlab.configuration = {
@@ -80,7 +80,7 @@ test('match should return true when registry url is from custom gitlab', async (
 test('authenticate should perform authenticate request', async () => {
   axios.mockImplementation(() => ({
     data: {
-      token: 'token', // NOSONAR - test fixture, not a real credential
+      token: 'token',
     },
   }));
   expect(

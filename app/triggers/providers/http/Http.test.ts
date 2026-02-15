@@ -90,7 +90,7 @@ describe('HTTP Trigger', () => {
     axios.mockResolvedValue({ data: {} });
     await http.register('trigger', 'http', 'test', {
       url: 'https://example.com/webhook',
-      auth: { type: 'BASIC', user: 'user', password: 'pass' }, // NOSONAR - test fixture, not a real credential
+      auth: { type: 'BASIC', user: 'user', password: 'pass' },
     });
     const container = { name: 'test' };
 
@@ -99,7 +99,7 @@ describe('HTTP Trigger', () => {
       method: 'POST',
       url: 'https://example.com/webhook',
       data: container,
-      auth: { username: 'user', password: 'pass' }, // NOSONAR - test fixture, not a real credential
+      auth: { username: 'user', password: 'pass' },
     });
   });
 
@@ -108,7 +108,7 @@ describe('HTTP Trigger', () => {
     axios.mockResolvedValue({ data: {} });
     await http.register('trigger', 'http', 'test', {
       url: 'https://example.com/webhook',
-      auth: { type: 'BEARER', bearer: 'token' }, // NOSONAR - test fixture, not a real credential
+      auth: { type: 'BEARER', bearer: 'token' },
     });
     const container = { name: 'test' };
 
@@ -117,7 +117,7 @@ describe('HTTP Trigger', () => {
       method: 'POST',
       url: 'https://example.com/webhook',
       data: container,
-      headers: { Authorization: 'Bearer token' }, // NOSONAR - test fixture, not a real credential
+      headers: { Authorization: 'Bearer token' },
     });
   });
 

@@ -22,7 +22,7 @@ test('authenticate should call super.authenticate when no existing session', asy
   basicStrategy.authenticate({
     isAuthenticated: () => false,
     headers: {
-      Authorization: 'Bearer XXXXX', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Bearer XXXXX',
     },
   });
   expect(fail).toHaveBeenCalled();

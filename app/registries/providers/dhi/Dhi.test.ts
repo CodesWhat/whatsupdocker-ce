@@ -2,9 +2,9 @@
 import Dhi from './Dhi.js';
 
 // Test fixture credentials - not real secrets
-const TEST_TOKEN = 'mytoken'; // NOSONAR
-const TEST_PASSWORD = 'testpass'; // NOSONAR
-const TEST_TOKEN_ALT = 'testtoken'; // NOSONAR
+const TEST_TOKEN = 'mytoken';
+const TEST_PASSWORD = 'testpass';
+const TEST_TOKEN_ALT = 'testtoken';
 
 // Mock axios
 vi.mock('axios', () => ({ default: vi.fn() }));
@@ -50,7 +50,7 @@ describe('DHI Registry', () => {
 
   test('should authenticate with credentials', async () => {
     const { default: axios } = await import('axios');
-    axios.mockResolvedValue({ data: { token: 'auth-token' } }); // NOSONAR - test fixture, not a real credential
+    axios.mockResolvedValue({ data: { token: 'auth-token' } });
 
     dhi.getAuthCredentials = vi.fn().mockReturnValue('base64credentials');
 
@@ -64,7 +64,7 @@ describe('DHI Registry', () => {
       url: 'https://dhi.io/token?service=registry.docker.io&scope=repository:python:pull&grant_type=password',
       headers: {
         Accept: 'application/json',
-        Authorization: 'Basic base64credentials', // NOSONAR - test fixture, not a real credential
+        Authorization: 'Basic base64credentials',
       },
     });
     expect(result.headers.Authorization).toBe('Bearer auth-token');
@@ -72,7 +72,7 @@ describe('DHI Registry', () => {
 
   test('should authenticate without credentials', async () => {
     const { default: axios } = await import('axios');
-    axios.mockResolvedValue({ data: { token: 'public-token' } }); // NOSONAR - test fixture, not a real credential
+    axios.mockResolvedValue({ data: { token: 'public-token' } });
 
     dhi.getAuthCredentials = vi.fn().mockReturnValue(null);
 

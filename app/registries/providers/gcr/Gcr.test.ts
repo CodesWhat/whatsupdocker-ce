@@ -3,11 +3,11 @@ import Gcr from './Gcr.js';
 
 // Test fixture credentials - not real secrets
 const TEST_CLIENT_EMAIL = 'accesskeyid';
-const TEST_PRIVATE_KEY = 'secretaccesskey'; // NOSONAR
+const TEST_PRIVATE_KEY = 'secretaccesskey';
 
 vi.mock('axios', () => ({
   default: vi.fn().mockImplementation(() => ({
-    data: { token: 'xxxxx' }, // NOSONAR
+    data: { token: 'xxxxx' },
   })),
 }));
 
@@ -102,7 +102,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should call gcr auth endpoint', async () => {
   expect(gcr.authenticate({}, { headers: {} })).resolves.toEqual({
     headers: {
-      Authorization: 'Bearer xxxxx', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Bearer xxxxx',
     },
   });
 });

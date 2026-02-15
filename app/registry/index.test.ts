@@ -134,13 +134,13 @@ test('registerRegistries should register all registries', async () => {
     hub: {
       private: {
         login: 'login',
-        token: 'token', // NOSONAR - test fixture, not a real credential
+        token: 'token',
       },
     },
     ecr: {
       private: {
         accesskeyid: 'key',
-        secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
+        secretaccesskey: 'secret',
         region: 'region',
       },
     },
@@ -358,13 +358,13 @@ test('init should register all components', async () => {
     hub: {
       private: {
         login: 'login',
-        token: 'token', // NOSONAR - test fixture, not a real credential
+        token: 'token',
       },
     },
     ecr: {
       private: {
         accesskeyid: 'key',
-        secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
+        secretaccesskey: 'secret',
         region: 'region',
       },
     },
@@ -416,11 +416,11 @@ test('deregisterAll should deregister all components', async () => {
   registries = {
     hub: {
       login: 'login',
-      token: 'token', // NOSONAR - test fixture, not a real credential
+      token: 'token',
     },
     ecr: {
       accesskeyid: 'key',
-      secretaccesskey: 'secret', // NOSONAR - test fixture, not a real credential
+      secretaccesskey: 'secret',
       region: 'region',
     },
   };
@@ -743,8 +743,8 @@ test('registerTriggers should let explicit config override trigger group default
 test('init should register agents and their watchers/triggers', async () => {
   agents = {
     node1: {
-      host: 'http://10.0.0.1:3000', // NOSONAR - intentional http for test fixture
-      secret: 'mysecret', // NOSONAR - test fixture, not a real credential
+      host: 'http://10.0.0.1:3000',
+      secret: 'mysecret',
     },
   };
   triggers = {};
@@ -771,8 +771,8 @@ test('init in agent mode should skip authentications and agents registration', a
   };
   agents = {
     node1: {
-      host: 'http://10.0.0.1:3000', // NOSONAR - test fixture
-      secret: 'mysecret', // NOSONAR - test fixture
+      host: 'http://10.0.0.1:3000',
+      secret: 'mysecret',
     },
   };
 

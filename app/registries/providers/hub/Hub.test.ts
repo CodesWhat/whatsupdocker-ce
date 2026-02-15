@@ -57,7 +57,7 @@ describe('Docker Hub Registry', () => {
   });
 
   test('should mask configuration with token', async () => {
-    hub.configuration = { login: 'testuser', token: 'secret_token' }; // NOSONAR - test fixture, not a real credential
+    hub.configuration = { login: 'testuser', token: 'secret_token' };
     const masked = hub.maskConfiguration();
     expect(masked.login).toBe('testuser');
     expect(masked.token).toBe('s**********n');
@@ -84,14 +84,14 @@ describe('Docker Hub Registry', () => {
   test('should initialize with token as password', async () => {
     const hubWithToken = new Hub();
     await hubWithToken.register('registry', 'hub', 'test', {
-      token: 'mytoken', // NOSONAR - test fixture, not a real credential
+      token: 'mytoken',
     });
     expect(hubWithToken.configuration.password).toBe('mytoken');
   });
 
   test('should authenticate with credentials', async () => {
     const { default: axios } = await import('axios');
-    axios.mockResolvedValue({ data: { token: 'auth-token' } }); // NOSONAR - test fixture, not a real credential
+    axios.mockResolvedValue({ data: { token: 'auth-token' } });
 
     hub.getAuthCredentials = vi.fn().mockReturnValue('base64credentials');
 
@@ -105,7 +105,7 @@ describe('Docker Hub Registry', () => {
       url: 'https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/nginx:pull&grant_type=password',
       headers: {
         Accept: 'application/json',
-        Authorization: 'Basic base64credentials', // NOSONAR - test fixture, not a real credential
+        Authorization: 'Basic base64credentials',
       },
     });
     expect(result.headers.Authorization).toBe('Bearer auth-token');
@@ -113,7 +113,7 @@ describe('Docker Hub Registry', () => {
 
   test('should authenticate without credentials', async () => {
     const { default: axios } = await import('axios');
-    axios.mockResolvedValue({ data: { token: 'public-token' } }); // NOSONAR - test fixture, not a real credential
+    axios.mockResolvedValue({ data: { token: 'public-token' } });
 
     hub.getAuthCredentials = vi.fn().mockReturnValue(null);
 
@@ -140,7 +140,7 @@ describe('Docker Hub Registry', () => {
   test('should validate object configuration with auth', async () => {
     const config = {
       login: 'user',
-      password: 'pass', // NOSONAR - test fixture, not a real credential
+      password: 'pass',
       auth: Buffer.from('user:pass').toString('base64'),
     };
     expect(() => hub.validateConfiguration(config)).not.toThrow();
@@ -150,8 +150,8 @@ describe('Docker Hub Registry', () => {
     hub.configuration = {
       url: 'https://registry-1.docker.io',
       login: 'testuser',
-      password: 'testpass', // NOSONAR - test fixture, not a real credential
-      token: 'testtoken', // NOSONAR - test fixture, not a real credential
+      password: 'testpass',
+      token: 'testtoken',
       auth: 'dGVzdDp0ZXN0',
     };
     const masked = hub.maskConfiguration();

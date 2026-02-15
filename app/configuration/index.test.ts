@@ -156,12 +156,12 @@ test('getRegistryConfigurations should return configured registries when overrid
 
 test('getAgentConfigurations should return configured agents when overridden', async () => {
   configuration.ddEnvVars.DD_AGENT_NODE1_HOST = '10.0.0.1';
-  configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1'; // NOSONAR - test fixture
+  configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1';
   configuration.ddEnvVars.DD_AGENT_NODE2_HOST = '10.0.0.2';
-  configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2'; // NOSONAR - test fixture
+  configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2';
   expect(configuration.getAgentConfigurations()).toStrictEqual({
-    node1: { host: '10.0.0.1', secret: 'secret1' }, // NOSONAR
-    node2: { host: '10.0.0.2', secret: 'secret2' }, // NOSONAR
+    node1: { host: '10.0.0.1', secret: 'secret1' },
+    node2: { host: '10.0.0.2', secret: 'secret2' },
   });
 });
 
@@ -396,7 +396,7 @@ describe('getWebhookConfiguration', () => {
 
   test('should return enabled webhook when token is provided', () => {
     configuration.ddEnvVars.DD_SERVER_WEBHOOK_ENABLED = 'true';
-    configuration.ddEnvVars.DD_SERVER_WEBHOOK_TOKEN = 'secret-token'; // NOSONAR - test fixture
+    configuration.ddEnvVars.DD_SERVER_WEBHOOK_TOKEN = 'secret-token';
 
     expect(configuration.getWebhookConfiguration()).toStrictEqual({
       enabled: true,

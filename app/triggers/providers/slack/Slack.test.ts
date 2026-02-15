@@ -10,7 +10,7 @@ import Slack from './Slack.js';
 const slack = new Slack();
 
 const configurationValid = {
-  token: 'token', // NOSONAR - test fixture, not a real credential
+  token: 'token',
   channel: 'channel',
   threshold: 'all',
   mode: 'simple',
@@ -40,7 +40,7 @@ test('validateConfiguration should throw error when invalid', async () => {
 
 test('maskConfiguration should mask sensitive data', async () => {
   slack.configuration = {
-    token: 'token', // NOSONAR - test fixture, not a real credential
+    token: 'token',
     channel: 'channel',
   };
   expect(slack.maskConfiguration()).toEqual({

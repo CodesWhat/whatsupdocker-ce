@@ -14,7 +14,7 @@ import Telegram from './Telegram.js';
 const telegram = new Telegram();
 
 const configurationValid = {
-  bottoken: 'token', // NOSONAR - test fixture, not a real credential
+  bottoken: 'token',
   chatid: '123456789',
   threshold: 'all',
   mode: 'simple',

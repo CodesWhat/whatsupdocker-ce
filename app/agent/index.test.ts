@@ -42,11 +42,11 @@ describe('agent/index', () => {
       agent: {
         'dd.agent1': {
           name: 'agent1',
-          configuration: { host: 'host1', port: 3001, secret: 'secret1' }, // NOSONAR - test fixture
+          configuration: { host: 'host1', port: 3001, secret: 'secret1' },
         },
         'dd.agent2': {
           name: 'agent2',
-          configuration: { host: 'host2', port: 3002, secret: 'secret2' }, // NOSONAR - test fixture
+          configuration: { host: 'host2', port: 3002, secret: 'secret2' },
         },
       },
     });
@@ -62,7 +62,7 @@ describe('agent/index', () => {
       agent: {
         'dd.agent1': {
           name: 'agent1',
-          configuration: { secret: 'secret1' }, // NOSONAR - test fixture
+          configuration: { secret: 'secret1' },
         },
       },
     });

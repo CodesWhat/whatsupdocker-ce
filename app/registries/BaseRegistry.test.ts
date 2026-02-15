@@ -61,7 +61,7 @@ test('getAuthCredentials should return auth when set', () => {
 });
 
 test('getAuthCredentials should return base64 encoded login/password', () => {
-  baseRegistry.configuration = { login: 'user', password: 'pass' }; // NOSONAR - test fixture, not a real credential
+  baseRegistry.configuration = { login: 'user', password: 'pass' };
   expect(baseRegistry.getAuthCredentials()).toBe(Buffer.from('user:pass').toString('base64'));
 });
 
@@ -71,15 +71,15 @@ test('getAuthCredentials should return undefined when no auth configured', () =>
 });
 
 test('getAuthPull should return login/password when set', async () => {
-  baseRegistry.configuration = { login: 'user', password: 'pass' }; // NOSONAR - test fixture, not a real credential
+  baseRegistry.configuration = { login: 'user', password: 'pass' };
   const result = await baseRegistry.getAuthPull();
-  expect(result).toEqual({ username: 'user', password: 'pass' }); // NOSONAR - test fixture, not a real credential
+  expect(result).toEqual({ username: 'user', password: 'pass' });
 });
 
 test('getAuthPull should return username/token when set', async () => {
-  baseRegistry.configuration = { username: 'user', token: 'tok' }; // NOSONAR - test fixture, not a real credential
+  baseRegistry.configuration = { username: 'user', token: 'tok' };
   const result = await baseRegistry.getAuthPull();
-  expect(result).toEqual({ username: 'user', password: 'tok' }); // NOSONAR - test fixture, not a real credential
+  expect(result).toEqual({ username: 'user', password: 'tok' });
 });
 
 test('getAuthPull should return undefined when no credentials', async () => {
@@ -91,12 +91,12 @@ test('getAuthPull should return undefined when no credentials', async () => {
 test('getAuthPull should prefer login/password over username/token', async () => {
   baseRegistry.configuration = {
     login: 'user',
-    password: 'pass', // NOSONAR - test fixture, not a real credential
+    password: 'pass',
     username: 'user2',
-    token: 'tok2', // NOSONAR - test fixture, not a real credential
+    token: 'tok2',
   };
   const result = await baseRegistry.getAuthPull();
-  expect(result).toEqual({ username: 'user', password: 'pass' }); // NOSONAR - test fixture, not a real credential
+  expect(result).toEqual({ username: 'user', password: 'pass' });
 });
 
 test('matchUrlPattern should test image url against pattern', () => {
@@ -111,8 +111,8 @@ test('matchUrlPattern should test image url against pattern', () => {
 test('maskSensitiveFields should mask specified fields', () => {
   baseRegistry.configuration = {
     login: 'user',
-    password: 'supersecret', // NOSONAR - test fixture, not a real credential
-    token: 'mytoken', // NOSONAR - test fixture, not a real credential
+    password: 'supersecret',
+    token: 'mytoken',
   };
   const result = baseRegistry.maskSensitiveFields(['password', 'token']);
   expect(result.login).toBe('user');
@@ -129,7 +129,7 @@ test('maskSensitiveFields should skip fields not in configuration', () => {
 
 test('authenticateBearerFromAuthUrl should set bearer token using default extractor', async () => {
   const { default: axios } = await import('axios');
-  axios.mockResolvedValue({ data: { token: 'abc123' } }); // NOSONAR - test fixture
+  axios.mockResolvedValue({ data: { token: 'abc123' } });
 
   const result = await baseRegistry.authenticateBearerFromAuthUrl(
     { headers: {} },

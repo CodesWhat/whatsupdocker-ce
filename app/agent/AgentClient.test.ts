@@ -46,7 +46,7 @@ describe('AgentClient', () => {
     client = new AgentClient('test-agent', {
       host: 'localhost',
       port: 3001,
-      secret: 'test-secret', // NOSONAR - test fixture, not a real credential
+      secret: 'test-secret',
     });
   });
 
@@ -66,7 +66,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'myhost',
         port: 4000,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
       });
       expect(c.baseUrl).toBe('http://myhost:4000');
     });
@@ -75,7 +75,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'myhost',
         port: 4000,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
         certfile: '/path/to/cert.pem',
         keyfile: '/path/to/key.pem',
         cafile: '/path/to/ca.pem',
@@ -87,7 +87,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'agent.example.com',
         port: 443,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
       });
       expect(c.baseUrl).toBe('https://agent.example.com');
     });
@@ -95,9 +95,9 @@ describe('AgentClient', () => {
     test('should handle host that already starts with http', () => {
       // Intentionally using http:// to verify protocol-prefix detection logic
       const c = new AgentClient('a', {
-        host: 'http://myhost', // NOSONAR - intentional http for branch coverage
+        host: 'http://myhost',
         port: 4000,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
       });
       expect(c.baseUrl).toBe('http://myhost:4000');
     });
@@ -106,7 +106,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'myhost',
         port: 0,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
       });
       expect(c.baseUrl).toBe('http://myhost:3000');
     });
@@ -115,7 +115,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'myhost',
         port: 4000,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
         certfile: '/path/to/cert.pem',
       });
       expect(c.baseUrl).toBe('https://myhost:4000');
@@ -133,7 +133,7 @@ describe('AgentClient', () => {
       const c = new AgentClient('a', {
         host: 'myhost',
         port: 4000,
-        secret: 's', // NOSONAR - test fixture, not a real credential
+        secret: 's',
         certfile: '/path/to/cert.pem',
       });
 
@@ -147,7 +147,7 @@ describe('AgentClient', () => {
           new AgentClient('a', {
             host: 'httpx://myhost',
             port: 4000,
-            secret: 's', // NOSONAR - test fixture, not a real credential
+            secret: 's',
           }),
       ).toThrowError('Invalid agent URL protocol: httpx:');
     });

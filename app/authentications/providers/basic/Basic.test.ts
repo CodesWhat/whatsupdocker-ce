@@ -17,7 +17,7 @@ describe('Basic Authentication', () => {
     // Mock configuration to avoid validation errors
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     const strategy = basic.getStrategy();
@@ -36,7 +36,7 @@ describe('Basic Authentication', () => {
   test('should mask configuration hash', async () => {
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
     const masked = basic.maskConfiguration();
     expect(masked.user).toBe('testuser');
@@ -47,7 +47,7 @@ describe('Basic Authentication', () => {
     const { default: passJs } = await import('pass');
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     passJs.validate = vi.fn((pass, hash, callback) => {
@@ -65,7 +65,7 @@ describe('Basic Authentication', () => {
   test('should reject invalid user', async () => {
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     await new Promise<void>((resolve) => {
@@ -80,7 +80,7 @@ describe('Basic Authentication', () => {
     const { default: passJs } = await import('pass');
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     passJs.validate = vi.fn((pass, hash, callback) => {
@@ -98,7 +98,7 @@ describe('Basic Authentication', () => {
   test('should reject null user', async () => {
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     await new Promise<void>((resolve) => {
@@ -129,7 +129,7 @@ describe('Basic Authentication', () => {
     const { default: passJs } = await import('pass');
     basic.configuration = {
       user: 'testuser',
-      hash: '$2b$10$test.hash.value', // NOSONAR - test fixture, not a real credential
+      hash: '$2b$10$test.hash.value',
     };
 
     passJs.validate = vi.fn((pass, hash, callback) => {

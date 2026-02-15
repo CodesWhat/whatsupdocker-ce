@@ -4,7 +4,7 @@ import log from '../../../log/index.js';
 import Quay from './Quay.js';
 
 // Test fixture credentials - not real secrets
-const TEST_TOKEN = 'token'; // NOSONAR
+const TEST_TOKEN = 'token';
 
 vi.mock('axios');
 axios.mockImplementation(() => ({

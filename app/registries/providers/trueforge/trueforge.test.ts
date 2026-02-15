@@ -7,7 +7,7 @@ const trueforge = new Trueforge();
 trueforge.configuration = {
   namespace: 'namespace',
   account: 'account',
-  token: 'token', // NOSONAR - test fixture, not a real credential
+  token: 'token',
 };
 
 vi.mock('axios');
@@ -17,12 +17,12 @@ test('validatedConfiguration should initialize when auth configuration is valid'
     trueforge.validateConfiguration({
       namespace: 'namespace',
       account: 'account',
-      token: 'token', // NOSONAR - test fixture, not a real credential
+      token: 'token',
     }),
   ).toStrictEqual({
     namespace: 'namespace',
     account: 'account',
-    token: 'token', // NOSONAR - test fixture, not a real credential
+    token: 'token',
   });
 });
 
@@ -108,6 +108,6 @@ test('normalizeImage should preserve already-https registry urls', async () => {
 test('getAuthPull should return quay-compatible pull credentials', async () => {
   await expect(trueforge.getAuthPull()).resolves.toStrictEqual({
     username: 'namespace+account',
-    password: 'token', // NOSONAR - test fixture, not a real credential
+    password: 'token',
   });
 });

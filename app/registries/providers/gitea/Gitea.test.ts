@@ -3,8 +3,8 @@ import Gitea from './Gitea.js';
 
 // Test fixture credentials - not real secrets
 const TEST_LOGIN = 'login';
-const TEST_PASSWORD = 'password'; // NOSONAR
-const TEST_PASS = 'pass'; // NOSONAR
+const TEST_PASSWORD = 'password';
+const TEST_PASS = 'pass';
 
 const gitea = new Gitea();
 gitea.configuration = {
