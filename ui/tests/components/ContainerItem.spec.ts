@@ -78,6 +78,23 @@ const BASE_CONTAINER = {
   updatePolicy: undefined,
 };
 
+const BASE_SECURITY_SCAN = {
+  scanner: 'trivy',
+  image: 'repo/image:1.1.0',
+  scannedAt: '2026-01-10T12:00:00.000Z',
+  status: 'passed',
+  blockSeverities: ['CRITICAL', 'HIGH'],
+  blockingCount: 0,
+  summary: {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    unknown: 0,
+  },
+  vulnerabilities: [],
+};
+
 const createContainer = (overrides: any = {}) => {
   const imageOverrides = overrides.image ?? {};
   const container: any = {
@@ -430,6 +447,99 @@ describe('ContainerItem', () => {
     expect(wrapper.vm.isCurrentUpdateSkipped).toBe(false);
     expect(wrapper.vm.updatePolicyChipLabel).toBe('');
     expect(wrapper.vm.updatePolicyDescription).toBe('No custom update policy');
+  });
+
+  it('shows no vulnerability chip state when no scan is recorded', () => {
+    expect(wrapper.vm.securityScan).toBeUndefined();
+    expect(wrapper.vm.hasSecurityScan).toBe(false);
+    expect(wrapper.vm.vulnerabilityChipColor).toBe('info');
+    expect(wrapper.vm.vulnerabilityChipLabel).toBe('scanned');
+    expect(wrapper.vm.vulnerabilityTooltipDescription).toBe('No vulnerability scan result');
+  });
+
+  it('computes vulnerability chip and tooltip for blocked scan results', async () => {
+    const blockedScan = {
+      ...BASE_SECURITY_SCAN,
+      status: 'blocked',
+      blockingCount: 2,
+      summary: {
+        critical: 1,
+        high: 1,
+        medium: 3,
+        low: 4,
+        unknown: 0,
+      },
+    };
+
+    await wrapper.setProps({
+      container: createContainer({
+        security: {
+          scan: blockedScan,
+        },
+      }),
+    });
+
+    expect(wrapper.vm.hasSecurityScan).toBe(true);
+    expect(wrapper.vm.vulnerabilityChipColor).toBe('error');
+    expect(wrapper.vm.vulnerabilityChipLabel).toBe('blocked (2)');
+    expect(wrapper.vm.vulnerabilityTooltipDescription).toBe(
+      `Blocked at ${new Date(blockedScan.scannedAt).toLocaleString()}. Critical: 1, High: 1, Medium: 3, Low: 4, Unknown: 0`,
+    );
+    expect(wrapper.text()).toContain('blocked (2)');
+  });
+
+  it('computes vulnerability chip and tooltip for scan errors', async () => {
+    const errorScan = {
+      ...BASE_SECURITY_SCAN,
+      status: 'error',
+      error: 'Trivy command failed',
+    };
+
+    await wrapper.setProps({
+      container: createContainer({
+        security: {
+          scan: errorScan,
+        },
+      }),
+    });
+
+    expect(wrapper.vm.hasSecurityScan).toBe(true);
+    expect(wrapper.vm.vulnerabilityChipColor).toBe('warning');
+    expect(wrapper.vm.vulnerabilityChipLabel).toBe('scan error');
+    expect(wrapper.vm.vulnerabilityTooltipDescription).toBe(
+      `Security scan failed at ${new Date(errorScan.scannedAt).toLocaleString()}: Trivy command failed`,
+    );
+    expect(wrapper.text()).toContain('scan error');
+  });
+
+  it('computes vulnerability chip and tooltip for passed scans', async () => {
+    const passedScan = {
+      ...BASE_SECURITY_SCAN,
+      status: 'passed',
+      summary: {
+        critical: 0,
+        high: 0,
+        medium: 1,
+        low: 2,
+        unknown: 1,
+      },
+    };
+
+    await wrapper.setProps({
+      container: createContainer({
+        security: {
+          scan: passedScan,
+        },
+      }),
+    });
+
+    expect(wrapper.vm.hasSecurityScan).toBe(true);
+    expect(wrapper.vm.vulnerabilityChipColor).toBe('success');
+    expect(wrapper.vm.vulnerabilityChipLabel).toBe('safe');
+    expect(wrapper.vm.vulnerabilityTooltipDescription).toBe(
+      `Scanned at ${new Date(passedScan.scannedAt).toLocaleString()}. Critical: 0, High: 0, Medium: 1, Low: 2, Unknown: 1`,
+    );
+    expect(wrapper.text()).toContain('safe');
   });
 
   it('applies update policy and emits success notification', async () => {

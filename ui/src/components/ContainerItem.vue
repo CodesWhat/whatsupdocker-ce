@@ -77,8 +77,10 @@
               <template v-slot:activator="{ props }">
                 <v-chip
                   label
+                  size="x-small"
                   variant="outlined"
                   color="warning"
+                  class="flex-shrink-0"
                   v-bind="props"
                 >
                   <v-icon start size="small">fas fa-bell-slash</v-icon>
@@ -86,6 +88,24 @@
                 </v-chip>
               </template>
               <span class="text-caption">{{ updatePolicyDescription }}</span>
+            </v-tooltip>
+          </span>
+          <span v-if="smAndUp && hasSecurityScan" class="d-flex align-center">
+            <v-tooltip location="bottom">
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  label
+                  size="x-small"
+                  variant="outlined"
+                  :color="vulnerabilityChipColor"
+                  class="flex-shrink-0"
+                  v-bind="props"
+                >
+                  <v-icon start size="small">fas fa-shield</v-icon>
+                  {{ vulnerabilityChipLabel }}
+                </v-chip>
+              </template>
+              <span class="text-caption">{{ vulnerabilityTooltipDescription }}</span>
             </v-tooltip>
           </span>
 

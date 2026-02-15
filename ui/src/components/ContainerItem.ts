@@ -204,6 +204,60 @@ export default defineComponent({
       }
       return 'No custom update policy';
     },
+    securityScan() {
+      return this.container.security?.scan;
+    },
+    hasSecurityScan() {
+      return Boolean(this.securityScan?.scannedAt);
+    },
+    vulnerabilityChipColor() {
+      const scanStatus = this.securityScan?.status;
+      if (scanStatus === 'blocked') {
+        return 'error';
+      }
+      if (scanStatus === 'error') {
+        return 'warning';
+      }
+      if (scanStatus === 'passed') {
+        return 'success';
+      }
+      return 'info';
+    },
+    vulnerabilityChipLabel() {
+      const scanStatus = this.securityScan?.status;
+      if (scanStatus === 'blocked') {
+        return `blocked (${this.securityScan?.blockingCount || 0})`;
+      }
+      if (scanStatus === 'error') {
+        return 'scan error';
+      }
+      if (scanStatus === 'passed') {
+        return 'safe';
+      }
+      return 'scanned';
+    },
+    vulnerabilityTooltipDescription() {
+      if (!this.hasSecurityScan) {
+        return 'No vulnerability scan result';
+      }
+      const summary = this.securityScan?.summary || {};
+      const critical = summary.critical || 0;
+      const high = summary.high || 0;
+      const medium = summary.medium || 0;
+      const low = summary.low || 0;
+      const unknown = summary.unknown || 0;
+      const scannedAt = this.securityScan?.scannedAt
+        ? this.$filters.dateTime(this.securityScan.scannedAt)
+        : 'unknown';
+      const scanStatus = this.securityScan?.status || 'unknown';
+      if (scanStatus === 'error') {
+        return `Security scan failed at ${scannedAt}: ${this.securityScan?.error || 'unknown error'}`;
+      }
+      if (scanStatus === 'blocked') {
+        return `Blocked at ${scannedAt}. Critical: ${critical}, High: ${high}, Medium: ${medium}, Low: ${low}, Unknown: ${unknown}`;
+      }
+      return `Scanned at ${scannedAt}. Critical: ${critical}, High: ${high}, Medium: ${medium}, Low: ${low}, Unknown: ${unknown}`;
+    },
   },
 
   methods: {
