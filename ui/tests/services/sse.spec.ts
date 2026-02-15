@@ -40,7 +40,7 @@ describe('SseService', () => {
     expect(MockEventSourceCtor).toHaveBeenCalledWith('/api/events/ui');
   });
 
-  it('registers event listeners for dd:connected, dd:self-update, and dd:heartbeat', () => {
+  it('registers event listeners for dd:connected, dd:self-update, dd:scan-started, dd:scan-completed, and dd:heartbeat', () => {
     sseService.connect(mockEventBus);
     expect(mockEventSource.addEventListener).toHaveBeenCalledWith(
       'dd:connected',
@@ -48,6 +48,14 @@ describe('SseService', () => {
     );
     expect(mockEventSource.addEventListener).toHaveBeenCalledWith(
       'dd:self-update',
+      expect.any(Function),
+    );
+    expect(mockEventSource.addEventListener).toHaveBeenCalledWith(
+      'dd:scan-started',
+      expect.any(Function),
+    );
+    expect(mockEventSource.addEventListener).toHaveBeenCalledWith(
+      'dd:scan-completed',
       expect.any(Function),
     );
     expect(mockEventSource.addEventListener).toHaveBeenCalledWith(
@@ -75,6 +83,18 @@ describe('SseService', () => {
     eventListeners['dd:heartbeat']();
 
     expect(mockEventBus.emit).not.toHaveBeenCalled();
+  });
+
+  it('emits scan-started on dd:scan-started event', () => {
+    sseService.connect(mockEventBus);
+    eventListeners['dd:scan-started']();
+    expect(mockEventBus.emit).toHaveBeenCalledWith('scan-started');
+  });
+
+  it('emits scan-completed on dd:scan-completed event', () => {
+    sseService.connect(mockEventBus);
+    eventListeners['dd:scan-completed']();
+    expect(mockEventBus.emit).toHaveBeenCalledWith('scan-completed');
   });
 
   it('emits connection-lost on error when in self-update mode', () => {

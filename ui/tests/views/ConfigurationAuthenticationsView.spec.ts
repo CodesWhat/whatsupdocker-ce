@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationAuthenticationsView from '@/views/ConfigurationAuthenticationsView';
+import ConfigurationAuthenticationsView from '@/views/ConfigurationAuthenticationsView.vue';
 
 vi.mock('@/services/authentication', () => ({
   getAllAuthentications: vi.fn(() =>

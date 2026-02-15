@@ -100,6 +100,20 @@ describe('Backup Service', () => {
       );
     });
 
+    it('includes unknown parsing error detail when parser throws a non-Error value', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw 'parse-failed';
+        },
+      } as any);
+
+      await expect(rollback('container-1')).rejects.toThrow(
+        'Rollback failed: Internal Server Error (unable to parse error response: Unknown parsing error)',
+      );
+    });
+
     it('throws without error detail when body has no error field', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,

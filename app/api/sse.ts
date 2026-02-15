@@ -40,6 +40,20 @@ function broadcastSelfUpdate(): void {
   }
 }
 
+export function broadcastScanStarted(containerId: string): void {
+  const data = JSON.stringify({ containerId });
+  for (const client of clients) {
+    client.write(`event: dd:scan-started\ndata: ${data}\n\n`);
+  }
+}
+
+export function broadcastScanCompleted(containerId: string, status: string): void {
+  const data = JSON.stringify({ containerId, status });
+  for (const client of clients) {
+    client.write(`event: dd:scan-completed\ndata: ${data}\n\n`);
+  }
+}
+
 export function init(): express.Router {
   // Register for self-update events from the trigger system
   registerSelfUpdateStarting(() => {
@@ -51,4 +65,9 @@ export function init(): express.Router {
 }
 
 // For testing
-export { clients as _clients, broadcastSelfUpdate as _broadcastSelfUpdate };
+export {
+  clients as _clients,
+  broadcastSelfUpdate as _broadcastSelfUpdate,
+  broadcastScanStarted as _broadcastScanStarted,
+  broadcastScanCompleted as _broadcastScanCompleted,
+};

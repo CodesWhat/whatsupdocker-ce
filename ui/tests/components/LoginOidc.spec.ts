@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import LoginOidc from '@/components/LoginOidc';
+import { getOidcRedirection } from '@/services/auth';
 
 vi.mock('@/services/auth', () => ({
   getOidcRedirection: vi.fn(() => Promise.resolve({ url: 'http://test.com' })),
@@ -24,15 +25,12 @@ describe('LoginOidc', () => {
   });
 
   beforeEach(() => {
-    try {
-      wrapper = mount(LoginOidc, {
-        props: {
-          name: 'test-provider',
-        },
-      });
-    } catch (e) {
-      wrapper = null;
-    }
+    vi.mocked(getOidcRedirection).mockClear();
+    wrapper = mount(LoginOidc, {
+      props: {
+        name: 'test-provider',
+      },
+    });
   });
 
   afterEach(() => {
@@ -42,20 +40,20 @@ describe('LoginOidc', () => {
   });
 
   it('renders OIDC login button', () => {
-    if (wrapper) {
-      expect(wrapper.find('.v-btn').exists()).toBe(true);
-    } else {
-      expect(true).toBe(true);
-    }
+    expect(wrapper.find('.v-btn').exists()).toBe(true);
   });
 
   it('handles login click', async () => {
-    if (wrapper) {
-      const loginButton = wrapper.find('.v-btn');
-      if (loginButton.exists()) {
-        await loginButton.trigger('click');
-      }
-    }
-    expect(true).toBe(true);
+    await wrapper.find('.v-btn').trigger('click');
+    expect(getOidcRedirection).toHaveBeenCalledWith('test-provider');
+    expect(window.location.href).toBe('http://test.com');
+  });
+
+  it('uses primary button color by default and secondary in dark mode', async () => {
+    const button = wrapper.findComponent({ name: 'v-btn' });
+    expect(button.props('color')).toBe('primary');
+
+    await wrapper.setProps({ dark: true });
+    expect(button.props('color')).toBe('secondary');
   });
 });

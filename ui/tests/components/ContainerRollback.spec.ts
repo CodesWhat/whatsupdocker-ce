@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerRollback from '@/components/ContainerRollback';
+import ContainerRollback from '@/components/ContainerRollback.vue';
 
 vi.mock('@/services/backup', () => ({
   getBackups: vi.fn(),
@@ -111,6 +111,20 @@ describe('ContainerRollback', () => {
 
     wrapper.vm.selectBackup('backup-2');
     expect(wrapper.vm.selectedBackupId).toBe('backup-2');
+  });
+
+  it('selects a backup from list item click handler', async () => {
+    (getBackups as any).mockResolvedValue(mockBackups);
+    wrapper = createWrapper({ modelValue: false });
+
+    await wrapper.setProps({ modelValue: true });
+    await new Promise((r) => setTimeout(r, 10));
+
+    const items = wrapper.findAll('.v-list-item');
+    expect(items.length).toBeGreaterThan(0);
+    await items[0].trigger('click');
+
+    expect(wrapper.vm.selectedBackupId).toBe('backup-1');
   });
 
   it('calls rollback service on confirmRollback', async () => {

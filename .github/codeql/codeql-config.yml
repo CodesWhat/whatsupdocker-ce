@@ -2,7 +2,12 @@ name: drydock CodeQL config
 
 queries:
   - uses: security-and-quality
+  - uses: ./.github/codeql/custom-queries
 
 query-filters:
   - exclude:
       id: js/clear-text-logging
+  # Exclude the built-in log-injection query; our custom-queries pack provides
+  # a replacement that recognises sanitizeLogParam() as a taint barrier.
+  - exclude:
+      id: js/log-injection

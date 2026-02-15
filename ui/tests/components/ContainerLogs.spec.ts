@@ -138,6 +138,30 @@ describe('ContainerLogs', () => {
     wrapper.unmount();
   });
 
+  it('updates tail through v-select model handler', async () => {
+    mockGetContainerLogs.mockResolvedValue({ logs: 'logs' });
+
+    const wrapper = mount(ContainerLogs, {
+      props: { container: mockContainer },
+      global: {
+        stubs: {
+          'v-select': {
+            template:
+              '<div class="v-select-stub" @click="$emit(\'update:modelValue\', 500)"></div>',
+            emits: ['update:modelValue'],
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+    await wrapper.find('.v-select-stub').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.vm.tail).toBe(500);
+    wrapper.unmount();
+  });
+
   it('passes container id and default tail to service', async () => {
     mockGetContainerLogs.mockResolvedValue({ logs: '' });
 

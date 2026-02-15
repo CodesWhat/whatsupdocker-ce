@@ -59,4 +59,14 @@
 .appbar-logo--invert {
   filter: invert(1);
 }
+
+:deep(.v-toolbar-title) {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+:deep(.v-toolbar-title__placeholder) {
+  overflow: visible;
+  text-overflow: unset;
+}
 </style>

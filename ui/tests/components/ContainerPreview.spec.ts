@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerPreview from '@/components/ContainerPreview';
+import ContainerPreview from '@/components/ContainerPreview.vue';
 
 vi.mock('@/services/preview', () => ({
   previewContainer: vi.fn(),
@@ -149,5 +149,29 @@ describe('ContainerPreview', () => {
     await wrapper.setProps({ modelValue: false });
     expect(wrapper.vm.preview).toBeNull();
     expect(wrapper.vm.error).toBe('');
+  });
+
+  it('renders local to remote version diff when preview update kind includes both values', async () => {
+    wrapper = createWrapper({ modelValue: true });
+    await wrapper.setData({
+      loading: false,
+      error: '',
+      preview: {
+        currentImage: 'nginx:1.0.0',
+        newImage: 'nginx:1.1.0',
+        updateKind: {
+          kind: 'semver',
+          semverDiff: 'minor',
+          localValue: '1.0.0',
+          remoteValue: '1.1.0',
+        },
+        networks: [],
+        changes: [],
+      },
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('1.0.0');
+    expect(wrapper.text()).toContain('1.1.0');
   });
 });

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationItem from '@/components/ConfigurationItem';
+import ConfigurationItem from '@/components/ConfigurationItem.vue';
 
 describe('ConfigurationItem', () => {
   const baseItem = {
@@ -101,6 +101,12 @@ describe('ConfigurationItem', () => {
       expect(wrapper.vm.showDetail).toBe(true);
       wrapper.vm.collapse();
       expect(wrapper.vm.showDetail).toBe(false);
+    });
+
+    it('toggles showDetail from card title click handler', async () => {
+      const title = wrapper.find('.v-card-title');
+      await title.trigger('click');
+      expect(wrapper.vm.showDetail).toBe(true);
     });
   });
 

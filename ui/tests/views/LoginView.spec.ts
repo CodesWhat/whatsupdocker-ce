@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import LoginBasic from '@/components/LoginBasic.vue';
 import LoginOidc from '@/components/LoginOidc.vue';
 import { getOidcRedirection, getStrategies } from '@/services/auth';
-import LoginView from '@/views/LoginView';
+import LoginView from '@/views/LoginView.vue';
 
 // Mock services
 vi.mock('@/services/auth', () => ({
@@ -40,6 +40,8 @@ describe('LoginView', () => {
     (getStrategies as any).mockReset();
     (getOidcRedirection as any).mockReset();
     mockRouter.push.mockReset();
+    localStorage.removeItem('themeMode');
+    mockRoute.query.next = undefined;
   });
 
   afterEach(() => {
@@ -48,7 +50,8 @@ describe('LoginView', () => {
     }
   });
 
-  const mountComponent = (strategies = []) => {
+  const mountComponent = (strategies = [], mountOptions: any = {}) => {
+    const { global: extraGlobal = {}, ...restOptions } = mountOptions;
     wrapper = mount(LoginView, {
       global: {
         mocks: {
@@ -60,12 +63,14 @@ describe('LoginView', () => {
             emit: vi.fn(),
           },
         },
+        ...extraGlobal,
       },
       data() {
         return {
           strategies: strategies,
         };
       },
+      ...restOptions,
     });
   };
 
@@ -79,6 +84,108 @@ describe('LoginView', () => {
     mountComponent([{ type: 'oidc', name: 'google' }]);
     expect(wrapper.findComponent(LoginBasic).exists()).toBe(false);
     expect(wrapper.findComponent(LoginOidc).exists()).toBe(true);
+  });
+
+  it('uses dark theme icon and color in dark mode', async () => {
+    mountComponent([{ type: 'basic', name: 'local' }]);
+    wrapper.vm.themeMode = 'dark';
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.currentTheme).toBe('dark');
+    expect(wrapper.vm.isDark).toBe(true);
+    expect(wrapper.vm.themeIcon).toBe('fas fa-moon');
+    expect(wrapper.vm.themeIconColor).toBe('#60A5FA');
+  });
+
+  it('uses light theme icon and color in light mode', async () => {
+    mountComponent([{ type: 'basic', name: 'local' }]);
+    wrapper.vm.themeMode = 'light';
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.currentTheme).toBe('light');
+    expect(wrapper.vm.isDark).toBe(false);
+    expect(wrapper.vm.themeIcon).toBe('fas fa-sun');
+    expect(wrapper.vm.themeIconColor).toBe('#F59E0B');
+  });
+
+  it('resolves system theme using prefers-color-scheme media query', async () => {
+    vi.mocked(globalThis.matchMedia).mockImplementation(
+      () =>
+        ({
+          matches: true,
+        }) as any,
+    );
+    mountComponent([{ type: 'basic', name: 'local' }]);
+    wrapper.vm.themeMode = 'system';
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.currentTheme).toBe('dark');
+
+    vi.mocked(globalThis.matchMedia).mockImplementation(
+      () =>
+        ({
+          matches: false,
+        }) as any,
+    );
+    wrapper.vm.themeMode = 'light';
+    await wrapper.vm.$nextTick();
+    wrapper.vm.themeMode = 'system';
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.currentTheme).toBe('light');
+  });
+
+  it('cycles theme mode and persists the selected mode', async () => {
+    mountComponent([{ type: 'basic', name: 'local' }]);
+    wrapper.vm.themeMode = 'light';
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.cycleTheme();
+    expect(wrapper.vm.themeMode).toBe('system');
+    expect(localStorage.themeMode).toBe('system');
+
+    wrapper.vm.cycleTheme();
+    expect(wrapper.vm.themeMode).toBe('dark');
+    expect(localStorage.themeMode).toBe('dark');
+
+    wrapper.vm.cycleTheme();
+    expect(wrapper.vm.themeMode).toBe('light');
+    expect(localStorage.themeMode).toBe('light');
+  });
+
+  it('renders strategy tabs and updates selected tab through v-model handlers', async () => {
+    mountComponent(
+      [
+        { type: 'basic', name: 'local' },
+        { type: 'oidc', name: 'google' },
+      ],
+      {
+        global: {
+          stubs: {
+            'v-tabs': {
+              template:
+                '<div class="v-tabs" @click="$emit(\'update:modelValue\', 1)"><slot /></div>',
+              props: ['modelValue'],
+              emits: ['update:modelValue'],
+            },
+            'v-window': {
+              template:
+                '<div class="v-window" @click="$emit(\'update:modelValue\', 0)"><slot /></div>',
+              props: ['modelValue'],
+              emits: ['update:modelValue'],
+            },
+          },
+        },
+      },
+    );
+
+    expect(wrapper.find('.v-tabs').exists()).toBe(true);
+    expect(wrapper.text()).toContain('local');
+    expect(wrapper.text()).toContain('google');
+
+    await wrapper.find('.v-tabs').trigger('click');
+    expect(wrapper.vm.strategySelected).toBe(1);
+
+    await wrapper.find('.v-window').trigger('click');
+    expect(wrapper.vm.strategySelected).toBe(0);
   });
 
   it('redirects to home on authentication success', () => {

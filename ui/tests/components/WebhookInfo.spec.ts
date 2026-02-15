@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import WebhookInfo from '@/components/WebhookInfo';
+import WebhookInfo from '@/components/WebhookInfo.vue';
 
 describe('WebhookInfo', () => {
   let wrapper;
@@ -64,6 +64,17 @@ describe('WebhookInfo', () => {
   it('shows anchor icon', () => {
     wrapper = createWrapper({ enabled: true });
     expect(wrapper.text()).toContain('fas fa-anchor');
+  });
+
+  it('toggles details when header is clicked', async () => {
+    wrapper = createWrapper({ enabled: true });
+    expect(wrapper.vm.showDetail).toBe(false);
+
+    await wrapper.find('.v-card-title').trigger('click');
+    expect(wrapper.vm.showDetail).toBe(true);
+
+    await wrapper.find('.v-card-title').trigger('click');
+    expect(wrapper.vm.showDetail).toBe(false);
   });
 
   it('does not show endpoint table when disabled', () => {

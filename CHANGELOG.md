@@ -10,6 +10,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-02-15
+
+### Fixed
+
+- **OIDC session resilience for WUD migrations** — Corrupt or incompatible session data (e.g. from WUD's connect-loki store) no longer causes 500 errors. Sessions that fail to reload are automatically regenerated. All OIDC error responses now return JSON instead of plain text, preventing frontend parse errors. Added a global Express error handler to ensure unhandled exceptions return JSON.
+- **Disabled X-Powered-By header** — Removed the default Express `X-Powered-By` header from both the main API and agent API servers to reduce information exposure.
+- **Trivy scan queue** — Serialized concurrent Trivy invocations to prevent `"cache may be in use by another process"` errors when multiple containers are scanned simultaneously (batch triggers, on-demand scans, SBOM generation).
+- **Login error on wrong password** — `loginBasic()` attempted to parse the response body as JSON even on 401 failures, causing `Unexpected token 'U', "Unauthorized" is not valid JSON` errors instead of the friendly "Username or password error" message.
+- **Snackbar notification colors ignoring level** — The SnackBar component had a hardcoded `color="primary"` instead of binding to the `level` prop, causing error and warning notifications to display as blue instead of red/amber.
+- **SBOM format key mismatch** — Fixed container model schema validating SBOM formats against `cyclonedx` instead of the correct `cyclonedx-json` key.
+
+### Added
+
+- **Snyk vulnerability monitoring** — Integrated Snyk for continuous dependency scanning of `app/package.json` and `ui/package.json`. Added Snyk badge to README with `targetFile` parameter for monorepo support.
+- **Update Guard (Trivy safe-pull gate)** — Added pre-update vulnerability scanning for Docker-triggered updates. Candidate images are scanned before pull/restart, updates are blocked when vulnerabilities match configured blocking severities, and latest scan data is persisted on `container.security.scan`. Added `GET /api/containers/:id/vulnerabilities` endpoint for retrieving scan results.
+- **Update Guard signature verification (cosign)** — Added optional pre-update image signature verification. When enabled, Docker-triggered updates are blocked if candidate image signatures are missing/invalid or verification fails.
+- **Update Guard SBOM generation** — Added Trivy SBOM generation (`spdx-json`, `cyclonedx-json`) for candidate images with persistence in `container.security.sbom` and a new `GET /api/containers/:id/sbom` API endpoint (with `format` query support).
+- **Container card security status chip** — Added a vulnerability chip on container cards showing Update Guard scan status (`safe`, `blocked`, `scan error`) with severity summary tooltip data from `container.security.scan`.
+- **On-demand security scan** — Added `POST /api/containers/:id/scan` endpoint for triggering vulnerability scan, signature verification, and SBOM generation on demand. Broadcasts `dd:scan-started` and `dd:scan-completed` SSE events for real-time UI feedback. Added shield button to container card actions and mobile overflow menu.
+- **Direct container update from UI** — Added `POST /api/containers/:id/update` endpoint that triggers a Docker update directly without requiring trigger configuration. The "Update now" button in the UI now calls this single endpoint instead of looping through configured triggers.
+- **Trivy and cosign in official image** — The official drydock image now includes both `trivy` and `cosign` binaries, removing the need for custom images in local CLI mode.
+
+### Changed
+
+- **README badge layout** — Added line breaks to badge rows for a cleaner two-line layout across all three badge sections.
+- **Grafana dashboard overhaul** — Updated overview dashboard with standard datasource naming (`DS_PROMETHEUS`), added bar chart and pie chart panels, and restructured panel layout for better monitoring coverage.
+- **Mobile responsive dashboard** — Stat cards now stack full-width on small screens with tighter vertical spacing for a cleaner mobile layout.
+- **Self-update overlay rendering** — Switched logo images from `v-if` to `v-show` to avoid re-mount flicker during self-update phase transitions.
+- **Container sort simplification** — Simplified null-group sorting in ContainersView using sentinel value instead of multi-branch conditionals.
+- **Test coverage improvements** — Expanded app test coverage for API routes (backup, container-actions, preview, webhook), OIDC authentication, registry component resolution, tag parsing, and log sanitization. Expanded UI test coverage across 38 spec files with improved Vuetify stub fidelity (v-tooltip activator slot, v-list-item slots, app-bar-nav-icon events).
+- **Vitest coverage config** — Narrowed coverage to `.js`/`.ts` files only (excluding `.vue` SFCs) to avoid non-actionable template branch noise.
+- **Prometheus counter deduplication** — Extracted shared `createCounter` factory in `app/prometheus/counter-factory.ts`, reducing boilerplate across audit, webhook, trigger, and container-actions counter modules.
+- **API error handler deduplication** — Extracted shared `handleContainerActionError` helper in `app/api/helpers.ts`, consolidating duplicate catch-block logic across backup, preview, and container-actions routes.
+- **Lint and code quality fixes** — Fixed biome `noPrototypeBuiltins` warning in OIDC tests, added `id` attributes to README HTML headings to resolve markdownlint MD051, and tuned qlty smell thresholds.
+
+### Security
+
+- **CodeQL alert fixes** — Fixed log injection vulnerabilities by sanitizing user-controlled input before logging. Removed unused variables flagged by static analysis. Added rate limiting to the on-demand scan endpoint.
+- **Build provenance and SBOM attestations** — Added supply chain attestations to release workflow for verifiable build provenance.
+
 ## 1.2.0
 
 ### Added
@@ -302,7 +342,8 @@ Remaining upstream-only changes (not ported — not applicable to drydock):
 | Fix codeberg tests | Covered by drydock's own tests |
 | Update changelog | Upstream-specific |
 
-[Unreleased]: https://github.com/CodesWhat/drydock/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/CodesWhat/drydock/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/CodesWhat/drydock/compare/v1.2.0...v1.3.0
 [1.1.1]: https://github.com/CodesWhat/drydock/compare/v1.1.0...1.1.1
 [1.1.0]: https://github.com/CodesWhat/drydock/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/CodesWhat/drydock/compare/v1.0.1...v1.0.2

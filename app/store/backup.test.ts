@@ -143,7 +143,7 @@ describe('Backup Store', () => {
   });
 
   test('getBackup should return a single backup by id', () => {
-    const inserted = backup.insertBackup({
+    backup.insertBackup({
       id: 'b1',
       containerId: 'c1',
       containerName: 'nginx',

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import IconRenderer from '@/components/IconRenderer';
+import IconRenderer from '@/components/IconRenderer.vue';
 
 describe('IconRenderer', () => {
   it('renders v-icon for standard mdi icons', () => {
@@ -147,6 +147,24 @@ describe('IconRenderer', () => {
     expect(wrapper.vm.imgFailed).toBe(false);
   });
 
+  it('switches selfhst icons to fallback CDN on first selfhst image error', () => {
+    const wrapper = mount(IconRenderer, {
+      props: { icon: 'sh-docker' },
+    });
+
+    expect(wrapper.vm.useFallbackCdn).toBe(false);
+    expect(wrapper.vm.selfhstIconUrl).toBe(
+      'https://cdn.jsdelivr.net/gh/selfhst/icons/png/docker.png',
+    );
+
+    wrapper.vm.onImgError(true);
+
+    expect(wrapper.vm.useFallbackCdn).toBe(true);
+    expect(wrapper.vm.selfhstIconUrl).toBe(
+      'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/docker.png',
+    );
+  });
+
   it('applies correct styling based on props', () => {
     const wrapper = mount(IconRenderer, {
       props: {
@@ -206,5 +224,55 @@ describe('IconRenderer', () => {
       props: { icon: 'sh:docker' },
     });
     expect(selfhstWrapper.vm.isSelfhstIcon).toBe(true);
+  });
+
+  it('renders fallback v-icon branch when image load fails', async () => {
+    const wrapper = mount(IconRenderer, {
+      props: { icon: 'si-docker', fallbackIcon: 'fas fa-circle-question' },
+    });
+
+    wrapper.vm.onImgError(false);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.v-icon').exists()).toBe(true);
+    expect(wrapper.text()).toContain('fas fa-circle-question');
+  });
+
+  it('renders each template branch based on icon type', () => {
+    const selfhst = mount(IconRenderer, { props: { icon: 'sh-docker' } });
+    expect(selfhst.find('img').attributes('src')).toContain('/selfhst/icons/');
+
+    const simple = mount(IconRenderer, { props: { icon: 'si-docker' } });
+    expect(simple.find('img.simple-icon').exists()).toBe(true);
+
+    const custom = mount(IconRenderer, { props: { icon: 'https://cdn.example.com/icon.png' } });
+    expect(custom.find('img.custom-icon').exists()).toBe(true);
+
+    const font = mount(IconRenderer, { props: { icon: 'fas:box' } });
+    expect(font.find('.v-icon').exists()).toBe(true);
+  });
+
+  it('executes homarr image error handler from template', async () => {
+    const wrapper = mount(IconRenderer, { props: { icon: 'hl-docker' } });
+    await wrapper.find('img').trigger('error');
+    expect(wrapper.vm.imgFailed).toBe(true);
+  });
+
+  it('executes selfhst image error handler from template', async () => {
+    const wrapper = mount(IconRenderer, { props: { icon: 'sh-docker' } });
+    await wrapper.find('img').trigger('error');
+    expect(wrapper.vm.useFallbackCdn).toBe(true);
+  });
+
+  it('executes simple icon image error handler from template', async () => {
+    const wrapper = mount(IconRenderer, { props: { icon: 'si-docker' } });
+    await wrapper.find('img').trigger('error');
+    expect(wrapper.vm.imgFailed).toBe(true);
+  });
+
+  it('executes custom icon image error handler from template', async () => {
+    const wrapper = mount(IconRenderer, { props: { icon: 'https://cdn.example.com/icon.png' } });
+    await wrapper.find('img').trigger('error');
+    expect(wrapper.vm.imgFailed).toBe(true);
   });
 });

@@ -1119,7 +1119,7 @@ test('preview should return an empty object by default', async () => {
 
 test('maskFields should mask non-empty configured values', () => {
   trigger.configuration = {
-    token: 'super-secret', // NOSONAR - test fixture
+    token: 'super-secret',
     empty: '',
   };
   const masked = trigger.maskFields(['token', 'empty']);

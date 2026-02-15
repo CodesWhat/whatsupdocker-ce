@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { useRoute, useRouter } from 'vue-router';
-import AppBar from '@/components/AppBar';
+import AppBar from '@/components/AppBar.vue';
 import { logout } from '@/services/auth';
 
 const mockThemeName = { value: 'light' };
@@ -42,11 +42,12 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-const mountComponent = () =>
+const mountComponent = (props: Record<string, any> = {}) =>
   mount(AppBar, {
     props: {
       user: { username: 'testuser' },
       showMenuToggle: true,
+      ...props,
     },
     global: {
       provide: {
@@ -72,6 +73,26 @@ describe('AppBar', () => {
 
     expect(wrapper.text()).toContain('testuser');
     expect(wrapper.vm.viewName).toBe('home');
+  });
+
+  it('emits toggle-drawer when nav icon is clicked', async () => {
+    const wrapper = mountComponent({ showMenuToggle: true });
+    await wrapper.find('.v-app-bar-nav-icon').trigger('click');
+    expect(wrapper.emitted('toggle-drawer')).toBeTruthy();
+  });
+
+  it('hides menu toggle controls when showMenuToggle is false and renders non-home title', () => {
+    vi.mocked(useRoute).mockReturnValue({ name: 'containers' } as any);
+    const wrapper = mountComponent({ showMenuToggle: false });
+
+    expect(wrapper.find('.v-app-bar-nav-icon').exists()).toBe(false);
+    expect(wrapper.find('.appbar-logo').exists()).toBe(false);
+    expect(wrapper.text()).toContain('containers');
+  });
+
+  it('hides user menu for anonymous users', () => {
+    const wrapper = mountComponent({ user: { username: 'anonymous' } });
+    expect(wrapper.text()).not.toContain('Log out');
   });
 
   it('migrates legacy darkMode localStorage key', () => {

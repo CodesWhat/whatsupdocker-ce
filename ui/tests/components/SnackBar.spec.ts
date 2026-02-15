@@ -24,16 +24,18 @@ describe('SnackBar', () => {
       },
     });
 
-    expect(wrapper.vm.level).toBe('error');
+    const snackbar = wrapper.findComponent({ name: 'v-snackbar' });
 
-    await wrapper.setProps({ level: 'success' });
-    expect(wrapper.vm.level).toBe('success');
+    expect(snackbar.props('color')).toBe('error');
 
     await wrapper.setProps({ level: 'warning' });
-    expect(wrapper.vm.level).toBe('warning');
+    expect(snackbar.props('color')).toBe('warning');
 
     await wrapper.setProps({ level: 'info' });
-    expect(wrapper.vm.level).toBe('info');
+    expect(snackbar.props('color')).toBe('primary');
+
+    await wrapper.setProps({ level: 'success' });
+    expect(snackbar.props('color')).toBe('primary');
   });
 
   it('emits close event when snackbar is closed', async () => {
@@ -61,6 +63,22 @@ describe('SnackBar', () => {
     });
 
     wrapper.vm.showLocal = false;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith('notify:close');
+  });
+
+  it('handles v-snackbar model update event from template binding', async () => {
+    const wrapper = mount(SnackBar, {
+      props: {
+        message: 'Test message',
+        show: true,
+        level: 'info',
+      },
+    });
+
+    const snackbar = wrapper.findComponent({ name: 'v-snackbar' });
+    snackbar.vm.$emit('update:modelValue', false);
     await wrapper.vm.$nextTick();
 
     expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith('notify:close');

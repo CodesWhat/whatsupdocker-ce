@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { getAuditLog } from '@/services/audit';
 import { getAllContainers } from '@/services/container';
-import HomeView from '@/views/HomeView';
+import HomeView from '@/views/HomeView.vue';
 
 // Mock services
 vi.mock('@/services/container', () => ({
@@ -112,6 +112,111 @@ describe('HomeView', () => {
     expect(wrapper.vm.containersWithUpdates).toHaveLength(1);
     expect(wrapper.find('.stat-badge--warning').exists()).toBe(true);
     expect(wrapper.find('.stat-badge--warning').text()).toBe('1');
+  });
+
+  it('renders all update category badges and tab counts when each category has entries', async () => {
+    await wrapper.setData({
+      containers: [
+        {
+          id: 'm1',
+          updateAvailable: true,
+          displayName: 'major',
+          displayIcon: 'fab fa-docker',
+          image: { name: 'major', tag: { value: '1.0.0' } },
+          updateKind: { kind: 'tag', semverDiff: 'major', remoteValue: '2.0.0' },
+        },
+        {
+          id: 'm2',
+          updateAvailable: true,
+          displayName: 'minor',
+          displayIcon: 'fab fa-docker',
+          image: { name: 'minor', tag: { value: '1.0.0' } },
+          updateKind: { kind: 'tag', semverDiff: 'minor', remoteValue: '1.1.0' },
+        },
+        {
+          id: 'm3',
+          updateAvailable: true,
+          displayName: 'patch',
+          displayIcon: 'fab fa-docker',
+          image: { name: 'patch', tag: { value: '1.0.0' } },
+          updateKind: { kind: 'tag', semverDiff: 'patch', remoteValue: '1.0.1' },
+        },
+        {
+          id: 'm4',
+          updateAvailable: true,
+          displayName: 'digest',
+          displayIcon: 'fab fa-docker',
+          image: { name: 'digest', tag: { value: 'latest' } },
+          updateKind: { kind: 'digest', remoteValue: 'sha256:new' },
+        },
+        {
+          id: 'm5',
+          updateAvailable: true,
+          displayName: 'unknown',
+          displayIcon: 'fab fa-docker',
+          image: { name: 'unknown', tag: { value: 'latest' } },
+        },
+      ],
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.stat-badge--error').exists()).toBe(true);
+    expect(wrapper.find('.stat-badge--warning').exists()).toBe(true);
+    expect(wrapper.find('.stat-badge--success').exists()).toBe(true);
+    expect(wrapper.find('.stat-badge--info').exists()).toBe(true);
+    expect(wrapper.find('.stat-badge--grey').exists()).toBe(true);
+
+    expect(wrapper.find('.tab-count--error').exists()).toBe(true);
+    expect(wrapper.find('.tab-count--warning').exists()).toBe(true);
+    expect(wrapper.find('.tab-count--success').exists()).toBe(true);
+    expect(wrapper.find('.tab-count--info').exists()).toBe(true);
+    expect(wrapper.find('.tab-count--grey').exists()).toBe(true);
+    expect(wrapper.text()).toContain('unknown');
+  });
+
+  it('updates active tab from tab/window model events', async () => {
+    const customWrapper = mount(HomeView, {
+      global: {
+        stubs: {
+          'v-tabs': {
+            template: '<div class="v-tabs" @click="$emit(\'update:modelValue\', 3)"><slot /></div>',
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+          },
+          'v-window': {
+            template:
+              '<div class="v-window" @click="$emit(\'update:modelValue\', 4)"><slot /></div>',
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+          },
+        },
+      },
+    });
+
+    try {
+      await customWrapper.setData({
+        containers: [
+          {
+            id: '1',
+            updateAvailable: true,
+            displayName: 'nginx',
+            displayIcon: 'fab fa-docker',
+            image: { name: 'nginx', tag: { value: '1.24' } },
+            updateKind: { kind: 'tag', semverDiff: 'minor', remoteValue: '1.25' },
+          },
+        ],
+      });
+
+      expect(customWrapper.vm.updateTab).toBe(0);
+
+      await customWrapper.find('.v-tabs').trigger('click');
+      expect(customWrapper.vm.updateTab).toBe(3);
+
+      await customWrapper.find('.v-window').trigger('click');
+      expect(customWrapper.vm.updateTab).toBe(4);
+    } finally {
+      customWrapper.unmount();
+    }
   });
 
   it('displays success message when no updates are available', async () => {
@@ -260,6 +365,10 @@ describe('HomeView', () => {
     expect(wrapper.vm.formatDuration(2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)).toBe('2d 3h');
   });
 
+  it('formats medium durations as hours and minutes', () => {
+    expect(wrapper.vm.formatDuration(2 * 60 * 60 * 1000 + 5 * 60 * 1000)).toBe('2h 5m');
+  });
+
   it('returns update kind color/label for all branches', () => {
     expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'digest' } })).toBe('info');
     expect(wrapper.vm.updateKindColor({ updateKind: { kind: 'tag', semverDiff: 'major' } })).toBe(
@@ -288,6 +397,12 @@ describe('HomeView', () => {
     expect(paths).toContain('/configuration/triggers');
     expect(paths).toContain('/configuration/watchers');
     expect(paths).toContain('/configuration/registries');
+  });
+
+  it('beforeUnmount is a no-op when no maintenance timer exists', () => {
+    wrapper.vm.maintenanceCountdownTimer = undefined;
+    expect(() => wrapper.unmount()).not.toThrow();
+    wrapper = null;
   });
 });
 
@@ -322,6 +437,27 @@ describe('HomeView Route Hook', () => {
 
   it('falls back to empty recent activity when audit fetch fails', async () => {
     vi.mocked(getAuditLog).mockRejectedValueOnce(new Error('audit disabled'));
+    const next = vi.fn();
+
+    await HomeView.beforeRouteEnter.call(HomeView, {}, {}, next);
+
+    const vm = {
+      containers: [],
+      watchers: [],
+      containersCount: 0,
+      triggersCount: 0,
+      watchersCount: 0,
+      registriesCount: 0,
+      recentActivity: [{ id: 'stale' }],
+    };
+    const callback = next.mock.calls[0][0];
+    callback(vm);
+
+    expect(vm.recentActivity).toEqual([]);
+  });
+
+  it('falls back to empty recent activity when audit payload has no entries array', async () => {
+    vi.mocked(getAuditLog).mockResolvedValueOnce({} as any);
     const next = vi.fn();
 
     await HomeView.beforeRouteEnter.call(HomeView, {}, {}, next);

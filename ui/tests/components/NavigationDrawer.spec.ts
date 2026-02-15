@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
+import { ref } from 'vue';
 import { useDisplay } from 'vuetify';
-import NavigationDrawer from '@/components/NavigationDrawer';
+import NavigationDrawer from '@/components/NavigationDrawer.vue';
 import { getAppInfos } from '@/services/app';
 
 // Mock all icon services
@@ -50,6 +51,10 @@ const stubs = {
   'v-list-group': {
     template: '<div class="v-list-group"><slot /><slot name="activator" :props="{}" /></div>',
   },
+  'v-navigation-drawer': {
+    template: '<div class="v-navigation-drawer"><slot /><slot name="append" /></div>',
+    props: ['modelValue'],
+  },
   'router-link': { template: '<a><slot /></a>' },
   img: true,
 };
@@ -60,7 +65,7 @@ describe('NavigationDrawer', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.mocked(useDisplay as any).mockReturnValue({
-      smAndDown: { value: false },
+      smAndDown: ref(false),
     } as any);
     vi.mocked(getAppInfos).mockClear();
     wrapper = mount(NavigationDrawer, {
@@ -151,7 +156,7 @@ describe('NavigationDrawer', () => {
   it('toggleDrawer emits model update on mobile', async () => {
     if (wrapper) wrapper.unmount();
     vi.mocked(useDisplay as any).mockReturnValue({
-      smAndDown: { value: true },
+      smAndDown: ref(true),
     } as any);
 
     wrapper = mount(NavigationDrawer, {
@@ -171,7 +176,7 @@ describe('NavigationDrawer', () => {
   it('drawerModel getter follows modelValue on mobile and forces open on desktop', async () => {
     if (wrapper) wrapper.unmount();
     vi.mocked(useDisplay as any).mockReturnValue({
-      smAndDown: { value: true },
+      smAndDown: ref(true),
     } as any);
     wrapper = mount(NavigationDrawer, {
       props: {
@@ -183,7 +188,7 @@ describe('NavigationDrawer', () => {
 
     if (wrapper) wrapper.unmount();
     vi.mocked(useDisplay as any).mockReturnValue({
-      smAndDown: { value: false },
+      smAndDown: ref(false),
     } as any);
     wrapper = mount(NavigationDrawer, {
       props: {
@@ -197,5 +202,59 @@ describe('NavigationDrawer', () => {
   it('drawerModel setter emits update:modelValue', () => {
     wrapper.vm.drawerModel = false;
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+  });
+
+  it('updates drawerModel from template v-model event on v-navigation-drawer', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: ref(true),
+    } as any);
+
+    wrapper = mount(NavigationDrawer, {
+      props: {
+        modelValue: true,
+      },
+      global: {
+        stubs: {
+          ...stubs,
+          'v-navigation-drawer': {
+            template:
+              '<div class="v-navigation-drawer" @click="$emit(\'update:modelValue\', false)"><slot /><slot name="append" /></div>',
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+          },
+        },
+      },
+    });
+
+    await wrapper.find('.v-navigation-drawer').trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+  });
+
+  it('hides brand text and version in desktop rail mode', async () => {
+    wrapper.vm.mini = true;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.drawer-brand').classes()).toContain('drawer-brand--rail');
+    expect(wrapper.find('.drawer-brand-text').exists()).toBe(false);
+    expect(wrapper.find('.drawer-version').exists()).toBe(false);
+  });
+
+  it('shows brand text on mobile and hides collapse button', async () => {
+    if (wrapper) wrapper.unmount();
+    vi.mocked(useDisplay as any).mockReturnValue({
+      smAndDown: ref(true),
+    } as any);
+
+    wrapper = mount(NavigationDrawer, {
+      props: {
+        modelValue: true,
+      },
+      global: { stubs },
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.drawer-brand-text').exists()).toBe(true);
+    expect(wrapper.find('.drawer-collapse-btn').exists()).toBe(false);
   });
 });

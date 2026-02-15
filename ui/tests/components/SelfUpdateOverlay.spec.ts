@@ -1,10 +1,11 @@
 import { mount } from '@vue/test-utils';
-import SelfUpdateOverlay from '@/components/SelfUpdateOverlay';
+import { ref } from 'vue';
+import SelfUpdateOverlay from '@/components/SelfUpdateOverlay.vue';
 
 const UINT32_MAX_PLUS_ONE = 0x1_0000_0000;
 
 // Mock vuetify useDisplay — default to desktop (smAndDown = false)
-const mockSmAndDown = { value: false };
+const mockSmAndDown = ref(false);
 vi.mock('vuetify', async () => {
   const actual = await vi.importActual('vuetify');
   return {
@@ -122,6 +123,19 @@ describe('SelfUpdateOverlay', () => {
 
     expect(wrapper.vm.statusText).toBe('Updating drydock...');
     expect(wrapper.text()).toContain('Updating drydock...');
+  });
+
+  it('activates desktop update mode when self-update starts', async () => {
+    mockSmAndDown.value = false;
+    eventHandlers['self-update']();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.active).toBe(true);
+    expect(wrapper.vm.smAndDown).toBe(false);
+    expect(wrapper.find('.bouncing-logo').exists()).toBe(true);
+    expect(wrapper.find('.bouncing-logo').isVisible()).toBe(true);
+    expect(wrapper.find('.mobile-logo').exists()).toBe(true);
+    expect(wrapper.find('.mobile-logo').isVisible()).toBe(false);
   });
 
   it('shows "Restarting..." text after connection-lost', async () => {
@@ -312,7 +326,6 @@ describe('SelfUpdateOverlay', () => {
       // speed = 1.5 + random, angle = random * 2PI
       // We want x near maxX, y near maxY, with positive dx/dy
       const maxX = window.innerWidth - 120; // 904
-      const maxY = window.innerHeight - 120; // 648
       const randomValues = [
         0.999, // x = 0.999 * maxX ~ maxX
         0.999, // y = 0.999 * maxY ~ maxY
@@ -325,7 +338,6 @@ describe('SelfUpdateOverlay', () => {
       eventHandlers['self-update']();
       await wrapper.vm.$nextTick();
 
-      const xBefore = wrapper.vm.x;
       const hueBefore = wrapper.vm.hue;
 
       // Run enough frames so logo reaches and bounces off the right edge
@@ -505,7 +517,9 @@ describe('SelfUpdateOverlay', () => {
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.mobile-logo').exists()).toBe(true);
-      expect(wrapper.find('.bouncing-logo').exists()).toBe(false);
+      expect(wrapper.find('.mobile-logo').isVisible()).toBe(true);
+      expect(wrapper.find('.bouncing-logo').exists()).toBe(true);
+      expect(wrapper.find('.bouncing-logo').isVisible()).toBe(false);
     });
 
     it('cleans up mobile hue timer on unmount', async () => {
@@ -515,7 +529,6 @@ describe('SelfUpdateOverlay', () => {
       wrapper.unmount();
 
       // Advancing timers should not cause errors after cleanup
-      const hueBefore = wrapper.vm.hue;
       await vi.advanceTimersByTimeAsync(1000);
     });
   });

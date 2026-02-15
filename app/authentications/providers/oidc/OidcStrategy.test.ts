@@ -6,8 +6,8 @@ import OidcStrategy from './OidcStrategy.js';
 const oidcConfig = new Configuration(
   { issuer: 'https://idp.example.com' },
   'wud-client',
-  'wud-secret', // NOSONAR - test fixture, not a real credential
-  ClientSecretPost('wud-secret'), // NOSONAR - test fixture
+  'wud-secret',
+  ClientSecretPost('wud-secret'),
 );
 const oidcStrategy = new OidcStrategy(
   {

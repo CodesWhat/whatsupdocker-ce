@@ -1,20 +1,9 @@
-import { Counter, register } from 'prom-client';
+import { createCounter } from './counter-factory.js';
 
-const METRIC_NAME = 'dd_webhook_total';
+const { init, getCounter: getWebhookCounter } = createCounter(
+  'dd_webhook_total',
+  'Total count of webhook operations',
+  ['action'],
+);
 
-let webhookCounter: Counter<string> | undefined;
-
-export function init(): void {
-  if (webhookCounter) {
-    register.removeSingleMetric(METRIC_NAME);
-  }
-  webhookCounter = new Counter({
-    name: METRIC_NAME,
-    help: 'Total count of webhook operations',
-    labelNames: ['action'],
-  });
-}
-
-export function getWebhookCounter(): Counter<string> | undefined {
-  return webhookCounter;
-}
+export { init, getWebhookCounter };

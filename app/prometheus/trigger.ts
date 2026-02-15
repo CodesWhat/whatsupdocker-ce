@@ -1,20 +1,9 @@
-// @ts-nocheck
-import { Counter, register } from 'prom-client';
+import { createCounter } from './counter-factory.js';
 
-let triggerCounter;
+const { init, getCounter: getTriggerCounter } = createCounter(
+  'dd_trigger_count',
+  'Total count of trigger events',
+  ['type', 'name', 'status'],
+);
 
-export function init() {
-  // Replace counter if init is called more than once
-  if (triggerCounter) {
-    register.removeSingleMetric(triggerCounter.name);
-  }
-  triggerCounter = new Counter({
-    name: 'dd_trigger_count',
-    help: 'Total count of trigger events',
-    labelNames: ['type', 'name', 'status'],
-  });
-}
-
-export function getTriggerCounter() {
-  return triggerCounter;
-}
+export { init, getTriggerCounter };

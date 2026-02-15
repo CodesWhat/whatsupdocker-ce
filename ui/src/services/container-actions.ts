@@ -34,4 +34,16 @@ async function restartContainer(containerId: string) {
   return response.json();
 }
 
-export { startContainer, stopContainer, restartContainer };
+async function updateContainer(containerId: string) {
+  const response = await fetch(`/api/containers/${containerId}/update`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body?.error || `Failed to update container: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export { startContainer, stopContainer, restartContainer, updateContainer };

@@ -33,7 +33,7 @@ class Gotify extends Trigger {
    */
   initTrigger() {
     this.client = new GotifyClient(this.configuration.url, {
-      app: this.configuration.token, // NOSONAR - token from admin configuration, not hardcoded
+      app: this.configuration.token,
     });
   }
 

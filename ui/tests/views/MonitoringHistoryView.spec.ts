@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import MonitoringHistoryView from '@/views/MonitoringHistoryView';
+import MonitoringHistoryView from '@/views/MonitoringHistoryView.vue';
 
 vi.mock('@/services/audit', () => ({
   getAuditLog: vi.fn(),
@@ -87,6 +87,15 @@ describe('MonitoringHistoryView', () => {
     expect(wrapper.vm.formatTimestamp('')).toBe('-');
   });
 
+  it('formats timestamps in compact mode when smAndUp is false', () => {
+    (getAuditLog as any).mockResolvedValue({ entries: [], total: 0 });
+    wrapper = mount(MonitoringHistoryView);
+    wrapper.vm.smAndUp = false;
+
+    const formatted = wrapper.vm.formatTimestamp('2025-01-15T10:30:00Z');
+    expect(formatted).toMatch(/^[A-Za-z]{3} \d{1,2} /);
+  });
+
   it('returns correct action colors', () => {
     (getAuditLog as any).mockResolvedValue({ entries: [], total: 0 });
     wrapper = mount(MonitoringHistoryView);
@@ -150,6 +159,117 @@ describe('MonitoringHistoryView', () => {
     expect(wrapper.vm.activeFilterCount).toBe(2);
   });
 
+  it('toggles filters panel from toolbar button click', async () => {
+    (getAuditLog as any).mockResolvedValue({ entries: [], total: 0 });
+    wrapper = mount(MonitoringHistoryView);
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(wrapper.vm.showFilters).toBe(false);
+    await wrapper.find('.v-btn').trigger('click');
+    expect(wrapper.vm.showFilters).toBe(true);
+  });
+
+  it('updates filters through select/text-field v-model handlers', async () => {
+    (getAuditLog as any).mockResolvedValue({ entries: mockEntries, total: 2 });
+    wrapper = mount(MonitoringHistoryView);
+    await new Promise((r) => setTimeout(r, 10));
+    wrapper.vm.showFilters = true;
+    await wrapper.vm.$nextTick();
+
+    const selects = wrapper.findAll('select.v-select');
+    expect(selects.length).toBeGreaterThan(0);
+    await selects[0].setValue('update-applied');
+
+    const input = wrapper.find('input.v-text-field');
+    await input.setValue('nginx');
+
+    expect(wrapper.vm.filterAction).toBe('update-applied');
+    expect(wrapper.vm.filterContainer).toBe('nginx');
+  });
+
+  it('clears active chips via click:close handlers', async () => {
+    const customWrapper = mount(MonitoringHistoryView, {
+      global: {
+        stubs: {
+          'v-chip': {
+            template: '<span class="v-chip" @click="$emit(\'click:close\')"><slot /></span>',
+            emits: ['click:close'],
+          },
+        },
+      },
+    });
+
+    try {
+      await customWrapper.setData({
+        loading: false,
+        entries: mockEntries,
+        total: 2,
+        filterAction: 'update-applied',
+        filterContainer: 'nginx',
+      });
+
+      const chips = customWrapper.findAll('.v-chip');
+      expect(chips.length).toBeGreaterThanOrEqual(2);
+      await chips[0].trigger('click');
+      await chips[1].trigger('click');
+
+      expect(customWrapper.vm.filterAction).toBeNull();
+      expect(customWrapper.vm.filterContainer).toBe('');
+    } finally {
+      customWrapper.unmount();
+    }
+  });
+
+  it('renders fallback "-" versions when from/to are missing', async () => {
+    (getAuditLog as any).mockResolvedValue({
+      entries: [
+        {
+          id: 'missing-version',
+          timestamp: '2025-01-15T10:30:00Z',
+          action: 'update-available',
+          containerName: 'redis',
+          status: 'info',
+        },
+      ],
+      total: 1,
+    });
+
+    wrapper = mount(MonitoringHistoryView);
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(wrapper.find('.audit-table').text()).toContain('-');
+  });
+
+  it('updates currentPage from pagination model event', async () => {
+    (getAuditLog as any).mockResolvedValue({
+      entries: mockEntries,
+      total: 40,
+    });
+
+    const customWrapper = mount(MonitoringHistoryView, {
+      global: {
+        stubs: {
+          'v-pagination': {
+            template: '<div class="v-pagination" @click="$emit(\'update:modelValue\', 2)"></div>',
+            props: ['modelValue', 'length'],
+            emits: ['update:modelValue'],
+          },
+        },
+      },
+    });
+
+    try {
+      await new Promise((r) => setTimeout(r, 10));
+      await customWrapper.vm.$nextTick();
+
+      expect(customWrapper.find('.v-pagination').exists()).toBe(true);
+      await customWrapper.find('.v-pagination').trigger('click');
+      expect(customWrapper.vm.currentPage).toBe(2);
+    } finally {
+      customWrapper.unmount();
+    }
+  });
+
   it('passes action and container filters to audit API', async () => {
     (getAuditLog as any).mockResolvedValue({ entries: [], total: 0 });
     wrapper = mount(MonitoringHistoryView);
@@ -166,6 +286,15 @@ describe('MonitoringHistoryView', () => {
         container: 'nginx',
       }),
     );
+  });
+
+  it('falls back to empty entries when API payload has no entries array', async () => {
+    (getAuditLog as any).mockResolvedValueOnce({ total: 4 });
+    wrapper = mount(MonitoringHistoryView);
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(wrapper.vm.entries).toEqual([]);
+    expect(wrapper.vm.total).toBe(4);
   });
 
   it('uses fallback error message when fetch throws without message', async () => {

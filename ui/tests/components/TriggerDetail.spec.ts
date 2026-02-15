@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import TriggerDetail from '@/components/TriggerDetail';
+import TriggerDetail from '@/components/TriggerDetail.vue';
 
 const mockGetAllContainers = vi.fn();
 const mockRunTrigger = vi.fn();
@@ -35,6 +35,26 @@ describe('TriggerDetail', () => {
     mockRunTrigger.mockReset();
     wrapper = mount(TriggerDetail, {
       props: { trigger: mockTrigger },
+      global: {
+        stubs: {
+          'v-navigation-drawer': {
+            template: '<div class="v-navigation-drawer"><slot /></div>',
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+          },
+          'v-select': {
+            template:
+              '<div class="v-select">' +
+              '<slot name="item" :props="{}" :item="{ raw: items?.[0] || {} }" />' +
+              '<slot name="selection" :item="{ raw: items?.[0] || {} }" />' +
+              '<button class="v-select-update" @click="$emit(\'update:modelValue\', items?.[0]?.id || \'\')">select</button>' +
+              '<slot />' +
+              '</div>',
+            props: ['items', 'modelValue'],
+            emits: ['update:modelValue'],
+          },
+        },
+      },
     });
     wrapper.vm.$eventBus.emit.mockClear();
   });
@@ -140,6 +160,25 @@ describe('TriggerDetail', () => {
       await wrapper.vm.openTestForm();
       expect(wrapper.vm.testContainers).toEqual([]);
     });
+
+    it('renders custom v-select item and selection slots', async () => {
+      mockGetAllContainers.mockResolvedValue(mockContainers);
+      await wrapper.vm.openTestForm();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.text()).toContain('App 1');
+      expect(wrapper.text()).toContain('app-1 • local');
+    });
+
+    it('falls back to container name when displayName is empty in item/selection slots', async () => {
+      mockGetAllContainers.mockResolvedValue([
+        { id: 'x1', name: 'fallback-name', displayName: '', watcher: 'local', agent: false },
+      ]);
+      await wrapper.vm.openTestForm();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.text()).toContain('fallback-name');
+    });
   });
 
   describe('runTrigger', () => {
@@ -214,5 +253,21 @@ describe('TriggerDetail', () => {
       await promise;
       expect(wrapper.vm.isTriggering).toBe(false);
     });
+
+    it('updates selectedContainerId through select model event handler', async () => {
+      await wrapper.find('.v-select-update').trigger('click');
+      expect(wrapper.vm.selectedContainerId).toBe('c1');
+    });
+  });
+
+  it('updates showTestForm through navigation drawer model event handler', async () => {
+    wrapper.vm.showTestForm = true;
+    await wrapper.vm.$nextTick();
+
+    const drawer = wrapper.findComponent('.v-navigation-drawer');
+    drawer.vm.$emit('update:modelValue', false);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.showTestForm).toBe(false);
   });
 });

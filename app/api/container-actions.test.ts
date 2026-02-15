@@ -102,6 +102,7 @@ describe('Container Actions Router', () => {
       expect(mockRouter.post).toHaveBeenCalledWith('/:id/start', expect.any(Function));
       expect(mockRouter.post).toHaveBeenCalledWith('/:id/stop', expect.any(Function));
       expect(mockRouter.post).toHaveBeenCalledWith('/:id/restart', expect.any(Function));
+      expect(mockRouter.post).toHaveBeenCalledWith('/:id/update', expect.any(Function));
     });
   });
 
@@ -176,6 +177,24 @@ describe('Container Actions Router', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({ error: expect.stringContaining('container already started') }),
+      );
+    });
+
+    test('should stringify non-Error Docker API failures', async () => {
+      const container = { id: 'c1', name: 'nginx', image: { name: 'nginx' } };
+      mockGetContainer.mockReturnValue(container);
+      const { trigger, dockerContainer } = createDockerTrigger();
+      dockerContainer.start.mockRejectedValue('start failed as string');
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/start');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.stringContaining('start failed as string') }),
       );
     });
 
@@ -354,6 +373,223 @@ describe('Container Actions Router', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({ error: expect.stringContaining('restart failed') }),
+      );
+    });
+  });
+
+  describe('updateContainer', () => {
+    test('should update container successfully', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      const updatedContainer = { ...container, image: { name: 'nginx:latest' } };
+      mockGetContainer.mockReturnValueOnce(container).mockReturnValueOnce(updatedContainer);
+      const mockTriggerFn = vi.fn().mockResolvedValue(undefined);
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(mockTriggerFn).toHaveBeenCalledWith(container);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Container updated successfully',
+          container: updatedContainer,
+        }),
+      );
+    });
+
+    test('should return 404 when container not found', async () => {
+      mockGetContainer.mockReturnValue(undefined);
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'missing' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    test('should return 400 when no update available', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: false,
+      };
+      mockGetContainer.mockReturnValue(container);
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: 'No update available for this container' }),
+      );
+    });
+
+    test('should return 404 when no docker trigger found', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      mockGetState.mockReturnValue({ trigger: {} });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.stringContaining('No docker trigger found') }),
+      );
+    });
+
+    test('should return 403 when feature flag is disabled', async () => {
+      mockGetServerConfiguration.mockReturnValue({ feature: { containeractions: false } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.sendStatus).toHaveBeenCalledWith(403);
+    });
+
+    test('should return 500 when trigger throws error', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      const mockTriggerFn = vi.fn().mockRejectedValue(new Error('pull failed'));
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.stringContaining('pull failed') }),
+      );
+    });
+
+    test('should insert audit entry on success', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      const mockTriggerFn = vi.fn().mockResolvedValue(undefined);
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(mockInsertAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'container-update',
+          containerName: 'nginx',
+          status: 'success',
+        }),
+      );
+    });
+
+    test('should insert audit entry on error', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      const mockTriggerFn = vi.fn().mockRejectedValue(new Error('Docker error'));
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(mockInsertAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'container-update',
+          status: 'error',
+          details: 'Docker error',
+        }),
+      );
+    });
+
+    test('should increment counters on success', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      const mockTriggerFn = vi.fn().mockResolvedValue(undefined);
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const mockAuditInc = vi.fn();
+      mockGetAuditCounter.mockReturnValue({ inc: mockAuditInc });
+      const mockActionsInc = vi.fn();
+      mockGetContainerActionsCounter.mockReturnValue({ inc: mockActionsInc });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(mockAuditInc).toHaveBeenCalledWith({ action: 'container-update' });
+      expect(mockActionsInc).toHaveBeenCalledWith({ action: 'container-update' });
+    });
+
+    test('should stringify non-Error trigger failures', async () => {
+      const container = {
+        id: 'c1',
+        name: 'nginx',
+        image: { name: 'nginx' },
+        updateAvailable: true,
+      };
+      mockGetContainer.mockReturnValue(container);
+      const mockTriggerFn = vi.fn().mockRejectedValue('update failed as string');
+      const trigger = { type: 'docker', trigger: mockTriggerFn };
+      mockGetState.mockReturnValue({ trigger: { 'docker.default': trigger } });
+
+      const handler = getHandler('post', '/:id/update');
+      const req = createMockRequest({ params: { id: 'c1' } });
+      const res = createMockResponse();
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.stringContaining('update failed as string') }),
       );
     });
   });

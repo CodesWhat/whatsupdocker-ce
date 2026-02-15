@@ -2,7 +2,7 @@
 import Codeberg from './Codeberg.js';
 
 // Test fixture credentials - not real secrets
-const TEST_PASS = 'pass'; // NOSONAR
+const TEST_PASS = 'pass';
 
 const codeberg = new Codeberg();
 codeberg.configuration = {

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerImage from '@/components/ContainerImage';
+import ContainerImage from '@/components/ContainerImage.vue';
 
 vi.mock('@/services/registry', () => ({
   getRegistryProviderIcon: vi.fn((name: string) => {
@@ -142,5 +142,16 @@ describe('ContainerImage', () => {
     });
     expect(wrapper.text()).toContain('library/myapp');
     expect(wrapper.text()).toContain('(lookup)');
+  });
+
+  it('invokes clipboard handlers from template copy buttons', async () => {
+    const copySpy = vi.spyOn(wrapper.vm, 'copyToClipboard');
+    const buttons = wrapper.findAll('.v-btn');
+
+    await buttons[0].trigger('click');
+    await buttons[1].trigger('click');
+
+    expect(copySpy).toHaveBeenCalledWith('image id', 'sha256:abc123');
+    expect(copySpy).toHaveBeenCalledWith('image digest', 'sha256:deadbeef1234567890');
   });
 });

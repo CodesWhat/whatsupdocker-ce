@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerDetail from '@/components/ContainerDetail';
+import ContainerDetail from '@/components/ContainerDetail.vue';
 
 const mockContainer = {
   id: 'abc123',
@@ -117,6 +117,13 @@ describe('ContainerDetail', () => {
       'notify',
       'container id copied to clipboard',
     );
+  });
+
+  it('invokes copy handler from container id button click', async () => {
+    const copySpy = vi.spyOn(wrapper.vm, 'copyToClipboard');
+    const button = wrapper.find('.v-btn');
+    await button.trigger('click');
+    expect(copySpy).toHaveBeenCalledWith('container id', 'abc123');
   });
 
   describe('Lifecycle Hooks', () => {

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationRegistriesView from '@/views/ConfigurationRegistriesView';
+import ConfigurationRegistriesView from '@/views/ConfigurationRegistriesView.vue';
 
 vi.mock('@/services/registry', () => ({
   getAllRegistries: vi.fn(() =>

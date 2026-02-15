@@ -179,4 +179,54 @@ describe('SSE Router', () => {
       expect(res.write).toHaveBeenCalledWith('event: dd:self-update\ndata: {}\n\n');
     });
   });
+
+  describe('broadcastScanStarted', () => {
+    test('should send dd:scan-started to all connected clients', () => {
+      var res1 = createSSEResponse();
+      var res2 = createSSEResponse();
+      sseRouter._clients.add(res1);
+      sseRouter._clients.add(res2);
+
+      sseRouter._broadcastScanStarted('container-1');
+
+      var expected = 'event: dd:scan-started\ndata: {"containerId":"container-1"}\n\n';
+      expect(res1.write).toHaveBeenCalledWith(expected);
+      expect(res2.write).toHaveBeenCalledWith(expected);
+    });
+
+    test('should handle empty client set', () => {
+      expect(() => sseRouter._broadcastScanStarted('container-1')).not.toThrow();
+    });
+  });
+
+  describe('broadcastScanCompleted', () => {
+    test('should send dd:scan-completed to all connected clients', () => {
+      var res1 = createSSEResponse();
+      var res2 = createSSEResponse();
+      sseRouter._clients.add(res1);
+      sseRouter._clients.add(res2);
+
+      sseRouter._broadcastScanCompleted('container-1', 'success');
+
+      var expected =
+        'event: dd:scan-completed\ndata: {"containerId":"container-1","status":"success"}\n\n';
+      expect(res1.write).toHaveBeenCalledWith(expected);
+      expect(res2.write).toHaveBeenCalledWith(expected);
+    });
+
+    test('should handle empty client set', () => {
+      expect(() => sseRouter._broadcastScanCompleted('container-1', 'error')).not.toThrow();
+    });
+
+    test('should include error status', () => {
+      var res = createSSEResponse();
+      sseRouter._clients.add(res);
+
+      sseRouter._broadcastScanCompleted('container-1', 'error');
+
+      var expected =
+        'event: dd:scan-completed\ndata: {"containerId":"container-1","status":"error"}\n\n';
+      expect(res.write).toHaveBeenCalledWith(expected);
+    });
+  });
 });

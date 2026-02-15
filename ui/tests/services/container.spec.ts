@@ -7,6 +7,7 @@ import {
   refreshAllContainers,
   refreshContainer,
   runTrigger,
+  scanContainer,
   updateContainerPolicy,
 } from '@/services/container';
 
@@ -306,6 +307,110 @@ describe('Container Service', () => {
       await expect(updateContainerPolicy('c1', 'enable')).rejects.toThrow(
         'Failed to update container policy enable: Internal Server Error',
       );
+    });
+
+    it('logs parse failures when response json throws a non-Error value', async () => {
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw 'parse-failed';
+        },
+      } as any);
+
+      try {
+        await expect(updateContainerPolicy('c1', 'enable')).rejects.toThrow(
+          'Failed to update container policy enable: Internal Server Error',
+        );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Unable to parse policy update response payload: parse-failed',
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('scanContainer', () => {
+    it('scans container successfully', async () => {
+      const mockResult = { id: 'c1', security: { scan: { status: 'passed' } } };
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as any);
+
+      const result = await scanContainer('c1');
+
+      expect(fetch).toHaveBeenCalledWith('/api/containers/c1/scan', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('throws with error detail when response body has error', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Bad Request',
+        json: async () => ({ error: 'Image not found' }),
+      } as any);
+
+      await expect(scanContainer('c1')).rejects.toThrow(
+        'Failed to scan container: Bad Request (Image not found)',
+      );
+    });
+
+    it('throws without detail when response body has no error field', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Bad Request',
+        json: async () => ({}),
+      } as any);
+
+      await expect(scanContainer('c1')).rejects.toThrow('Failed to scan container: Bad Request');
+    });
+
+    it('throws without detail when response body parsing fails', async () => {
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw new Error('parse error');
+        },
+      } as any);
+
+      try {
+        await expect(scanContainer('c1')).rejects.toThrow(
+          'Failed to scan container: Internal Server Error',
+        );
+        expect(debugSpy).toHaveBeenCalledWith('Unable to parse scan response payload: parse error');
+      } finally {
+        debugSpy.mockRestore();
+      }
+    });
+
+    it('logs parse failures when response json throws a non-Error value', async () => {
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw 'scan-parse-failed';
+        },
+      } as any);
+
+      try {
+        await expect(scanContainer('c1')).rejects.toThrow(
+          'Failed to scan container: Internal Server Error',
+        );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Unable to parse scan response payload: scan-parse-failed',
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
     });
   });
 

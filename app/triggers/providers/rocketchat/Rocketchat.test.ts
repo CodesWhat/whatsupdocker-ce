@@ -30,7 +30,7 @@ describe('Rocketchat Trigger', () => {
     const config = {
       url: 'https://open.rocket.chat',
       user: { id: 'jDdn8oh9BfJKnWdDY' },
-      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
       channel: '#general',
     };
 
@@ -40,7 +40,7 @@ describe('Rocketchat Trigger', () => {
   test('should throw error when URL is missing', async () => {
     const config = {
       user: { id: 'test' },
-      auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'test' },
       channel: '#general',
     };
 
@@ -51,7 +51,7 @@ describe('Rocketchat Trigger', () => {
     const config = {
       url: 'https://open.rocket.chat',
       user: {},
-      auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'test' },
       channel: '#general',
     };
 
@@ -73,7 +73,7 @@ describe('Rocketchat Trigger', () => {
     const config = {
       url: 'https://open.rocket.chat',
       user: { id: 'test' },
-      auth: { token: 'test' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'test' },
     };
 
     expect(() => rocketchat.validateConfiguration(config)).toThrow();
@@ -81,7 +81,7 @@ describe('Rocketchat Trigger', () => {
 
   test('should mask configuration sensitive data', async () => {
     rocketchat.configuration = {
-      auth: { token: 'token' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'token' },
       user: { id: 'some_user_id' },
       channel: '#general',
     };
@@ -95,7 +95,7 @@ describe('Rocketchat Trigger', () => {
     rocketchat.configuration = {
       url: 'https://open.rocket.chat',
       user: { id: 'jDdn8oh9BfJKnWdDY' },
-      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
       channel: '#general',
     };
     rocketchat.renderSimpleTitle = vi.fn().mockReturnValue('Title');
@@ -111,7 +111,7 @@ describe('Rocketchat Trigger', () => {
     rocketchat.configuration = {
       url: 'https://open.rocket.chat',
       user: { id: 'jDdn8oh9BfJKnWdDY' },
-      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
       channel: '#general',
     };
     rocketchat.renderBatchTitle = vi.fn().mockReturnValue('Batch Title');
@@ -128,7 +128,7 @@ describe('Rocketchat Trigger', () => {
     rocketchat.configuration = {
       url: 'https://open.rocket.chat',
       user: { id: 'jDdn8oh9BfJKnWdDY' },
-      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' }, // NOSONAR - test fixture, not a real credential
+      auth: { token: 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx' },
       channel: '#general',
     };
 
@@ -141,7 +141,7 @@ describe('Rocketchat Trigger', () => {
       },
       {
         headers: {
-          'X-Auth-Token': 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx', // NOSONAR - test fixture, not a real credential
+          'X-Auth-Token': 'Rbqz90hnkRyVwRfcmE5PzkP5Pqwml_fo7ZUXzxv2_zx',
           'X-User-Id': 'jDdn8oh9BfJKnWdDY',
           'content-type': 'application/json',
           accept: 'application/json',

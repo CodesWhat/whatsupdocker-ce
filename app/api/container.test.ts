@@ -4,12 +4,19 @@ import { createMockResponse } from '../test/helpers.js';
 const { mockRouter } = vi.hoisted(() => ({
   mockRouter: { use: vi.fn(), get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },
 }));
+const mockGenerateImageSbom = vi.hoisted(() => vi.fn());
+const mockScanImageForVulnerabilities = vi.hoisted(() => vi.fn());
+const mockVerifyImageSignature = vi.hoisted(() => vi.fn());
+const mockBroadcastScanStarted = vi.hoisted(() => vi.fn());
+const mockBroadcastScanCompleted = vi.hoisted(() => vi.fn());
 
 vi.mock('express', () => ({
   default: { Router: vi.fn(() => mockRouter) },
 }));
 
 vi.mock('nocache', () => ({ default: vi.fn(() => 'nocache-middleware') }));
+
+vi.mock('express-rate-limit', () => ({ default: vi.fn(() => 'rate-limit-middleware') }));
 
 vi.mock('../store/container', () => ({
   getContainers: vi.fn(() => []),
@@ -29,10 +36,23 @@ vi.mock('../configuration', () => ({
   getServerConfiguration: vi.fn(() => ({
     feature: { delete: true },
   })),
+  getSecurityConfiguration: vi.fn(() => ({
+    enabled: false,
+    scanner: undefined,
+    signature: { verify: false },
+    sbom: { enabled: false, formats: [] },
+  })),
 }));
 
 vi.mock('./component', () => ({
   mapComponentsToList: vi.fn(() => []),
+}));
+
+vi.mock('../security/scan', () => ({
+  generateImageSbom: (...args: unknown[]) => mockGenerateImageSbom(...args),
+  scanImageForVulnerabilities: (...args: unknown[]) => mockScanImageForVulnerabilities(...args),
+  verifyImageSignature: (...args: unknown[]) => mockVerifyImageSignature(...args),
+  SECURITY_SBOM_FORMATS: ['spdx-json', 'cyclonedx-json'],
 }));
 
 vi.mock('../triggers/providers/Trigger', () => ({
@@ -49,8 +69,14 @@ vi.mock('../agent/manager', () => ({
   getAgent: vi.fn(),
 }));
 
+vi.mock('./sse', () => ({
+  broadcastScanStarted: (...args: unknown[]) => mockBroadcastScanStarted(...args),
+  broadcastScanCompleted: (...args: unknown[]) => mockBroadcastScanCompleted(...args),
+}));
+
 import { getAgent } from '../agent/manager.js';
-import { getServerConfiguration } from '../configuration/index.js';
+import { getSecurityConfiguration, getServerConfiguration } from '../configuration/index.js';
+import rateLimit from 'express-rate-limit';
 import * as registry from '../registry/index.js';
 import * as storeContainer from '../store/container.js';
 import Trigger from '../triggers/providers/Trigger.js';
@@ -64,7 +90,7 @@ function createResponse() {
 function getHandler(method, path) {
   containerRouter.init();
   const call = mockRouter[method].mock.calls.find((c) => c[0] === path);
-  return call[1];
+  return call[call.length - 1];
 }
 
 /** Helper: invoke deleteContainer with a given container id and return the response mock */
@@ -134,6 +160,16 @@ function getUpdatedPolicy() {
 describe('Container Router', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    mockGenerateImageSbom.mockResolvedValue({
+      generator: 'trivy',
+      image: 'registry.example.com/test/app:1.2.3',
+      generatedAt: '2026-02-15T12:00:00.000Z',
+      status: 'generated',
+      formats: ['spdx-json'],
+      documents: {
+        'spdx-json': { SPDXID: 'SPDXRef-DOCUMENT' },
+      },
+    });
   });
 
   describe('init', () => {
@@ -155,7 +191,21 @@ describe('Container Router', () => {
       );
       expect(router.patch).toHaveBeenCalledWith('/:id/update-policy', expect.any(Function));
       expect(router.post).toHaveBeenCalledWith('/:id/watch', expect.any(Function));
+      expect(router.get).toHaveBeenCalledWith('/:id/vulnerabilities', expect.any(Function));
+      expect(router.get).toHaveBeenCalledWith('/:id/sbom', expect.any(Function));
+      expect(router.post).toHaveBeenCalledWith(
+        '/:id/scan',
+        'rate-limit-middleware',
+        expect.any(Function),
+      );
       expect(router.get).toHaveBeenCalledWith('/:id/logs', expect.any(Function));
+    });
+
+    test('should configure scan rate-limit key generator fallback', () => {
+      containerRouter.init();
+      const rateLimitOptions = rateLimit.mock.calls[0][0];
+      expect(rateLimitOptions.keyGenerator({ ip: '192.168.1.10' })).toBe('192.168.1.10');
+      expect(rateLimitOptions.keyGenerator({})).toBe('unknown');
     });
   });
 
@@ -199,6 +249,626 @@ describe('Container Router', () => {
       handler({ params: { id: 'missing' } }, res);
 
       expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+  });
+
+  describe('getContainerVulnerabilities', () => {
+    test('should return 404 when container not found', async () => {
+      storeContainer.getContainer.mockReturnValue(undefined);
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'missing' } }, res);
+      expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    test('should return empty payload when container has no scan result', async () => {
+      storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'c1' } }, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'not-scanned',
+          vulnerabilities: [],
+          blockingCount: 0,
+        }),
+      );
+    });
+
+    test('should return scan payload when available', async () => {
+      const scan = {
+        scanner: 'trivy',
+        status: 'blocked',
+        blockingCount: 2,
+        vulnerabilities: [{ id: 'CVE-123', severity: 'HIGH' }],
+      };
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        security: { scan },
+      });
+      const handler = getHandler('get', '/:id/vulnerabilities');
+      const res = createResponse();
+      handler({ params: { id: 'c1' } }, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(scan);
+    });
+  });
+
+  describe('getContainerSbom', () => {
+    test('should return 404 when container not found', async () => {
+      storeContainer.getContainer.mockReturnValue(undefined);
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'missing' }, query: {} }, res);
+      expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    test('should return 400 for unsupported sbom format', async () => {
+      storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: { format: 'foo' } }, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringContaining('Unsupported SBOM format'),
+        }),
+      );
+    });
+
+    test('should return existing sbom document when available in container security state', async () => {
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        security: {
+          sbom: {
+            generator: 'trivy',
+            image: 'registry.example.com/test/app:1.2.3',
+            generatedAt: '2026-02-15T12:00:00.000Z',
+            status: 'generated',
+            formats: ['spdx-json'],
+            documents: {
+              'spdx-json': { SPDXID: 'SPDXRef-DOCUMENT' },
+            },
+          },
+        },
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(mockGenerateImageSbom).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          format: 'spdx-json',
+          document: { SPDXID: 'SPDXRef-DOCUMENT' },
+        }),
+      );
+    });
+
+    test('should generate sbom when existing sbom is generated but lacks requested format', async () => {
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {
+          sbom: {
+            generator: 'trivy',
+            image: 'my-registry/test/app:1.2.3',
+            generatedAt: '2026-02-15T12:00:00.000Z',
+            status: 'generated',
+            formats: ['spdx-json'],
+            documents: {
+              'spdx-json': { SPDXID: 'SPDXRef-DOCUMENT' },
+            },
+          },
+        },
+      });
+      mockGenerateImageSbom.mockResolvedValue({
+        generator: 'trivy',
+        image: 'my-registry/test/app:1.2.3',
+        generatedAt: '2026-02-15T12:00:00.000Z',
+        status: 'generated',
+        formats: ['cyclonedx-json'],
+        documents: {
+          'cyclonedx-json': { bomFormat: 'CycloneDX' },
+        },
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: { format: 'cyclonedx-json' } }, res);
+      expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+        expect.objectContaining({ formats: ['cyclonedx-json'] }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          format: 'cyclonedx-json',
+          document: { bomFormat: 'CycloneDX' },
+        }),
+      );
+    });
+
+    test('should generate and persist sbom when not cached', async () => {
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {
+          hub: {
+            getImageFullName: vi.fn(() => 'my-registry/test/app:1.2.3'),
+            getAuthPull: vi.fn(async () => ({ username: 'user', password: 'token' })),
+          },
+        },
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: { format: 'spdx-json' } }, res);
+      expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: 'my-registry/test/app:1.2.3',
+          auth: { username: 'user', password: 'token' },
+          formats: ['spdx-json'],
+        }),
+      );
+      expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          security: expect.objectContaining({
+            sbom: expect.objectContaining({
+              status: 'generated',
+            }),
+          }),
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should return 500 when generated sbom is invalid', async () => {
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      mockGenerateImageSbom.mockResolvedValue({
+        generator: 'trivy',
+        image: 'my-registry/test/app:1.2.3',
+        generatedAt: '2026-02-15T12:00:00.000Z',
+        status: 'error',
+        formats: ['spdx-json'],
+        documents: {},
+        error: 'scanner unavailable',
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringContaining('scanner unavailable'),
+        }),
+      );
+    });
+
+    test('should fallback to composed image name when registry helper is missing', async () => {
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {},
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'fallback-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: 'fallback-registry/test/app:1.2.3',
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should continue sbom generation when registry auth lookup throws', async () => {
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {
+          hub: {
+            getAuthPull: vi.fn(async () => {
+              throw new Error('auth lookup failed');
+            }),
+          },
+        },
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'fallback-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+        expect.objectContaining({
+          auth: undefined,
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should return 500 when sbom result is generated but document is missing for requested format', async () => {
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      mockGenerateImageSbom.mockResolvedValue({
+        generator: 'trivy',
+        image: 'my-registry/test/app:1.2.3',
+        generatedAt: '2026-02-15T12:00:00.000Z',
+        status: 'generated',
+        formats: ['spdx-json'],
+        documents: {},
+      });
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringContaining('Error generating SBOM'),
+        }),
+      );
+    });
+
+    test('should return 500 when sbom generation throws', async () => {
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      mockGenerateImageSbom.mockRejectedValue(new Error('generator crashed'));
+      const handler = getHandler('get', '/:id/sbom');
+      const res = createResponse();
+      await handler({ params: { id: 'c1' }, query: {} }, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringContaining('generator crashed'),
+        }),
+      );
+    });
+  });
+
+  describe('scanContainer', () => {
+    /** Helper: invoke scanContainer handler */
+    async function callScanContainer(id = 'c1') {
+      const handler = getHandler('post', '/:id/scan');
+      const res = createResponse();
+      await handler({ params: { id } }, res);
+      return res;
+    }
+
+    test('should return 404 when container not found', async () => {
+      storeContainer.getContainer.mockReturnValue(undefined);
+      const res = await callScanContainer('missing');
+      expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    test('should return 400 when security scanner not configured', async () => {
+      storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: false,
+        scanner: undefined,
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+      const res = await callScanContainer();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: 'Security scanner is not configured' }),
+      );
+    });
+
+    test('should return 400 when scanner is not trivy', async () => {
+      storeContainer.getContainer.mockReturnValue({ id: 'c1' });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'other',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+      const res = await callScanContainer();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: 'Security scanner is not configured' }),
+      );
+    });
+
+    test('should scan update candidate image when updateKind is present', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {
+          hub: {
+            getImageFullName: vi.fn((image, tag) => `my-registry/${image.name}:${tag}`),
+            getAuthPull: vi.fn(async () => ({ username: 'user', password: 'token' })),
+          },
+        },
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        updateKind: { kind: 'tag', remoteValue: '2.0.0' },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockBroadcastScanStarted).toHaveBeenCalledWith('c1');
+      expect(mockScanImageForVulnerabilities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: 'my-registry/test/app:2.0.0',
+          auth: { username: 'user', password: 'token' },
+        }),
+      );
+      expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          security: expect.objectContaining({ scan: scanResult }),
+        }),
+      );
+      expect(mockBroadcastScanCompleted).toHaveBeenCalledWith('c1', 'scanned');
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should fall back to current tag when no update candidate', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {
+          hub: {
+            getImageFullName: vi.fn((image, tag) => `my-registry/${image.name}:${tag}`),
+            getAuthPull: vi.fn(async () => ({ username: 'user', password: 'token' })),
+          },
+        },
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockScanImageForVulnerabilities).toHaveBeenCalledWith(
+        expect.objectContaining({ image: 'my-registry/test/app:1.2.3' }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should run signature verification when configured', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      const signatureResult = { status: 'verified' };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      mockVerifyImageSignature.mockResolvedValue(signatureResult);
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: true },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockVerifyImageSignature).toHaveBeenCalled();
+      expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          security: expect.objectContaining({
+            scan: scanResult,
+            signature: signatureResult,
+          }),
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should generate SBOM when configured', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      const sbomResult = { status: 'generated', documents: {} };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      mockGenerateImageSbom.mockResolvedValue(sbomResult);
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: true, formats: ['spdx-json'] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+        expect.objectContaining({
+          formats: ['spdx-json'],
+        }),
+      );
+      expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          security: expect.objectContaining({
+            scan: scanResult,
+            sbom: sbomResult,
+          }),
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should scan container without pre-existing security property', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          security: expect.objectContaining({ scan: scanResult }),
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should scan with undefined auth when registry has no matching entry', async () => {
+      const scanResult = { status: 'scanned', vulnerabilities: [] };
+      mockScanImageForVulnerabilities.mockResolvedValue(scanResult);
+      registry.getState.mockReturnValue({
+        watcher: {},
+        trigger: {},
+        registry: {
+          'other-registry': {
+            getImageFullName: vi.fn(),
+            getAuthPull: vi.fn(),
+          },
+        },
+      });
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockScanImageForVulnerabilities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: 'my-registry/test/app:1.2.3',
+          auth: undefined,
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('should return 500 on scan failure', async () => {
+      mockScanImageForVulnerabilities.mockRejectedValue(new Error('scan engine crashed'));
+      storeContainer.getContainer.mockReturnValue({
+        id: 'c1',
+        image: {
+          registry: { name: 'hub', url: 'my-registry' },
+          name: 'test/app',
+          tag: { value: '1.2.3' },
+        },
+        security: {},
+      });
+      getSecurityConfiguration.mockReturnValue({
+        enabled: true,
+        scanner: 'trivy',
+        signature: { verify: false },
+        sbom: { enabled: false, formats: [] },
+      });
+
+      const res = await callScanContainer();
+
+      expect(mockBroadcastScanStarted).toHaveBeenCalledWith('c1');
+      expect(mockBroadcastScanCompleted).toHaveBeenCalledWith('c1', 'error');
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringContaining('scan engine crashed'),
+        }),
+      );
     });
   });
 

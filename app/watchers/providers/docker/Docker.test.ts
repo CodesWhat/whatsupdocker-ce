@@ -98,7 +98,7 @@ function createDeviceCodeResponse(overrides = {}) {
 /** Token response from the IdP. */
 function createTokenResponse(overrides = {}) {
   return {
-    access_token: 'test-token', // NOSONAR - test fixture, not a real credential
+    access_token: 'test-token',
     expires_in: 3600,
     ...overrides,
   };
@@ -330,7 +330,7 @@ describe('Docker Watcher', () => {
 
     mockAxios.post.mockResolvedValue({
       data: {
-        access_token: 'oidc-token', // NOSONAR - test fixture, not a real credential
+        access_token: 'oidc-token',
         expires_in: 300,
       },
     } as any);
@@ -395,7 +395,7 @@ describe('Docker Watcher', () => {
       const config = createOidcConfig(
         {
           clientid: 'dd-client',
-          clientsecret: 'super-secret', // NOSONAR - test fixture, not a real credential
+          clientsecret: 'super-secret',
           scope: 'docker.read',
         },
         { host: 'docker-proxy.example.com' },
@@ -451,7 +451,7 @@ describe('Docker Watcher', () => {
         protocol: 'https',
         auth: {
           type: 'bearer',
-          bearer: 'my-secret-token', // NOSONAR - test fixture, not a real credential
+          bearer: 'my-secret-token',
         },
       });
       expect(mockDockerode).toHaveBeenCalledWith({
@@ -459,7 +459,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
         headers: {
-          Authorization: 'Bearer my-secret-token', // NOSONAR
+          Authorization: 'Bearer my-secret-token',
         },
       });
     });
@@ -472,7 +472,7 @@ describe('Docker Watcher', () => {
         auth: {
           type: 'basic',
           user: 'john',
-          password: 'doe', // NOSONAR - test fixture, not a real credential
+          password: 'doe',
         },
       });
       expect(mockDockerode).toHaveBeenCalledWith({
@@ -480,7 +480,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
         headers: {
-          Authorization: 'Basic am9objpkb2U=', // NOSONAR - test fixture, not a real credential
+          Authorization: 'Basic am9objpkb2U=',
         },
       });
     });
@@ -492,7 +492,7 @@ describe('Docker Watcher', () => {
         'test',
         createOidcConfig(
           {
-            accesstoken: 'seed-access-token', // NOSONAR - test fixture
+            accesstoken: 'seed-access-token',
             expiresin: 300,
           },
           { host: 'localhost' },
@@ -503,7 +503,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
         headers: {
-          Authorization: 'Bearer seed-access-token', // NOSONAR - test fixture, not a real credential
+          Authorization: 'Bearer seed-access-token',
         },
       });
     });
@@ -515,7 +515,7 @@ describe('Docker Watcher', () => {
         protocol: 'http',
         auth: {
           type: 'bearer',
-          bearer: 'my-secret-token', // NOSONAR - test fixture, not a real credential
+          bearer: 'my-secret-token',
         },
       });
       expect(mockDockerode).toHaveBeenCalledWith({
@@ -648,7 +648,7 @@ describe('Docker Watcher', () => {
         'test',
         createOidcConfig({
           clientid: 'dd-client',
-          clientsecret: 'dd-secret', // NOSONAR - test fixture, not a real credential
+          clientsecret: 'dd-secret',
           scope: 'docker.read',
         }),
       );
@@ -675,7 +675,7 @@ describe('Docker Watcher', () => {
         'docker',
         'test',
         createOidcConfig({
-          refreshtoken: 'refresh-token-1', // NOSONAR - test fixture, not a real credential
+          refreshtoken: 'refresh-token-1',
         }),
       );
 
@@ -690,7 +690,7 @@ describe('Docker Watcher', () => {
       mockDockerApi.listContainers.mockResolvedValue([]);
       mockAxios.post.mockResolvedValue({
         data: createTokenResponse({
-          access_token: 'cached-token', // NOSONAR - test fixture, not a real credential
+          access_token: 'cached-token',
         }),
       } as any);
       await docker.register('watcher', 'docker', 'test', createOidcConfig());
@@ -725,7 +725,7 @@ describe('Docker Watcher', () => {
         'docker',
         'test',
         createDeviceFlowConfig({
-          refreshtoken: 'existing-refresh-token', // NOSONAR - test fixture, not a real credential
+          refreshtoken: 'existing-refresh-token',
         }),
       );
 
@@ -753,8 +753,8 @@ describe('Docker Watcher', () => {
         }
         return Promise.resolve({
           data: createTokenResponse({
-            access_token: 'device-flow-token', // NOSONAR - test fixture, not a real credential
-            refresh_token: 'device-flow-refresh', // NOSONAR - test fixture, not a real credential
+            access_token: 'device-flow-token',
+            refresh_token: 'device-flow-refresh',
           }),
         });
       });
@@ -821,7 +821,7 @@ describe('Docker Watcher', () => {
         }
         return Promise.resolve({
           data: createTokenResponse({
-            access_token: 'slow-down-token', // NOSONAR - test fixture, not a real credential
+            access_token: 'slow-down-token',
           }),
         });
       });
@@ -897,7 +897,7 @@ describe('Docker Watcher', () => {
       mockDockerApi.listContainers.mockResolvedValue([]);
       mockAxios.post.mockResolvedValue({
         data: createTokenResponse({
-          access_token: 'fallback-cc-token', // NOSONAR - test fixture, not a real credential
+          access_token: 'fallback-cc-token',
           expires_in: 300,
         }),
       } as any);
@@ -934,7 +934,7 @@ describe('Docker Watcher', () => {
         }
         return Promise.resolve({
           data: createTokenResponse({
-            access_token: 'complete-uri-token', // NOSONAR - test fixture, not a real credential
+            access_token: 'complete-uri-token',
           }),
         });
       });
@@ -968,7 +968,7 @@ describe('Docker Watcher', () => {
         }
         return Promise.resolve({
           data: createTokenResponse({
-            access_token: 'scoped-token', // NOSONAR - test fixture, not a real credential
+            access_token: 'scoped-token',
           }),
         });
       });
@@ -1014,8 +1014,8 @@ describe('Docker Watcher', () => {
         }
         return Promise.resolve({
           data: createTokenResponse({
-            access_token: 'device-token-1', // NOSONAR - test fixture, not a real credential
-            refresh_token: 'device-refresh-1', // NOSONAR - test fixture, not a real credential
+            access_token: 'device-token-1',
+            refresh_token: 'device-refresh-1',
             expires_in: 1, // Expires almost immediately
           }),
         });
@@ -1036,8 +1036,8 @@ describe('Docker Watcher', () => {
       // Reset mock for the refresh call
       mockAxios.post.mockResolvedValue({
         data: createTokenResponse({
-          access_token: 'refreshed-token-2', // NOSONAR - test fixture, not a real credential
-          refresh_token: 'refreshed-refresh-2', // NOSONAR - test fixture, not a real credential
+          access_token: 'refreshed-token-2',
+          refresh_token: 'refreshed-refresh-2',
         }),
       } as any);
 
@@ -3058,7 +3058,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
       });
-      docker.configuration.auth = { type: 'custom', user: 'x', password: 'y' }; // NOSONAR
+      docker.configuration.auth = { type: 'custom', user: 'x', password: 'y' };
       const logMock = createMockLog(['warn', 'info', 'debug']);
       docker.log = logMock;
       docker.initWatcher();
@@ -3073,7 +3073,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
         auth: { bearer: 'tok' },
-      }); // NOSONAR
+      });
       expect(docker.getRemoteAuthResolution(docker.configuration.auth).authType).toBe('bearer');
 
       await docker.register('watcher', 'docker', 'test', {
@@ -3081,7 +3081,7 @@ describe('Docker Watcher', () => {
         port: 443,
         protocol: 'https',
         auth: { user: 'j', password: 'd' },
-      }); // NOSONAR
+      });
       expect(docker.getRemoteAuthResolution(docker.configuration.auth).authType).toBe('basic');
 
       await docker.register('watcher', 'docker', 'test', {
@@ -3465,7 +3465,7 @@ describe('Docker Watcher', () => {
             accesstoken: 'initial-token',
           },
         },
-      }); // NOSONAR
+      });
       const masked = docker.maskConfiguration();
       expect(masked.auth.oidc.tokenurl).toBe('https://idp/token');
       expect(masked.auth.oidc.clientsecret).not.toBe('super-secret');
@@ -3568,7 +3568,7 @@ describe('Docker Watcher', () => {
     test('should create modem object when missing', async () => {
       await docker.register('watcher', 'docker', 'test', {});
       docker.dockerApi.modem = undefined;
-      docker.setRemoteAuthorizationHeader('Bearer test-token'); // NOSONAR - test
+      docker.setRemoteAuthorizationHeader('Bearer test-token');
       expect(docker.dockerApi.modem.headers.Authorization).toBe('Bearer test-token');
     });
   });
@@ -3576,7 +3576,7 @@ describe('Docker Watcher', () => {
   describe('Additional Coverage - isRemoteOidcTokenRefreshRequired', () => {
     test('should return false when expiresAt is undefined but token exists', async () => {
       await docker.register('watcher', 'docker', 'test', {});
-      docker.remoteOidcAccessToken = 'some-token'; // NOSONAR - test
+      docker.remoteOidcAccessToken = 'some-token';
       docker.remoteOidcAccessTokenExpiresAt = undefined;
       expect(docker.isRemoteOidcTokenRefreshRequired()).toBe(false);
     });
@@ -3602,8 +3602,8 @@ describe('Docker Watcher', () => {
       mockDockerApi.listContainers.mockResolvedValue([]);
       mockAxios.post.mockResolvedValue({
         data: createTokenResponse({
-          access_token: 'new-token', // NOSONAR - test
-          refresh_token: 'new-refresh', // NOSONAR - test
+          access_token: 'new-token',
+          refresh_token: 'new-refresh',
           expires_in: 3600,
         }),
       } as any);
@@ -3615,7 +3615,7 @@ describe('Docker Watcher', () => {
     test('should use default TTL when expires_in is not in response', async () => {
       mockDockerApi.listContainers.mockResolvedValue([]);
       mockAxios.post.mockResolvedValue({
-        data: { access_token: 'no-expiry-token' }, // NOSONAR - test
+        data: { access_token: 'no-expiry-token' },
       } as any);
       await docker.register('watcher', 'docker', 'test', createOidcConfig());
       await docker.getContainers();
@@ -3662,7 +3662,7 @@ describe('Docker Watcher', () => {
         'docker',
         'test',
         createDeviceFlowConfig({
-          clientsecret: 'device-secret', // NOSONAR - test
+          clientsecret: 'device-secret',
         }),
       );
       docker.sleep = vi.fn().mockResolvedValue(undefined);
@@ -3964,7 +3964,7 @@ describe('Docker Watcher', () => {
         'test',
         createOidcConfig({
           expiresin: '600',
-          accesstoken: 'string-expires-token', // NOSONAR - test
+          accesstoken: 'string-expires-token',
         }),
       );
       docker.initializeRemoteOidcStateFromConfiguration();
@@ -4255,7 +4255,7 @@ describe('Docker Watcher', () => {
         })
         .mockResolvedValueOnce({
           data: {
-            access_token: 'device-token', // NOSONAR - test fixture
+            access_token: 'device-token',
             expires_in: 60,
           },
         });
@@ -4329,7 +4329,7 @@ describe('Docker Watcher', () => {
       docker.sleep = vi.fn().mockResolvedValue(undefined);
       mockAxios.post.mockResolvedValueOnce(undefined as any).mockResolvedValueOnce({
         data: {
-          access_token: 'device-token-2', // NOSONAR - test fixture
+          access_token: 'device-token-2',
           expires_in: 60,
         },
       });
@@ -4354,7 +4354,7 @@ describe('Docker Watcher', () => {
         auth: {
           type: 'basic',
           user: 'user',
-          password: 'password', // NOSONAR - test fixture
+          password: 'password',
         },
       });
       const refreshSpy = vi.spyOn(docker, 'refreshRemoteOidcAccessToken');

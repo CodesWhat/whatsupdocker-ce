@@ -172,16 +172,22 @@ config.global.stubs = {
   'v-alert': { template: '<div class="v-alert"><slot /></div>', props: ['type'] },
   'v-divider': { template: '<div class="v-divider"></div>' },
   'v-spacer': { template: '<div class="v-spacer"></div>' },
-  'v-tooltip': { template: '<div class="v-tooltip"><slot /></div>' },
+  'v-tooltip': {
+    template: '<div class="v-tooltip"><slot name="activator" :props="{}" /><slot /></div>',
+  },
   'v-form': { template: '<form class="v-form" @keyup.enter="() => {}"><slot /></form>' },
   'v-list': { template: '<div class="v-list"><slot /></div>' },
-  'v-list-item': { template: '<div class="v-list-item"><slot /></div>' },
+  'v-list-item': {
+    template:
+      '<div class="v-list-item"><slot name="prepend" /><slot /><slot name="append" /></div>',
+  },
   'v-list-item-title': { template: '<div class="v-list-item-title"><slot /></div>' },
   'v-list-item-subtitle': { template: '<div class="v-list-item-subtitle"><slot /></div>' },
   'v-toolbar-title': { template: '<div class="v-toolbar-title"><slot /></div>' },
   'v-app-bar': { template: '<div class="v-app-bar"><slot /></div>' },
   'v-app-bar-nav-icon': {
-    template: '<button class="v-app-bar-nav-icon" @click="$emit(\'click\')"><slot /></button>',
+    template:
+      '<button class="v-app-bar-nav-icon" @click="$emit(\'click\', $event)"><slot /></button>',
     emits: ['click'],
   },
   'v-navigation-drawer': { template: '<div class="v-navigation-drawer"><slot /></div>' },

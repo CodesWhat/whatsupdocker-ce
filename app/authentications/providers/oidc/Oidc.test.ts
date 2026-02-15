@@ -8,7 +8,7 @@ const app = express();
 
 const configurationValid = {
   clientid: '123465798',
-  clientsecret: 'secret', // NOSONAR - test fixture, not a real credential
+  clientsecret: 'secret',
   discovery: 'https://idp/.well-known/openid-configuration',
   redirect: false,
   timeout: 5000,
@@ -63,7 +63,7 @@ function createCallbackReq(
 
 /** Set up a successful grant + userInfo mock on the openidClientMock */
 function mockSuccessfulGrant(mock: any) {
-  mock.authorizationCodeGrant = vi.fn().mockResolvedValue({ access_token: 'token' }); // NOSONAR - test fixture, not a real credential
+  mock.authorizationCodeGrant = vi.fn().mockResolvedValue({ access_token: 'token' });
   mock.fetchUserInfo = vi.fn().mockResolvedValue({ email: 'user@example.com' });
 }
 
@@ -73,10 +73,10 @@ function expect401Json(res: any, error = 'Authentication failed') {
   expect(res.json).toHaveBeenCalledWith({ error });
 }
 
-/** Assert a 401 text error response */
-function expect401Send(res: any, message: string) {
+/** Assert a 401 JSON error response with specific message */
+function expect401JsonMessage(res: any, message: string) {
   expect(res.status).toHaveBeenCalledWith(401);
-  expect(res.send).toHaveBeenCalledWith(message);
+  expect(res.json).toHaveBeenCalledWith({ error: message });
 }
 
 /** Perform a redirect flow and return the session with pending state */
@@ -109,8 +109,8 @@ beforeEach(() => {
   oidc.client = new Configuration(
     { issuer: 'https://idp.example.com' },
     'dd-client',
-    'dd-secret', // NOSONAR - test fixture, not a real credential
-    ClientSecretPost('dd-secret'), // NOSONAR - test fixture, not a real credential
+    'dd-secret',
+    ClientSecretPost('dd-secret'),
   );
   oidc.name = '';
   oidc.log = {
@@ -287,7 +287,7 @@ test('callback should fail with explicit message when callback state is missing'
   await oidc.callback(req, res);
 
   expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
-  expect401Send(res, 'OIDC callback is missing state. Please retry authentication.');
+  expect401JsonMessage(res, 'OIDC callback is missing state. Please retry authentication.');
 });
 
 test('callback should return explicit error when oidc checks are missing', async () => {
@@ -299,7 +299,7 @@ test('callback should return explicit error when oidc checks are missing', async
   await oidc.callback(req, res);
 
   expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
-  expect401Send(res, 'OIDC session is missing or expired. Please retry authentication.');
+  expect401JsonMessage(res, 'OIDC session is missing or expired. Please retry authentication.');
 });
 
 test('callback should authenticate using matching state when multiple auth redirects are pending', async () => {
@@ -379,7 +379,33 @@ test('callback should return explicit error when callback state does not match s
   await oidc.callback(req, res);
 
   expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
-  expect401Send(res, 'OIDC session state mismatch or expired. Please retry authentication.');
+  expect401JsonMessage(res, 'OIDC session state mismatch or expired. Please retry authentication.');
+});
+
+test('callback should reject when pending check guard reports a missing entry', async () => {
+  const session = createSessionWithPending({
+    knownState: createPendingCheck(),
+  });
+  const req = createCallbackReq('/auth/oidc/default/cb?code=abc&state=unknown-state', session);
+  const res = createRes();
+  const originalHasOwn = Object.hasOwn;
+  const hasOwnSpy = vi
+    .spyOn(Object, 'hasOwn')
+    .mockImplementation((value: any, key: PropertyKey) => {
+      if (key === 'unknown-state') {
+        return true;
+      }
+      return originalHasOwn(value, key);
+    });
+
+  try {
+    await oidc.callback(req, res);
+  } finally {
+    hasOwnSpy.mockRestore();
+  }
+
+  expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
+  expect401JsonMessage(res, 'OIDC session state mismatch or expired. Please retry authentication.');
 });
 
 test('callback should reject malformed pending checks from session storage', async () => {
@@ -403,7 +429,7 @@ test('callback should reject malformed pending checks from session storage', asy
   await oidc.callback(req, res);
 
   expect(openidClientMock.authorizationCodeGrant).not.toHaveBeenCalled();
-  expect401Send(res, 'OIDC session state mismatch or expired. Please retry authentication.');
+  expect401JsonMessage(res, 'OIDC session state mismatch or expired. Please retry authentication.');
 });
 
 test('callback should accept pending checks without numeric createdAt', async () => {
@@ -487,6 +513,33 @@ test('callback should proceed when session object disappears before cleanup', as
   expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
 });
 
+test('callback should proceed when session key is removed before cleanup', async () => {
+  openidClientMock.authorizationCodeGrant = vi.fn().mockResolvedValue({ access_token: 'token' });
+  openidClientMock.fetchUserInfo = vi.fn().mockResolvedValue({ email: 'user@example.com' });
+
+  const session = {
+    save: vi.fn((cb) => cb()),
+    oidc: {
+      default: {
+        pending: {
+          'valid-state': createPendingCheck(),
+        },
+      },
+    },
+  };
+  const req = createCallbackReq('/auth/oidc/default/cb?code=abc&state=valid-state', session);
+  openidClientMock.authorizationCodeGrant.mockImplementation(async () => {
+    delete req.session.oidc.default;
+    return { access_token: 'token' };
+  });
+  const res = createRes();
+
+  await oidc.callback(req, res);
+
+  expect(req.session.oidc.default).toBeUndefined();
+  expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
+});
+
 test('callback should fall back to slash redirect when public url is empty', async () => {
   mockSuccessfulGrant(openidClientMock);
 
@@ -545,12 +598,6 @@ test('callback should return 401 when authorizationCodeGrant throws', async () =
 test.each([
   ['session is unavailable', {}],
   ['session save fails', { session: { save: vi.fn((cb) => cb(new Error('save failed'))) } }],
-  [
-    'session reload error',
-    {
-      session: { reload: vi.fn((cb) => cb(new Error('reload failed'))), save: vi.fn((cb) => cb()) },
-    },
-  ],
 ])('redirect should respond with 500 when %s', async (_label, reqOverrides) => {
   const req = createReq(reqOverrides);
   const res = createRes();
@@ -558,6 +605,42 @@ test.each([
   await oidc.redirect(req, res);
 
   expect(res.status).toHaveBeenCalledWith(500);
+  expect(res.json).toHaveBeenCalledWith({ error: 'Unable to initialize OIDC session' });
+});
+
+test('redirect should recover from session reload error by regenerating', async () => {
+  const regenerate = vi.fn((cb) => cb());
+  const save = vi.fn((cb) => cb());
+  const req = createReq({
+    session: {
+      reload: vi.fn((cb) => cb(new Error('corrupt session'))),
+      regenerate,
+      save,
+    },
+  });
+  const res = createRes();
+
+  await oidc.redirect(req, res);
+
+  expect(regenerate).toHaveBeenCalledTimes(1);
+  expect(res.json).toHaveBeenCalledWith({ url: 'https://idp/auth' });
+  expect(res.status).not.toHaveBeenCalled();
+});
+
+test('redirect should recover from session reload error even without regenerate', async () => {
+  const save = vi.fn((cb) => cb());
+  const req = createReq({
+    session: {
+      reload: vi.fn((cb) => cb(new Error('corrupt session'))),
+      save,
+    },
+  });
+  const res = createRes();
+
+  await oidc.redirect(req, res);
+
+  expect(res.json).toHaveBeenCalledWith({ url: 'https://idp/auth' });
+  expect(res.status).not.toHaveBeenCalled();
 });
 
 test('callback should return 401 when access_token is missing', async () => {
@@ -620,6 +703,25 @@ test('callback should use req.url as fallback when originalUrl is missing', asyn
 
   await oidc.callback(req, res);
   expect(res.redirect).toHaveBeenCalledWith('https://dd.example.com');
+});
+
+test('redirect should return 500 when session regenerate also fails after reload error', async () => {
+  const regenerate = vi.fn((cb) => cb(new Error('regenerate failed')));
+  const save = vi.fn((cb) => cb());
+  const req = createReq({
+    session: {
+      reload: vi.fn((cb) => cb(new Error('corrupt session'))),
+      regenerate,
+      save,
+    },
+  });
+  const res = createRes();
+
+  await oidc.redirect(req, res);
+
+  expect(regenerate).toHaveBeenCalledTimes(1);
+  expect(res.status).toHaveBeenCalledWith(500);
+  expect(res.json).toHaveBeenCalledWith({ error: 'Unable to initialize OIDC session' });
 });
 
 test('redirect should skip session lock when sessionID is empty', async () => {

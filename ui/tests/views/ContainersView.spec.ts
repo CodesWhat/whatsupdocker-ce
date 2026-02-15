@@ -87,6 +87,16 @@ describe('ContainersView', () => {
     expect(labels).toContain('env');
   });
 
+  it('handles containers without labels when computing allContainerLabels', async () => {
+    wrapper.vm.containers = [
+      { ...mockContainers[0], labels: null },
+      { ...mockContainers[1], labels: { team: 'platform' } },
+    ];
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.allContainerLabels).toEqual(['team']);
+  });
+
   it('filters containers by registry', async () => {
     wrapper.vm.registrySelected = 'hub';
     await wrapper.vm.$nextTick();
@@ -463,6 +473,65 @@ describe('ContainersView', () => {
     });
   });
 
+  it('handles grouped delete-container event emitted from template', async () => {
+    const groupedWrapper = mount(ContainersView, {
+      global: {
+        stubs: {
+          'container-filter': true,
+          'container-item': true,
+          'container-group': {
+            template:
+              '<div class="container-group-stub" @click="$emit(\'delete-container\', containers[0])"></div>',
+            props: ['containers'],
+            emits: ['delete-container'],
+          },
+        },
+      },
+    });
+
+    try {
+      groupedWrapper.vm.onRefreshAllContainers(mockContainers);
+      groupedWrapper.vm.groupByLabel = 'app';
+      await groupedWrapper.vm.$nextTick();
+
+      const deleteSpy = vi.spyOn(groupedWrapper.vm, 'deleteContainer');
+      await groupedWrapper.find('.container-group-stub').trigger('click');
+
+      expect(deleteSpy).toHaveBeenCalled();
+    } finally {
+      groupedWrapper.unmount();
+    }
+  });
+
+  it('handles ungrouped delete-container event emitted from template', async () => {
+    const listWrapper = mount(ContainersView, {
+      global: {
+        stubs: {
+          'container-filter': true,
+          'container-group': true,
+          'container-item': {
+            template:
+              '<div class="container-item-stub" @click="$emit(\'delete-container\')"></div>',
+            emits: ['delete-container'],
+          },
+        },
+      },
+    });
+
+    try {
+      listWrapper.vm.onRefreshAllContainers(mockContainers);
+      listWrapper.vm.groupByLabel = '';
+      await listWrapper.vm.$nextTick();
+
+      const deleteSpy = vi.spyOn(listWrapper.vm, 'deleteContainer');
+      await listWrapper.find('.container-item-stub').trigger('click');
+
+      expect(deleteSpy).toHaveBeenCalled();
+    } finally {
+      listWrapper.unmount();
+    }
+  });
+
   describe('beforeRouteEnter', () => {
     it('loads containers and agents on route enter', async () => {
       const agents = [{ name: 'agent1' }];
@@ -533,6 +602,40 @@ describe('ContainersView', () => {
         'error',
       );
     });
+
+    it('keeps default filter values when query params are absent', async () => {
+      vi.mocked(getAllContainers).mockResolvedValue(mockContainers);
+      mockGetAgents.mockResolvedValue([]);
+
+      const guard =
+        ContainersView.__component?.beforeRouteEnter ?? (ContainersView as any).beforeRouteEnter;
+
+      let nextCallback: ((vm: any) => void) | undefined;
+      await guard.call(undefined, { query: {} } as any, {} as any, (cb: any) => {
+        nextCallback = cb;
+      });
+
+      const vm: any = {
+        containers: [],
+        agentsList: [],
+        registrySelected: '',
+        agentSelected: '',
+        watcherSelected: '',
+        updateKindSelected: '',
+        updateAvailableSelected: false,
+        oldestFirst: false,
+        groupByLabel: '',
+      };
+      nextCallback?.(vm);
+
+      expect(vm.registrySelected).toBe('');
+      expect(vm.agentSelected).toBe('');
+      expect(vm.watcherSelected).toBe('');
+      expect(vm.updateKindSelected).toBe('');
+      expect(vm.updateAvailableSelected).toBe(false);
+      expect(vm.oldestFirst).toBe(false);
+      expect(vm.groupByLabel).toBe('');
+    });
   });
 
   it('sorts containers with groupByLabel where one has label and one does not', async () => {
@@ -566,6 +669,35 @@ describe('ContainersView', () => {
     expect(filtered[1].id).toBe('1');
   });
 
+  it('sorts groups with null keys last when null group is inserted first', async () => {
+    wrapper.vm.containers = [
+      {
+        id: 'z0',
+        displayName: 'No label first',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: false,
+        labels: {},
+      },
+      {
+        id: 'z1',
+        displayName: 'Named group',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: false,
+        labels: { app: 'alpha' },
+      },
+    ];
+    wrapper.vm.groupByLabel = 'app';
+    await wrapper.vm.$nextTick();
+
+    const groups = wrapper.vm.computedGroups;
+    expect(groups[0].name).toBe('alpha');
+    expect(groups[1].name).toBeNull();
+  });
+
   it('handles non-string sortable values in helper comparisons', async () => {
     wrapper.vm.containers = [
       {
@@ -592,5 +724,52 @@ describe('ContainersView', () => {
     expect(Array.isArray(wrapper.vm.watchers)).toBe(true);
     expect(Array.isArray(wrapper.vm.agents)).toBe(true);
     expect(Array.isArray(wrapper.vm.registries)).toBe(true);
+  });
+
+  it('covers null-group comparator edge paths in computedGroups sort', async () => {
+    wrapper.vm.containers = [
+      {
+        id: 'a1',
+        displayName: 'Alpha',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-01T00:00:00Z' },
+        updateAvailable: false,
+        labels: { app: 'alpha' },
+      },
+      {
+        id: 'a2',
+        displayName: 'No Label',
+        agent: '',
+        watcher: 'local',
+        image: { registry: { name: 'hub' }, created: '2023-01-02T00:00:00Z' },
+        updateAvailable: false,
+        labels: {},
+      },
+    ];
+    wrapper.vm.groupByLabel = 'app';
+    await wrapper.vm.$nextTick();
+
+    const originalSort = Array.prototype.sort;
+    const sortSpy = vi.spyOn(Array.prototype, 'sort').mockImplementation(function mockedSort(
+      this: any[],
+      compareFn?: any,
+    ) {
+      if (typeof compareFn === 'function') {
+        compareFn([null, []], [null, []]);
+        compareFn(['alpha', []], [null, []]);
+      }
+      return originalSort.call(this, compareFn);
+    });
+
+    try {
+      const computeGroups = wrapper.vm.$options.computed?.computedGroups as
+        | ((this: any) => any[])
+        | undefined;
+      const groups = computeGroups?.call(wrapper.vm) ?? wrapper.vm.computedGroups;
+      expect(groups.at(-1)?.name).toBeNull();
+    } finally {
+      sortSpy.mockRestore();
+    }
   });
 });

@@ -156,12 +156,12 @@ test('getRegistryConfigurations should return configured registries when overrid
 
 test('getAgentConfigurations should return configured agents when overridden', async () => {
   configuration.ddEnvVars.DD_AGENT_NODE1_HOST = '10.0.0.1';
-  configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1'; // NOSONAR - test fixture
+  configuration.ddEnvVars.DD_AGENT_NODE1_SECRET = 'secret1';
   configuration.ddEnvVars.DD_AGENT_NODE2_HOST = '10.0.0.2';
-  configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2'; // NOSONAR - test fixture
+  configuration.ddEnvVars.DD_AGENT_NODE2_SECRET = 'secret2';
   expect(configuration.getAgentConfigurations()).toStrictEqual({
-    node1: { host: '10.0.0.1', secret: 'secret1' }, // NOSONAR
-    node2: { host: '10.0.0.2', secret: 'secret2' }, // NOSONAR
+    node1: { host: '10.0.0.1', secret: 'secret1' },
+    node2: { host: '10.0.0.2', secret: 'secret2' },
   });
 });
 
@@ -247,6 +247,160 @@ test('replaceSecrets must read secret in file', async () => {
   configuration.replaceSecrets(vars);
   expect(vars).toStrictEqual({
     DD_SERVER_X: 'super_secret',
+  });
+});
+
+describe('getSecurityConfiguration', () => {
+  test('should return disabled scanner by default', () => {
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER;
+    const result = configuration.getSecurityConfiguration();
+    expect(result).toEqual({
+      enabled: false,
+      scanner: '',
+      blockSeverities: ['CRITICAL', 'HIGH'],
+      trivy: {
+        server: '',
+        command: 'trivy',
+        timeout: 120000,
+      },
+      signature: {
+        verify: false,
+        cosign: {
+          command: 'cosign',
+          timeout: 60000,
+          key: '',
+          identity: '',
+          issuer: '',
+        },
+      },
+      sbom: {
+        enabled: false,
+        formats: ['spdx-json'],
+      },
+    });
+  });
+
+  test('should parse trivy security config', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = 'critical,medium';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER = 'http://trivy:4954';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_COMMAND = '/usr/local/bin/trivy';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT = '60000';
+    configuration.ddEnvVars.DD_SECURITY_VERIFY_SIGNATURES = 'true';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_COMMAND = '/usr/local/bin/cosign';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_TIMEOUT = '45000';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_KEY = '/keys/cosign.pub';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_IDENTITY = 'maintainer@example.com';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_ISSUER =
+      'https://token.actions.githubusercontent.com';
+    configuration.ddEnvVars.DD_SECURITY_SBOM_ENABLED = 'true';
+    configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS = 'cyclonedx-json,spdx-json,cyclonedx-json';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result).toEqual({
+      enabled: true,
+      scanner: 'trivy',
+      blockSeverities: ['CRITICAL', 'MEDIUM'],
+      trivy: {
+        server: 'http://trivy:4954',
+        command: '/usr/local/bin/trivy',
+        timeout: 60000,
+      },
+      signature: {
+        verify: true,
+        cosign: {
+          command: '/usr/local/bin/cosign',
+          timeout: 45000,
+          key: '/keys/cosign.pub',
+          identity: 'maintainer@example.com',
+          issuer: 'https://token.actions.githubusercontent.com',
+        },
+      },
+      sbom: {
+        enabled: true,
+        formats: ['cyclonedx-json', 'spdx-json'],
+      },
+    });
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_SERVER;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_COMMAND;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT;
+    delete configuration.ddEnvVars.DD_SECURITY_VERIFY_SIGNATURES;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_COMMAND;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_TIMEOUT;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_KEY;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_IDENTITY;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_ISSUER;
+    delete configuration.ddEnvVars.DD_SECURITY_SBOM_ENABLED;
+    delete configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS;
+  });
+
+  test('should fallback to default block severities when configured list is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = 'foo,bar';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.blockSeverities).toEqual(['CRITICAL', 'HIGH']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+  });
+
+  test('should fallback to default block severities when list is empty after normalization', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY = ' ,  , ';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.blockSeverities).toEqual(['CRITICAL', 'HIGH']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_BLOCK_SEVERITY;
+  });
+
+  test('should throw when trivy timeout is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT = 'not-a-number';
+
+    expect(() => configuration.getSecurityConfiguration()).toThrow();
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_TRIVY_TIMEOUT;
+  });
+
+  test('should fallback to default sbom formats when configured list is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS = 'foo,bar';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.sbom.formats).toEqual(['spdx-json']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS;
+  });
+
+  test('should fallback to default sbom formats when list is empty after normalization', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS = ' , , ';
+
+    const result = configuration.getSecurityConfiguration();
+    expect(result.sbom.formats).toEqual(['spdx-json']);
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_SBOM_FORMATS;
+  });
+
+  test('should throw when cosign timeout is invalid', () => {
+    configuration.ddEnvVars.DD_SECURITY_SCANNER = 'trivy';
+    configuration.ddEnvVars.DD_SECURITY_COSIGN_TIMEOUT = 'not-a-number';
+
+    expect(() => configuration.getSecurityConfiguration()).toThrow();
+
+    delete configuration.ddEnvVars.DD_SECURITY_SCANNER;
+    delete configuration.ddEnvVars.DD_SECURITY_COSIGN_TIMEOUT;
   });
 });
 
@@ -396,7 +550,7 @@ describe('getWebhookConfiguration', () => {
 
   test('should return enabled webhook when token is provided', () => {
     configuration.ddEnvVars.DD_SERVER_WEBHOOK_ENABLED = 'true';
-    configuration.ddEnvVars.DD_SERVER_WEBHOOK_TOKEN = 'secret-token'; // NOSONAR - test fixture
+    configuration.ddEnvVars.DD_SERVER_WEBHOOK_TOKEN = 'secret-token';
 
     expect(configuration.getWebhookConfiguration()).toStrictEqual({
       enabled: true,

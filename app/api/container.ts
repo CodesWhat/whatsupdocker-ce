@@ -1,14 +1,23 @@
 // @ts-nocheck
 import express from 'express';
 import nocache from 'nocache';
+import rateLimit from 'express-rate-limit';
 import { getAgent } from '../agent/manager.js';
-import { getServerConfiguration } from '../configuration/index.js';
+import { getSecurityConfiguration, getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
 import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
+import {
+  generateImageSbom,
+  SECURITY_SBOM_FORMATS,
+  type SecuritySbomFormat,
+  scanImageForVulnerabilities,
+  verifyImageSignature,
+} from '../security/scan.js';
 import * as storeContainer from '../store/container.js';
 import Trigger from '../triggers/providers/Trigger.js';
 import { mapComponentsToList } from './component.js';
+import { broadcastScanCompleted, broadcastScanStarted } from './sse.js';
 
 const log = logger.child({ component: 'container' });
 
@@ -118,6 +127,156 @@ function getContainer(req, res) {
     res.status(200).json(container);
   } else {
     res.sendStatus(404);
+  }
+}
+
+function getEmptyVulnerabilityResponse() {
+  return {
+    scanner: undefined,
+    scannedAt: undefined,
+    status: 'not-scanned',
+    blockSeverities: [],
+    blockingCount: 0,
+    summary: {
+      unknown: 0,
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+    vulnerabilities: [],
+  };
+}
+
+function resolveSbomFormat(rawFormat: unknown): SecuritySbomFormat | undefined {
+  const format = `${rawFormat || 'spdx-json'}`.toLowerCase();
+  if (SECURITY_SBOM_FORMATS.includes(format as SecuritySbomFormat)) {
+    return format as SecuritySbomFormat;
+  }
+  return undefined;
+}
+
+function getContainerImageFullName(container, tagOverride?: string) {
+  const tag = tagOverride || container.image.tag.value;
+  const registryState = registry.getState().registry || {};
+  const containerRegistry = registryState[container.image.registry.name];
+  if (containerRegistry && typeof containerRegistry.getImageFullName === 'function') {
+    return containerRegistry.getImageFullName(container.image, tag);
+  }
+  return `${container.image.registry.url}/${container.image.name}:${tag}`;
+}
+
+async function getContainerRegistryAuth(container) {
+  try {
+    const registryState = registry.getState().registry || {};
+    const containerRegistry = registryState[container.image.registry.name];
+    if (containerRegistry && typeof containerRegistry.getAuthPull === 'function') {
+      return await containerRegistry.getAuthPull();
+    }
+  } catch (e: any) {
+    log.warn(
+      `Unable to retrieve registry auth for SBOM generation (container=${sanitizeLogParam(
+        container.id,
+      )}): ${sanitizeLogParam(e.message)}`,
+    );
+  }
+  return undefined;
+}
+
+/**
+ * Get latest vulnerability scan result for a container.
+ * @param req
+ * @param res
+ */
+export function getContainerVulnerabilities(req, res) {
+  const { id } = req.params;
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
+  if (!container.security?.scan) {
+    res.status(200).json(getEmptyVulnerabilityResponse());
+    return;
+  }
+  res.status(200).json(container.security.scan);
+}
+
+export async function getContainerSbom(req, res) {
+  const { id } = req.params;
+  const sbomFormat = resolveSbomFormat(req.query.format);
+  if (!sbomFormat) {
+    res.status(400).json({
+      error: `Unsupported SBOM format. Supported values: ${SECURITY_SBOM_FORMATS.join(', ')}`,
+    });
+    return;
+  }
+
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const existingSbom = container.security?.sbom;
+  const existingSbomDocument = existingSbom?.documents?.[sbomFormat];
+  if (existingSbom?.status === 'generated' && existingSbomDocument) {
+    res.status(200).json({
+      generator: existingSbom.generator,
+      image: existingSbom.image,
+      generatedAt: existingSbom.generatedAt,
+      format: sbomFormat,
+      document: existingSbomDocument,
+      error: existingSbom.error,
+    });
+    return;
+  }
+
+  try {
+    const image = getContainerImageFullName(container);
+    const auth = await getContainerRegistryAuth(container);
+    const sbomResult = await generateImageSbom({
+      image,
+      auth,
+      formats: [sbomFormat],
+    });
+    const existingSbomState = container.security?.sbom;
+    const containerToStore = {
+      ...container,
+      security: {
+        ...(container.security || {}),
+        sbom: {
+          ...existingSbomState,
+          ...sbomResult,
+          documents: {
+            ...(existingSbomState?.documents || {}),
+            ...sbomResult.documents,
+          },
+        },
+      },
+    };
+    storeContainer.updateContainer(containerToStore);
+
+    const generatedDocument = sbomResult.documents?.[sbomFormat];
+    if (sbomResult.status !== 'generated' || !generatedDocument) {
+      res.status(500).json({
+        error: `Error generating SBOM (${sbomResult.error || 'unknown SBOM error'})`,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      generator: sbomResult.generator,
+      image: sbomResult.image,
+      generatedAt: sbomResult.generatedAt,
+      format: sbomFormat,
+      document: generatedDocument,
+      error: sbomResult.error,
+    });
+  } catch (e: any) {
+    res.status(500).json({
+      error: `Error generating SBOM (${e.message})`,
+    });
   }
 }
 
@@ -507,6 +666,69 @@ async function getContainerLogs(req, res) {
   }
 }
 
+async function scanContainer(req, res) {
+  const { id } = req.params;
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const securityConfiguration = getSecurityConfiguration();
+  if (!securityConfiguration.enabled || securityConfiguration.scanner !== 'trivy') {
+    res.status(400).json({ error: 'Security scanner is not configured' });
+    return;
+  }
+
+  broadcastScanStarted(id);
+
+  try {
+    const updateTag = container.updateKind?.remoteValue;
+    const image = getContainerImageFullName(container, updateTag);
+    log.info(`Running on-demand security scan for ${image}`);
+    const auth = await getContainerRegistryAuth(container);
+    const securityPatch: Record<string, any> = {};
+
+    // Run vulnerability scan
+    const scanResult = await scanImageForVulnerabilities({ image, auth });
+    securityPatch.scan = scanResult;
+
+    // Run signature verification if configured
+    if (securityConfiguration.signature.verify) {
+      const signatureResult = await verifyImageSignature({ image, auth });
+      securityPatch.signature = signatureResult;
+    }
+
+    // Generate SBOM if configured
+    if (securityConfiguration.sbom.enabled) {
+      const sbomResult = await generateImageSbom({
+        image,
+        auth,
+        formats: securityConfiguration.sbom.formats,
+      });
+      securityPatch.sbom = sbomResult;
+    }
+
+    // Persist results
+    const containerToStore = {
+      ...container,
+      security: {
+        ...(container.security || {}),
+        ...securityPatch,
+      },
+    };
+    const updatedContainer = storeContainer.updateContainer(containerToStore);
+
+    broadcastScanCompleted(id, scanResult.status);
+    res.status(200).json(updatedContainer);
+  } catch (e: any) {
+    broadcastScanCompleted(id, 'error');
+    res.status(500).json({
+      error: `Security scan failed (${e.message})`,
+    });
+  }
+}
+
 /**
  * Init Router.
  * @returns {*}
@@ -522,6 +744,19 @@ export function init() {
   router.post('/:id/triggers/:triggerAgent/:triggerType/:triggerName', runTrigger);
   router.patch('/:id/update-policy', patchContainerUpdatePolicy);
   router.post('/:id/watch', watchContainer);
+  router.get('/:id/vulnerabilities', getContainerVulnerabilities);
+  router.get('/:id/sbom', getContainerSbom);
+  router.post(
+    '/:id/scan',
+    rateLimit({
+      windowMs: 60_000,
+      max: 5,
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.ip ?? 'unknown',
+    }),
+    scanContainer,
+  );
   router.get('/:id/logs', getContainerLogs);
   return router;
 }

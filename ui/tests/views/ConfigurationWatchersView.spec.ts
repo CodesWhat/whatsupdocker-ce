@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationWatchersView from '@/views/ConfigurationWatchersView';
+import ConfigurationWatchersView from '@/views/ConfigurationWatchersView.vue';
 
 vi.mock('@/services/watcher', () => ({
   getAllWatchers: vi.fn(() =>

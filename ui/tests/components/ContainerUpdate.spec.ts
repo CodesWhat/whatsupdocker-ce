@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerUpdate from '@/components/ContainerUpdate';
+import ContainerUpdate from '@/components/ContainerUpdate.vue';
 
 const mockUpdateKind = {
   kind: 'tag',
@@ -46,12 +46,12 @@ describe('ContainerUpdate', () => {
     });
 
     it('returns "Unknown" when updateKind is null', async () => {
-      await wrapper.setProps({ updateKind: null });
+      await wrapper.setProps({ updateKind: null, updateAvailable: false });
       expect(wrapper.vm.updateKindFormatted).toBe('Unknown');
     });
 
     it('returns "Unknown" when updateKind is undefined', async () => {
-      await wrapper.setProps({ updateKind: undefined });
+      await wrapper.setProps({ updateKind: undefined, updateAvailable: false });
       expect(wrapper.vm.updateKindFormatted).toBe('Unknown');
     });
 
@@ -137,5 +137,16 @@ describe('ContainerUpdate', () => {
   it('handles missing result.digest', async () => {
     await wrapper.setProps({ result: { tag: '2.0.0' } });
     expect(wrapper.exists()).toBe(true);
+  });
+
+  it('invokes copy handlers from tag/digest template buttons', async () => {
+    const copySpy = vi.spyOn(wrapper.vm, 'copyToClipboard');
+    const buttons = wrapper.findAll('.v-btn');
+
+    await buttons[0].trigger('click');
+    await buttons[1].trigger('click');
+
+    expect(copySpy).toHaveBeenCalledWith('update tag', '2.0.0');
+    expect(copySpy).toHaveBeenCalledWith('update digest', 'sha256:abcdef123456');
   });
 });

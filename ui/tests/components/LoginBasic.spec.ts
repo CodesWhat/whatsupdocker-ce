@@ -65,6 +65,17 @@ describe('LoginBasic', () => {
     }
   });
 
+  it('updates form models via v-text-field input handlers', async () => {
+    const fields = wrapper.findAll('input.v-text-field');
+    expect(fields).toHaveLength(2);
+
+    await fields[0].setValue('typed-user');
+    await fields[1].setValue('typed-pass');
+
+    expect(wrapper.vm.username).toBe('typed-user');
+    expect(wrapper.vm.password).toBe('typed-pass');
+  });
+
   it('calls loginBasic service on form submission', async () => {
     vi.mocked(loginBasic).mockResolvedValue({ username: 'testuser' });
 

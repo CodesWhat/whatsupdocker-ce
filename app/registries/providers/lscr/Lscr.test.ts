@@ -3,14 +3,14 @@ import Lscr from './Lscr.js';
 
 vi.mock('axios', () =>
   vi.fn().mockImplementation(() => ({
-    data: { token: 'xxxxx' }, // NOSONAR - test fixture, not a real credential
+    data: { token: 'xxxxx' },
   })),
 );
 
 const lscr = new Lscr();
 lscr.configuration = {
   username: 'user',
-  token: 'token', // NOSONAR - test fixture, not a real credential
+  token: 'token',
 };
 
 vi.mock('axios');
@@ -19,11 +19,11 @@ test('validatedConfiguration should initialize when auth configuration is valid'
   expect(
     lscr.validateConfiguration({
       username: 'user',
-      token: 'token', // NOSONAR - test fixture, not a real credential
+      token: 'token',
     }),
   ).toStrictEqual({
     username: 'user',
-    token: 'token', // NOSONAR - test fixture, not a real credential
+    token: 'token',
   });
 });
 

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationTriggersView from '@/views/ConfigurationTriggersView';
+import ConfigurationTriggersView from '@/views/ConfigurationTriggersView.vue';
 
 vi.mock('@/services/trigger', () => ({
   getAllTriggers: vi.fn(() =>

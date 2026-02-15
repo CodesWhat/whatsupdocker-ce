@@ -6,6 +6,7 @@ import * as storeBackup from '../store/backup.js';
 import * as storeContainer from '../store/container.js';
 import { recordAuditEvent } from './audit-events.js';
 import { findDockerTriggerForContainer, NO_DOCKER_TRIGGER_FOUND_ERROR } from './docker-trigger.js';
+import { handleContainerActionError } from './helpers.js';
 
 const log = logger.child({ component: 'backup' });
 
@@ -114,18 +115,14 @@ async function rollbackContainer(req: Request, res: Response) {
       backup: latestBackup,
     });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    log.warn(`Error rolling back container ${id} (${message})`);
-
-    recordAuditEvent({
+    handleContainerActionError({
+      error: e,
       action: 'rollback',
+      actionLabel: 'rolling back',
+      id,
       container,
-      status: 'error',
-      details: message,
-    });
-
-    res.status(500).json({
-      error: `Error rolling back container (${message})`,
+      log,
+      res,
     });
   }
 }

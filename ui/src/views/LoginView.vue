@@ -77,6 +77,7 @@
   background: #f5f5f5;
   padding: 16px;
   transition: background 0.3s ease;
+  overflow-y: auto;
 }
 
 .login-dark {
@@ -136,5 +137,18 @@
   position: absolute;
   top: 16px;
   right: 16px;
+}
+
+@media (max-height: 600px) {
+  .logo-bounce {
+    width: 72px;
+  }
+  .logo-section {
+    margin-bottom: 16px;
+  }
+  .app-title {
+    font-size: 1.5rem;
+    margin-top: 8px;
+  }
 }
 </style>

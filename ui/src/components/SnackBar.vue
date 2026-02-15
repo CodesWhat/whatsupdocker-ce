@@ -2,7 +2,7 @@
   <v-snackbar
     v-model="showLocal"
     :timeout="timeout"
-    color="primary"
+    :color="level === 'error' ? 'error' : level === 'warning' ? 'warning' : 'primary'"
     variant="flat"
   >
     {{ message }}

@@ -19,7 +19,7 @@ vi.mock('@aws-sdk/client-ecr', () => ({
 const ecr = new Ecr();
 ecr.configuration = {
   accesskeyid: 'accesskeyid',
-  secretaccesskey: 'secretaccesskey', // NOSONAR - test fixture, not a real credential
+  secretaccesskey: 'secretaccesskey',
   region: 'region',
 };
 
@@ -29,12 +29,12 @@ test('validatedConfiguration should initialize when configuration is valid', asy
   expect(
     ecr.validateConfiguration({
       accesskeyid: 'accesskeyid',
-      secretaccesskey: 'secretaccesskey', // NOSONAR - test fixture, not a real credential
+      secretaccesskey: 'secretaccesskey',
       region: 'region',
     }),
   ).toStrictEqual({
     accesskeyid: 'accesskeyid',
-    secretaccesskey: 'secretaccesskey', // NOSONAR - test fixture, not a real credential
+    secretaccesskey: 'secretaccesskey',
     region: 'region',
   });
 });
@@ -42,7 +42,7 @@ test('validatedConfiguration should initialize when configuration is valid', asy
 test('validatedConfiguration should throw error when accessKey is missing', async () => {
   expect(() => {
     ecr.validateConfiguration({
-      secretaccesskey: 'secretaccesskey', // NOSONAR - test fixture, not a real credential
+      secretaccesskey: 'secretaccesskey',
       region: 'region',
     });
   }).toThrow('"accesskeyid" is required');
@@ -61,7 +61,7 @@ test('validatedConfiguration should throw error when secretaccesskey is missing'
   expect(() => {
     ecr.validateConfiguration({
       accesskeyid: 'accesskeyid',
-      secretaccesskey: 'secretaccesskey', // NOSONAR - test fixture, not a real credential
+      secretaccesskey: 'secretaccesskey',
     });
   }).toThrow('"region" is required');
 });
@@ -129,7 +129,7 @@ test('normalizeImage should keep already-https urls unchanged', async () => {
 test('authenticate should call ecr auth endpoint', async () => {
   await expect(ecr.authenticate(undefined, { headers: {} })).resolves.toEqual({
     headers: {
-      Authorization: 'Basic QVdTOnh4eHg=', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Basic QVdTOnh4eHg=',
     },
   });
 });
@@ -137,13 +137,13 @@ test('authenticate should call ecr auth endpoint', async () => {
 test('getAuthPull should return decoded ECR credentials', async () => {
   await expect(ecr.getAuthPull()).resolves.toEqual({
     username: 'AWS',
-    password: 'xxxx', // NOSONAR - test fixture, not a real credential
+    password: 'xxxx',
   });
 });
 
 test('authenticate should fetch public ECR gallery token for public images', async () => {
   const { default: axios } = await import('axios');
-  axios.mockResolvedValueOnce({ data: { token: 'public-token-123' } }); // NOSONAR - test fixture, not a real credential
+  axios.mockResolvedValueOnce({ data: { token: 'public-token-123' } });
 
   const ecrPublic = new Ecr();
   ecrPublic.configuration = {};
@@ -154,7 +154,7 @@ test('authenticate should fetch public ECR gallery token for public images', asy
   );
   expect(result).toEqual({
     headers: {
-      Authorization: 'Bearer public-token-123', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Bearer public-token-123',
     },
   });
 });

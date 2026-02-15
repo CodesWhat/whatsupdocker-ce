@@ -17,88 +17,178 @@
       <v-card-title
         @click="collapseDetail()"
         style="cursor: pointer"
-        class="pa-4 d-flex align-center bg-surface"
+        class="pa-4 bg-surface container-card-title"
       >
-        <div class="d-flex align-center" style="gap: 16px">
-          <div class="d-flex align-center justify-center flex-shrink-0" :style="{ width: smAndUp ? '40px' : '28px' }">
-            <IconRenderer
-              :icon="effectiveDisplayIcon"
-              :size="smAndUp ? 32 : 24"
-              :margin-right="0"
-            />
+        <!-- Mobile layout (< 600px): two rows -->
+        <div v-if="!smAndUp" class="container-card-mobile">
+          <div class="d-flex align-center" style="gap: 10px">
+            <div class="d-flex align-center justify-center flex-shrink-0" style="width: 28px">
+              <IconRenderer
+                :icon="effectiveDisplayIcon"
+                :size="24"
+                :margin-right="0"
+              />
+            </div>
+            <span class="text-body-2 font-weight-medium text-truncate flex-grow-1">
+              {{ container.displayName }}
+            </span>
+            <span v-if="container.updateAvailable" class="update-dot flex-shrink-0" :class="'update-dot--' + newVersionClass" />
+            <v-chip v-if="container.status !== 'running'" label size="x-small" variant="tonal" color="warning" class="flex-shrink-0">
+              {{ container.status }}
+            </v-chip>
+            <v-icon class="flex-shrink-0" size="small">{{
+              showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down"
+            }}</v-icon>
           </div>
-          <div class="d-flex flex-column" style="min-width: 0">
-            <div class="d-flex align-center" style="gap: 6px">
-              <span class="text-body-2 font-weight-medium text-truncate">
-                {{ container.displayName }}
-              </span>
-              <v-chip label size="x-small" variant="tonal" color="info" class="flex-shrink-0">
-                {{ container.image.tag.value }}
-              </v-chip>
-              <v-chip v-if="container.status !== 'running'" label size="x-small" variant="tonal" color="warning" class="flex-shrink-0">
-                {{ container.status }}
-              </v-chip>
-            </div>
-            <div v-if="smAndUp" class="text-caption text-medium-emphasis d-flex align-center" style="gap: 4px">
-              <v-icon v-if="container.agent" size="x-small" :color="agentStatusColor">fas fa-circle</v-icon>
-              <span v-if="container.agent">{{ container.agent }} &middot;</span>
-              <span>{{ container.watcher }}</span>
-              <span v-if="mdAndUp">&middot; {{ container.image.registry.name }}</span>
-            </div>
+          <div v-if="container.updateAvailable" class="d-flex align-center mt-1" style="gap: 6px; padding-left: 38px">
+            <v-chip label size="x-small" variant="tonal" color="info" class="flex-shrink-0">
+              {{ container.image.tag.value }}
+            </v-chip>
+            <v-icon size="x-small" class="text-medium-emphasis">fas fa-arrow-right</v-icon>
+            <v-chip
+              label
+              size="x-small"
+              variant="tonal"
+              :color="newVersionClass"
+              class="flex-shrink-0"
+              @click="
+                copyToClipboard('container new version', newVersion);
+                $event.stopImmediatePropagation();
+              "
+            >
+              {{ newVersion }}
+            </v-chip>
+          </div>
+          <div v-else class="d-flex align-center mt-1" style="gap: 6px; padding-left: 38px">
+            <v-chip label size="x-small" variant="tonal" color="info" class="flex-shrink-0">
+              {{ container.image.tag.value }}
+            </v-chip>
           </div>
         </div>
-        
-        <v-spacer />
-        
-        <div class="d-flex align-center" style="gap: 8px">
-          <span v-if="smAndUp && container.updateAvailable" class="d-flex align-center" style="gap: 4px">
-            <v-icon>fas fa-arrow-right</v-icon>
-            <v-tooltip location="bottom">
-              <template v-slot:activator="{ props }">
-                <v-chip
-                  label
-                  variant="tonal"
-                  :color="newVersionClass"
-                  v-bind="props"
-                  @click="
-                    copyToClipboard('container new version', newVersion);
-                    $event.stopImmediatePropagation();
-                  "
-                >
-                  {{ newVersion }}
-                  <v-icon end size="small">far fa-clipboard</v-icon>
-                </v-chip>
-              </template>
-              <span class="text-caption">Copy to clipboard</span>
-            </v-tooltip>
-          </span>
-          <span v-if="smAndUp && updatePolicyChipLabel" class="d-flex align-center">
-            <v-tooltip location="bottom">
-              <template v-slot:activator="{ props }">
-                <v-chip
-                  label
-                  variant="outlined"
-                  color="warning"
-                  v-bind="props"
-                >
-                  <v-icon start size="small">fas fa-bell-slash</v-icon>
-                  {{ updatePolicyChipLabel }}
-                </v-chip>
-              </template>
-              <span class="text-caption">{{ updatePolicyDescription }}</span>
-            </v-tooltip>
-          </span>
 
-          <span
-            v-if="smAndUp && oldestFirst"
-            class="text-caption"
-          >
-            {{ this.$filters.date(container.image.created) }}
-          </span>
+        <!-- Desktop layout (>= 600px): single row -->
+        <div v-else class="d-flex align-center" style="width: 100%">
+          <div class="d-flex align-center" style="gap: 16px">
+            <div class="d-flex align-center justify-center flex-shrink-0" style="width: 40px">
+              <IconRenderer
+                :icon="effectiveDisplayIcon"
+                :size="32"
+                :margin-right="0"
+              />
+            </div>
+            <div class="d-flex flex-column" style="min-width: 0">
+              <div class="d-flex align-center" style="gap: 6px">
+                <span class="text-body-2 font-weight-medium text-truncate">
+                  {{ container.displayName }}
+                </span>
+                <v-chip label size="x-small" variant="tonal" color="info" class="flex-shrink-0">
+                  {{ container.image.tag.value }}
+                </v-chip>
+                <v-chip v-if="container.status !== 'running'" label size="x-small" variant="tonal" color="warning" class="flex-shrink-0">
+                  {{ container.status }}
+                </v-chip>
+              </div>
+              <div class="text-caption text-medium-emphasis d-flex align-center" style="gap: 4px">
+                <v-icon v-if="container.agent" size="x-small" :color="agentStatusColor">fas fa-circle</v-icon>
+                <span v-if="container.agent">{{ container.agent }} &middot;</span>
+                <span>{{ container.watcher }}</span>
+                <span v-if="mdAndUp">&middot; {{ container.image.registry.name }}</span>
+              </div>
+            </div>
+          </div>
 
-          <v-icon>{{
-            showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down"
-          }}</v-icon>
+          <v-spacer />
+
+          <div class="d-flex align-center" style="gap: 8px">
+            <span v-if="container.updateAvailable" class="d-flex align-center" style="gap: 4px">
+              <v-icon>fas fa-arrow-right</v-icon>
+              <v-tooltip location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-chip
+                    label
+                    variant="tonal"
+                    :color="newVersionClass"
+                    v-bind="props"
+                    @click="
+                      copyToClipboard('container new version', newVersion);
+                      $event.stopImmediatePropagation();
+                    "
+                  >
+                    {{ newVersion }}
+                    <v-icon end size="small">far fa-clipboard</v-icon>
+                  </v-chip>
+                </template>
+                <span class="text-caption">Copy to clipboard</span>
+              </v-tooltip>
+            </span>
+            <span v-if="updatePolicyChipLabel" class="d-flex align-center">
+              <v-tooltip location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-chip
+                    label
+                    size="x-small"
+                    variant="outlined"
+                    color="warning"
+                    class="flex-shrink-0"
+                    v-bind="props"
+                  >
+                    <v-icon start size="small">fas fa-bell-slash</v-icon>
+                    {{ updatePolicyChipLabel }}
+                  </v-chip>
+                </template>
+                <span class="text-caption">{{ updatePolicyDescription }}</span>
+              </v-tooltip>
+            </span>
+            <span v-if="hasSecurityScan" class="d-flex align-center">
+              <v-tooltip location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-chip
+                    label
+                    size="x-small"
+                    variant="outlined"
+                    :color="vulnerabilityChipColor"
+                    :aria-label="vulnerabilityTooltipDescription"
+                    class="flex-shrink-0"
+                    v-bind="props"
+                  >
+                    <v-icon start size="small">fas fa-shield</v-icon>
+                    {{ vulnerabilityChipLabel }}
+                  </v-chip>
+                </template>
+                <span class="text-caption">{{ vulnerabilityTooltipDescription }}</span>
+              </v-tooltip>
+            </span>
+            <span v-if="hasSignatureVerification" class="d-flex align-center">
+              <v-tooltip location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-chip
+                    label
+                    size="x-small"
+                    variant="outlined"
+                    :color="signatureChipColor"
+                    :aria-label="signatureTooltipDescription"
+                    class="flex-shrink-0"
+                    v-bind="props"
+                  >
+                    <v-icon start size="small">fas fa-certificate</v-icon>
+                    {{ signatureChipLabel }}
+                  </v-chip>
+                </template>
+                <span class="text-caption">{{ signatureTooltipDescription }}</span>
+              </v-tooltip>
+            </span>
+
+            <span
+              v-if="oldestFirst"
+              class="text-caption"
+            >
+              {{ this.$filters.date(container.image.created) }}
+            </span>
+
+            <v-icon>{{
+              showDetail ? "fas fa-chevron-up" : "fas fa-chevron-down"
+            }}</v-icon>
+          </div>
         </div>
       </v-card-title>
       <transition name="expand-transition">
@@ -167,6 +257,19 @@
 
                 <v-divider vertical class="mx-1" />
               </template>
+
+              <!-- Security scan -->
+              <v-tooltip text="Run security scan" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn icon variant="text" size="small" v-bind="props"
+                    :loading="isScanningContainer"
+                    @click="scanContainerNow">
+                    <v-icon>fas fa-shield-halved</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+
+              <v-divider vertical class="mx-1" />
 
               <!-- Preview -->
               <v-tooltip text="Preview update" location="top">
@@ -341,6 +444,10 @@
                       <template v-slot:prepend><v-icon>fas fa-arrows-rotate</v-icon></template>
                       <v-list-item-title>Restart</v-list-item-title>
                     </v-list-item>
+                    <v-list-item :loading="isScanningContainer" @click="scanContainerNow">
+                      <template v-slot:prepend><v-icon>fas fa-shield-halved</v-icon></template>
+                      <v-list-item-title>Security scan</v-list-item-title>
+                    </v-list-item>
                     <v-divider />
                   </template>
                   <v-list-item
@@ -512,4 +619,21 @@
   -ms-user-select: none;
   user-select: none;
 }
+
+/* Mobile two-row layout */
+.container-card-mobile {
+  width: 100%;
+}
+
+/* Colored update-kind dot */
+.update-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.update-dot--error { background: rgb(var(--v-theme-error)); }
+.update-dot--warning { background: rgb(var(--v-theme-warning)); }
+.update-dot--success { background: rgb(var(--v-theme-success)); }
+.update-dot--info { background: rgb(var(--v-theme-info)); }
 </style>

@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DD_PROMETHEUS",
-      "label": "drydock Prometheus",
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
       "description": "",
       "type": "datasource",
       "pluginId": "prometheus",
@@ -15,13 +15,25 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.5.0-81311"
+      "version": "11.5.0"
     },
     {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
       "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "barchart",
+      "name": "Bar chart",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "piechart",
+      "name": "Pie chart",
+      "version": ""
     },
     {
       "type": "panel",
@@ -33,6 +45,12 @@
       "type": "panel",
       "id": "table",
       "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
       "version": ""
     }
   ],
@@ -54,347 +72,273 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": null,
   "links": [],
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DD_PROMETHEUS}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#1565c0"
           },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
-          }
+          },
+          "noValue": "0"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
       "options": {
-        "colorMode": "value",
         "graphMode": "area",
+        "colorMode": "background_gradient",
+        "textMode": "auto",
+        "wideLayout": true,
         "justifyMode": "auto",
         "orientation": "auto",
-        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "percentChangeColorMode": "standard"
       },
-      "pluginVersion": "11.5.0-81311",
+      "pluginVersion": "11.5.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DD_PROMETHEUS}"
+            "uid": "${DS_PROMETHEUS}"
           },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "count(dd_containers{watcher=~\"${docker_host:pipe}\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "editorMode": "code",
+          "expr": "count(dd_containers{watcher=~\"$watcher\"})",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
-          "useBackend": false
+          "instant": false
         }
       ],
-      "title": "Images Monitored",
+      "title": "Watched Containers",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DD_PROMETHEUS}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "index": 0,
-                  "text": "0"
-                }
-              },
-              "type": "special"
-            }
-          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#4CAF50",
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "#FF9800",
                 "value": 1
               },
               {
-                "color": "red",
+                "color": "#E53935",
                 "value": 3
               }
             ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.5.0-81311",
-      "targets": [
-        {
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"major\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "useBackend": false,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DD_PROMETHEUS}"
-          }
-        }
-      ],
-      "title": "Major Updates Available",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DD_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "index": 0,
-                  "text": "0"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "noValue": "0",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 3
-              }
-            ]
-          }
+          "noValue": "0"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
       "id": 3,
       "options": {
-        "colorMode": "value",
         "graphMode": "area",
+        "colorMode": "background_gradient",
+        "textMode": "auto",
+        "wideLayout": true,
         "justifyMode": "auto",
         "orientation": "auto",
-        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "percentChangeColorMode": "standard"
       },
-      "pluginVersion": "11.5.0-81311",
+      "pluginVersion": "11.5.0",
       "targets": [
         {
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"minor\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DD_PROMETHEUS}"
-          }
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count(dd_containers{update_available=\"true\", watcher=~\"$watcher\"})",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
         }
       ],
-      "title": "Minor Updates Available",
+      "title": "Updates Available",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DD_PROMETHEUS}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#6a1b9a"
           },
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "index": 0,
-                  "text": "0"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 3
               }
             ]
-          }
+          },
+          "noValue": "0"
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
       "id": 4,
       "options": {
-        "colorMode": "value",
         "graphMode": "area",
+        "colorMode": "background_gradient",
+        "textMode": "auto",
+        "wideLayout": true,
         "justifyMode": "auto",
         "orientation": "auto",
-        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "percentChangeColorMode": "standard"
       },
-      "pluginVersion": "11.5.0-81311",
+      "pluginVersion": "11.5.0",
       "targets": [
         {
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "count(dd_containers{update_available=\"true\", update_kind_semver_diff=\"patch\", watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DD_PROMETHEUS}"
-          }
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(dd_trigger_count_total)",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
         }
       ],
-      "title": "Patch Updates Available",
+      "title": "Triggers Executed",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DD_PROMETHEUS}"
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#e65100"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_gradient",
+        "textMode": "auto",
+        "wideLayout": true,
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
+      },
+      "pluginVersion": "11.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(dd_watcher_maintenance_skip_total)",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ],
+      "title": "Maintenance Skips",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 10,
+      "panels": [],
+      "title": "Container Updates",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -402,14 +346,12 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
             "cellOptions": {
               "type": "auto"
             },
             "filterable": true,
             "inspect": false
           },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -428,47 +370,47 @@
             },
             "properties": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "applyToRow": false,
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Update Type"
-            },
-            "properties": [
-              {
                 "id": "mappings",
                 "value": [
                   {
                     "options": {
                       "major": {
-                        "color": "red",
-                        "index": 0
+                        "color": "#E53935",
+                        "index": 0,
+                        "text": "major"
                       },
                       "minor": {
-                        "color": "yellow",
-                        "index": 1
+                        "color": "#FF9800",
+                        "index": 1,
+                        "text": "minor"
                       },
                       "patch": {
-                        "color": "green",
-                        "index": 2
+                        "color": "#4CAF50",
+                        "index": 2,
+                        "text": "patch"
+                      },
+                      "digest": {
+                        "color": "#2196F3",
+                        "index": 3,
+                        "text": "digest"
                       },
                       "undefined": {
                         "color": "transparent",
-                        "index": 3,
+                        "index": 4,
                         "text": "-"
                       }
                     },
                     "type": "value"
                   }
                 ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient",
+                  "applyToRow": false
+                }
               }
             ]
           },
@@ -501,12 +443,6 @@
             },
             "properties": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "auto"
-                }
-              },
-              {
                 "id": "links",
                 "value": [
                   {
@@ -536,13 +472,8 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 23,
-        "w": 24,
-        "x": 0,
-        "y": 8
-      },
-      "id": 5,
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 6 },
+      "id": 11,
       "options": {
         "cellHeight": "md",
         "footer": {
@@ -559,60 +490,48 @@
           }
         ]
       },
-      "pluginVersion": "11.5.0-81311",
+      "pluginVersion": "11.5.0",
       "targets": [
         {
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "group by(display_name, update_kind_remote_value, update_kind_semver_diff, watcher, image_tag_value, link) (dd_containers{watcher=~\"${docker_host:pipe}\", image_name=~\"${container_image:pipe}\"})",
-          "format": "table",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "instant": true,
-          "interval": "",
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "useBackend": false,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DD_PROMETHEUS}"
-          }
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "group by(display_name, update_kind_remote_value, update_kind_semver_diff, watcher, image_tag_value, link) (dd_containers{watcher=~\"$watcher\", image_name=~\"$image\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
         }
       ],
-      "title": "Monitored Containers",
+      "title": "Container Updates",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {
               "Time": true,
-              "Value": true,
-              "image_tag_value": false
+              "Value": true
             },
-            "includeByName": {},
             "indexByName": {
-              "Time": 6,
-              "Value": 7,
+              "watcher": 0,
               "display_name": 1,
               "image_tag_value": 2,
-              "link": 5,
               "update_kind_remote_value": 3,
               "update_kind_semver_diff": 4,
-              "watcher": 0
+              "link": 5,
+              "Time": 6,
+              "Value": 7
             },
             "renameByName": {
-              "Time": "",
+              "watcher": "Docker Host",
               "display_name": "Container Name",
               "image_tag_value": "Current Tag",
-              "link": "Release Notes",
-              "link_template": "Release Notes",
-              "update_kind_local_value": "Current Tag",
               "update_kind_remote_value": "Available Tag",
               "update_kind_semver_diff": "Update Type",
-              "watcher": "Docker Host"
+              "link": "Release Notes"
             }
           }
         },
@@ -622,70 +541,626 @@
             "fields": {},
             "sort": [
               {
-                "desc": false,
-                "field": "Update Type"
+                "field": "Update Type",
+                "desc": false
               }
             ]
           }
         }
       ],
       "type": "table"
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 20,
+      "title": "Triggers & Activity",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "scheme",
+                "lineWidth": 1,
+                "scaleDistribution": { "type": "linear" },
+                "stacking": { "group": "A", "mode": "normal" },
+                "thresholdsStyle": { "mode": "off" }
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 14, "x": 0, "y": 19 },
+          "id": 21,
+          "options": {
+            "barRadius": 0.1,
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+            "orientation": "auto",
+            "showValue": "auto",
+            "stacking": "normal",
+            "tooltip": { "mode": "single", "sort": "none" },
+            "xTickLabelRotation": 0
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "increase(dd_trigger_count_total[$__rate_interval])",
+              "legendFormat": "{{type}}",
+              "range": true,
+              "instant": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Trigger Executions",
+          "type": "barchart"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "custom": {
+                "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+              },
+              "mappings": []
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "success" },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": { "fixedColor": "#4CAF50", "mode": "fixed" }
+                  }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "error" },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": { "fixedColor": "#E53935", "mode": "fixed" }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 10, "x": 14, "y": 19 },
+          "id": 22,
+          "options": {
+            "displayLabels": ["percent"],
+            "legend": {
+              "displayMode": "list",
+              "placement": "right",
+              "values": ["value", "percent"]
+            },
+            "pieType": "donut",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "sum by (status) (dd_trigger_count_total)",
+              "legendFormat": "{{status}}",
+              "instant": true,
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Success vs Error",
+          "type": "piechart"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 30,
+      "title": "Audit & Webhooks",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 25,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+          "id": 31,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max"],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "increase(dd_audit_entries_total[$__rate_interval])",
+              "legendFormat": "Audit Events",
+              "range": true,
+              "instant": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Audit Events",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "fixedColor": "#6a1b9a", "mode": "fixed" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "noValue": "0"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 6, "x": 12, "y": 28 },
+          "id": 32,
+          "options": {
+            "colorMode": "background_gradient",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "sum(dd_webhook_total)",
+              "legendFormat": "__auto",
+              "range": true,
+              "instant": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Webhook Calls",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "fixedColor": "#0096C7", "mode": "fixed" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "noValue": "0"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 6, "x": 18, "y": 28 },
+          "id": 33,
+          "options": {
+            "colorMode": "background_gradient",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "sum(dd_container_actions_total)",
+              "legendFormat": "__auto",
+              "range": true,
+              "instant": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Container Actions",
+          "type": "stat"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "id": 40,
+      "title": "Registries",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "continuous-blues" },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "seconds",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 30,
+                "gradientMode": "scheme",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "area" }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+          "id": 41,
+          "options": {
+            "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "rate(dd_registry_response_sum[$__rate_interval]) / rate(dd_registry_response_count[$__rate_interval])",
+              "instant": false,
+              "legendFormat": "Avg Response Time",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Registry Response Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "continuous-greens" },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "queries/min",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              },
+              "unit": "reqpm"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+          "id": 42,
+          "options": {
+            "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "rate(dd_registry_response_count[$__rate_interval]) * 60",
+              "instant": false,
+              "legendFormat": "Queries/min",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Registry Query Rate",
+          "type": "timeseries"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 50,
+      "title": "Watchers",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+          "id": 51,
+          "options": {
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "dd_watcher_total",
+              "instant": false,
+              "legendFormat": "{{watcher}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Watcher Activity",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": {
+                "align": "auto",
+                "cellOptions": { "type": "auto" },
+                "filterable": true,
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "Value" },
+                "properties": [{ "id": "displayName", "value": "Container Count" }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+          "id": 52,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": ["sum"],
+              "show": true
+            },
+            "showHeader": true,
+            "sortBy": [{ "desc": true, "displayName": "Container Count" }]
+          },
+          "pluginVersion": "11.5.0",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "editorMode": "code",
+              "expr": "count by (watcher) (dd_containers)",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Watcher Container Breakdown",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": { "Time": true },
+                "includeByName": {},
+                "indexByName": { "Time": 2, "Value": 1, "watcher": 0 },
+                "renameByName": { "watcher": "Watcher" }
+              }
+            },
+            {
+              "id": "sortBy",
+              "options": {
+                "fields": {},
+                "sort": [{ "desc": true, "field": "Container Count" }]
+              }
+            }
+          ],
+          "type": "table"
+        }
+      ]
     }
   ],
-  "refresh": "",
+  "refresh": "30s",
   "schemaVersion": 40,
-  "tags": [],
+  "tags": ["drydock", "containers", "docker"],
   "templating": {
     "list": [
       {
-        "allValue": ".*",
-        "allowCustomValue": false,
         "current": {},
-        "definition": "label_values(dd_containers,watcher)",
-        "description": "",
+        "description": "Prometheus datasource",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(dd_containers, watcher)",
+        "description": "Filter by watcher",
+        "hide": 0,
         "includeAll": true,
-        "label": "Docker Host",
+        "label": "Watcher",
         "multi": true,
-        "name": "docker_host",
+        "name": "watcher",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(dd_containers,watcher)",
+          "query": "label_values(dd_containers, watcher)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
         "type": "query"
       },
       {
         "allValue": ".*",
-        "allowCustomValue": false,
         "current": {},
-        "definition": "label_values(dd_containers,image_name)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(dd_containers, image_name)",
+        "description": "Filter by image",
+        "hide": 0,
         "includeAll": true,
         "label": "Image",
         "multi": true,
-        "name": "container_image",
+        "name": "image",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(dd_containers,image_name)",
+          "query": "label_values(dd_containers, image_name)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "drydock",
   "uid": "ce9usvatkar5sa",
-  "version": 31,
+  "version": 1,
   "weekStart": ""
 }

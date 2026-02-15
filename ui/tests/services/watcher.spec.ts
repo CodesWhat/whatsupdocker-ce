@@ -1,4 +1,9 @@
-import { getAllWatchers, getWatcherIcon, getWatcherProviderIcon } from '@/services/watcher';
+import {
+  getAllWatchers,
+  getWatcherIcon,
+  getWatcherProviderColor,
+  getWatcherProviderIcon,
+} from '@/services/watcher';
 
 describe('Watcher Service', () => {
   beforeEach(() => {
@@ -15,6 +20,14 @@ describe('Watcher Service', () => {
 
   it('returns default icon for unknown provider', () => {
     expect(getWatcherProviderIcon('kubernetes')).toBe('fas fa-eye');
+  });
+
+  it('returns docker color for docker provider', () => {
+    expect(getWatcherProviderColor('docker')).toBe('#2496ED');
+  });
+
+  it('returns default color for unknown provider', () => {
+    expect(getWatcherProviderColor('kubernetes')).toBe('#6B7280');
   });
 
   it('should get all watchers', async () => {

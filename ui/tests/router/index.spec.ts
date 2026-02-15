@@ -196,6 +196,24 @@ describe('Router', () => {
       expect(result).toBe(true);
     });
 
+    it('applyAuthNavigationGuard skips authenticated emit when event bus is not available', async () => {
+      (router as any).app = {
+        config: {
+          globalProperties: {},
+        },
+      };
+      vi.mocked(getUser).mockResolvedValue({ username: 'demo' });
+
+      const result = await applyAuthNavigationGuard({
+        name: 'containers',
+        path: '/containers',
+        query: {},
+      });
+      await nextTick();
+
+      expect(result).toBe(true);
+    });
+
     it('beforeEach guard runs during real router navigation', async () => {
       vi.mocked(getUser).mockResolvedValue(undefined);
       await router.push('/login');

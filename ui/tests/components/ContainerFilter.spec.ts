@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ContainerFilter from '@/components/ContainerFilter';
+import ContainerFilter from '@/components/ContainerFilter.vue';
 import { refreshAllContainers } from '@/services/container';
 
 const mockProps = {
@@ -212,6 +212,121 @@ describe('ContainerFilter', () => {
     expect(wrapper.emitted('group-by-label-changed')?.at(-1)).toEqual(['']);
   });
 
+  it('toggles advanced filters panel from the filters button', async () => {
+    expect(wrapper.vm.showFilters).toBe(false);
+
+    const buttons = wrapper.findAll('.v-btn');
+    await buttons[0].trigger('click');
+    expect(wrapper.vm.showFilters).toBe(true);
+
+    await buttons[0].trigger('click');
+    expect(wrapper.vm.showFilters).toBe(false);
+  });
+
+  it('updates local selections through select/autocomplete model handlers', async () => {
+    const customWrapper = mount(ContainerFilter, {
+      props: mockProps,
+      global: {
+        stubs: {
+          'v-select': {
+            template:
+              '<div class="v-select-stub" @click="$emit(\'update:modelValue\', valueForLabel)"></div>',
+            props: ['label'],
+            emits: ['update:modelValue'],
+            computed: {
+              valueForLabel() {
+                if (this.label === 'Agent') return 'node1';
+                if (this.label === 'Watcher') return 'docker';
+                if (this.label === 'Registry') return 'hub';
+                return 'major';
+              },
+            },
+          },
+          'v-autocomplete': {
+            template:
+              '<div class="v-autocomplete-stub" @click="$emit(\'update:modelValue\', \'app\')"></div>',
+            emits: ['update:modelValue'],
+          },
+        },
+      },
+    });
+
+    try {
+      customWrapper.vm.showFilters = true;
+      await customWrapper.vm.$nextTick();
+
+      const selects = customWrapper.findAll('.v-select-stub');
+      expect(selects).toHaveLength(4);
+
+      await selects[0].trigger('click');
+      await selects[1].trigger('click');
+      await selects[2].trigger('click');
+      await selects[3].trigger('click');
+      await customWrapper.find('.v-autocomplete-stub').trigger('click');
+
+      expect(customWrapper.emitted('agent-changed')?.at(-1)).toEqual(['node1']);
+      expect(customWrapper.emitted('watcher-changed')?.at(-1)).toEqual(['docker']);
+      expect(customWrapper.emitted('registry-changed')?.at(-1)).toEqual(['hub']);
+      expect(customWrapper.emitted('update-kind-changed')?.at(-1)).toEqual(['major']);
+      expect(customWrapper.emitted('group-by-label-changed')?.at(-1)).toEqual(['app']);
+    } finally {
+      customWrapper.unmount();
+    }
+  });
+
+  it('toggles updateAvailable and oldestFirst via toolbar button click handlers', async () => {
+    const buttons = wrapper.findAll('.v-btn');
+
+    expect(wrapper.vm.updateAvailableLocal).toBe(false);
+    await buttons[1].trigger('click');
+    expect(wrapper.vm.updateAvailableLocal).toBe(true);
+    expect(wrapper.emitted('update-available-changed')).toBeTruthy();
+
+    expect(wrapper.vm.oldestFirstLocal).toBe(false);
+    await buttons[2].trigger('click');
+    expect(wrapper.vm.oldestFirstLocal).toBe(true);
+    expect(wrapper.emitted('oldest-first-changed')).toBeTruthy();
+  });
+
+  it('clears chip filters through click:close template handlers', async () => {
+    const customWrapper = mount(ContainerFilter, {
+      props: {
+        ...mockProps,
+        registrySelectedInit: 'hub',
+        agentSelectedInit: 'node1',
+        watcherSelectedInit: 'docker',
+      },
+      global: {
+        stubs: {
+          'v-chip': {
+            template: '<span class="v-chip" @click="$emit(\'click:close\')"><slot /></span>',
+            emits: ['click:close'],
+          },
+        },
+      },
+    });
+
+    try {
+      await customWrapper.vm.$nextTick();
+      customWrapper.vm.agentSelected = 'node1';
+      customWrapper.vm.watcherSelected = 'docker';
+      customWrapper.vm.registrySelected = 'hub';
+      await customWrapper.vm.$nextTick();
+
+      const chips = customWrapper.findAll('.v-chip');
+      expect(chips.length).toBeGreaterThan(0);
+      for (const chip of chips) {
+        await chip.trigger('click');
+      }
+
+      expect(customWrapper.emitted('agent-changed')).toBeTruthy();
+      expect(customWrapper.emitted('watcher-changed')).toBeTruthy();
+      expect(customWrapper.emitted('registry-changed')).toBeTruthy();
+    } finally {
+      customWrapper.unmount();
+    }
+  });
+
   it('handles non-array group labels safely', async () => {
     await wrapper.setProps({
       groupLabels: null,
@@ -219,5 +334,11 @@ describe('ContainerFilter', () => {
 
     const items = wrapper.vm.groupLabelItems;
     expect(items).toEqual([{ title: 'Smart group', value: '__smart__' }]);
+  });
+
+  it('coalesces null registry values to an empty string in emitRegistryChanged', async () => {
+    wrapper.vm.registrySelected = null;
+    await wrapper.vm.emitRegistryChanged();
+    expect(wrapper.emitted('registry-changed')?.at(-1)).toEqual(['']);
   });
 });

@@ -177,10 +177,9 @@ export default defineComponent({
 
       const entries = [...grouped.entries()];
       entries.sort((a, b) => {
-        if (a[0] === null && b[0] === null) return 0;
-        if (a[0] === null) return 1;
-        if (b[0] === null) return -1;
-        return a[0].localeCompare(b[0]);
+        const aKey = a[0] ?? '\uffff';
+        const bKey = b[0] ?? '\uffff';
+        return aKey.localeCompare(bKey);
       });
 
       return entries.map(([name, containers]) => ({ name, containers }));

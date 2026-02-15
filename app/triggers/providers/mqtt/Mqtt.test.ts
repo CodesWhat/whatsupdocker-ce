@@ -124,7 +124,7 @@ test('validateConfiguration should throw error when invalid', async () => {
 
 test('maskConfiguration should mask sensitive data', async () => {
   mqtt.configuration = {
-    password: 'password', // NOSONAR - test fixture, not a real credential
+    password: 'password',
     url: 'mqtt://host:1883',
     topic: 'dd/container',
     hass: {
@@ -149,7 +149,7 @@ test('initTrigger should init Mqtt client', async () => {
   mqtt.configuration = {
     ...configurationValid,
     user: 'user',
-    password: 'password', // NOSONAR - test fixture, not a real credential
+    password: 'password',
     clientid: 'wud',
     hass: {
       enabled: true,
@@ -162,7 +162,7 @@ test('initTrigger should init Mqtt client', async () => {
   expect(spy).toHaveBeenCalledWith('mqtt://host:1883', {
     clientId: 'wud',
     username: 'user',
-    password: 'password', // NOSONAR - test fixture, not a real credential
+    password: 'password',
     rejectUnauthorized: true,
   });
 });

@@ -9,13 +9,13 @@ import ContainerRollback from '@/components/ContainerRollback.vue';
 import ContainerTriggers from '@/components/ContainerTriggers.vue';
 import ContainerUpdate from '@/components/ContainerUpdate.vue';
 import IconRenderer from '@/components/IconRenderer.vue';
+import { refreshContainer, scanContainer, updateContainerPolicy } from '@/services/container';
 import {
-  getContainerTriggers,
-  refreshContainer,
-  runTrigger,
-  updateContainerPolicy,
-} from '@/services/container';
-import { restartContainer, startContainer, stopContainer } from '@/services/container-actions';
+  restartContainer,
+  startContainer,
+  stopContainer,
+  updateContainer,
+} from '@/services/container-actions';
 import { getEffectiveDisplayIcon } from '@/services/image-icon';
 import { getRegistryProviderIcon } from '@/services/registry';
 
@@ -72,6 +72,7 @@ export default defineComponent({
       isStarting: false,
       isStopping: false,
       isRestarting: false,
+      isScanningContainer: false,
       containerActionsEnabled: false,
     };
   },
@@ -204,6 +205,116 @@ export default defineComponent({
       }
       return 'No custom update policy';
     },
+    securityScan() {
+      return this.container.security?.scan;
+    },
+    signatureVerification() {
+      return this.container.security?.signature;
+    },
+    hasSecurityScan() {
+      return Boolean(this.securityScan?.scannedAt);
+    },
+    hasSignatureVerification() {
+      return Boolean(this.signatureVerification?.verifiedAt);
+    },
+    vulnerabilityChipColor() {
+      const scanStatus = this.securityScan?.status;
+      if (scanStatus === 'blocked') {
+        return 'error';
+      }
+      if (scanStatus === 'error') {
+        return 'warning';
+      }
+      if (scanStatus === 'passed') {
+        return 'success';
+      }
+      return 'info';
+    },
+    vulnerabilityChipLabel() {
+      const scanStatus = this.securityScan?.status;
+      if (scanStatus === 'blocked') {
+        return `blocked (${this.securityScan?.blockingCount || 0})`;
+      }
+      if (scanStatus === 'error') {
+        return 'scan error';
+      }
+      if (scanStatus === 'passed') {
+        return 'safe';
+      }
+      return 'no scan';
+    },
+    vulnerabilityTooltipDescription() {
+      if (!this.hasSecurityScan) {
+        return 'No vulnerability scan result';
+      }
+      const summary = this.securityScan?.summary || {};
+      const critical = summary.critical ?? 0;
+      const high = summary.high ?? 0;
+      const medium = summary.medium ?? 0;
+      const low = summary.low ?? 0;
+      const unknown = summary.unknown ?? 0;
+      const scannedAt = this.securityScan?.scannedAt
+        ? this.$filters.dateTime(this.securityScan.scannedAt)
+        : 'unknown';
+      const scanStatus = this.securityScan?.status || 'unknown';
+      if (scanStatus === 'error') {
+        return `Security scan failed at ${scannedAt}: ${this.securityScan?.error || 'unknown error'}`;
+      }
+      if (scanStatus === 'blocked') {
+        return `Blocked at ${scannedAt}. Critical: ${critical}, High: ${high}, Medium: ${medium}, Low: ${low}, Unknown: ${unknown}`;
+      }
+      return `Scanned at ${scannedAt}. Critical: ${critical}, High: ${high}, Medium: ${medium}, Low: ${low}, Unknown: ${unknown}`;
+    },
+    signatureChipColor() {
+      const signatureStatus = this.signatureVerification?.status;
+      if (signatureStatus === 'unverified') {
+        return 'error';
+      }
+      if (signatureStatus === 'error') {
+        return 'warning';
+      }
+      if (signatureStatus === 'verified') {
+        return 'success';
+      }
+      return 'info';
+    },
+    signatureChipLabel() {
+      const signatureStatus = this.signatureVerification?.status;
+      if (signatureStatus === 'unverified') {
+        return 'unsigned';
+      }
+      if (signatureStatus === 'error') {
+        return 'sig error';
+      }
+      if (signatureStatus === 'verified') {
+        return 'signed';
+      }
+      return 'no sig';
+    },
+    signatureTooltipDescription() {
+      if (!this.hasSignatureVerification) {
+        return 'No signature verification result';
+      }
+      const verifiedAt = this.signatureVerification?.verifiedAt
+        ? this.$filters.dateTime(this.signatureVerification.verifiedAt)
+        : 'unknown';
+      const signatureStatus = this.signatureVerification?.status || 'unknown';
+      if (signatureStatus === 'error') {
+        return `Signature verification failed at ${verifiedAt}: ${
+          this.signatureVerification?.error || 'unknown error'
+        }`;
+      }
+      if (signatureStatus === 'unverified') {
+        return `No valid image signature found at ${verifiedAt}: ${
+          this.signatureVerification?.error || 'signature missing or invalid'
+        }`;
+      }
+      const signatures = this.signatureVerification?.signatures ?? 0;
+      const verificationMode = this.signatureVerification?.keyless ? 'keyless' : 'public-key';
+      return `Verified at ${verifiedAt}. ${signatures} signature${
+        signatures === 1 ? '' : 's'
+      } (${verificationMode})`;
+    },
   },
 
   methods: {
@@ -272,34 +383,11 @@ export default defineComponent({
     async updateContainerNow() {
       this.isUpdatingContainer = true;
       try {
-        const triggers = await getContainerTriggers(this.container.id);
-        if (!Array.isArray(triggers) || triggers.length === 0) {
-          this.$eventBus.emit('notify', 'No triggers associated to this container', 'warning');
-          return;
+        const result = await updateContainer(this.container.id);
+        if (result.container) {
+          this.$emit('container-refreshed', result.container);
         }
-
-        const triggerErrors = [];
-        for (const trigger of triggers) {
-          const result = await runTrigger({
-            containerId: this.container.id,
-            triggerType: trigger.type,
-            triggerName: trigger.name,
-            triggerAgent: trigger.agent,
-          });
-          if (result?.error) {
-            triggerErrors.push(`${trigger.type}.${trigger.name}`);
-          }
-        }
-
-        if (triggerErrors.length > 0) {
-          throw new Error(`some triggers failed (${triggerErrors.join(', ')})`);
-        }
-
-        this.$eventBus.emit(
-          'notify',
-          `Update triggered (${triggers.length} trigger${triggers.length > 1 ? 's' : ''})`,
-        );
-        await this.refreshContainerNow(false);
+        this.$eventBus.emit('notify', 'Container updated');
       } catch (e: any) {
         this.$eventBus.emit(
           'notify',
@@ -358,6 +446,19 @@ export default defineComponent({
         this.$eventBus.emit('notify', `Error restarting container (${e.message})`, 'error');
       } finally {
         this.isRestarting = false;
+      }
+    },
+
+    async scanContainerNow() {
+      this.isScanningContainer = true;
+      try {
+        const containerScanned = await scanContainer(this.container.id);
+        this.$emit('container-refreshed', containerScanned);
+        this.$eventBus.emit('notify', 'Security scan completed');
+      } catch (e: any) {
+        this.$eventBus.emit('notify', `Error when running security scan (${e.message})`, 'error');
+      } finally {
+        this.isScanningContainer = false;
       }
     },
 

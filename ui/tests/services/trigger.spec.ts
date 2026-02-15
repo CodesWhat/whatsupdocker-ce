@@ -1,6 +1,7 @@
 import {
   getAllTriggers,
   getTriggerIcon,
+  getTriggerProviderColor,
   getTriggerProviderIcon,
   runTrigger,
 } from '@/services/trigger';
@@ -54,6 +55,31 @@ describe('Trigger Service', () => {
 
       expect(fetch).toHaveBeenCalledWith('/api/triggers', { credentials: 'include' });
       expect(result).toEqual(mockTriggers);
+    });
+  });
+
+  describe('getTriggerProviderColor', () => {
+    it.each([
+      ['slack', '#4A154B'],
+      ['discord', '#5865F2'],
+      ['telegram', '#26A5E4'],
+      ['smtp', '#EA4335'],
+      ['mqtt', '#660066'],
+      ['kafka', '#231F20'],
+      ['http', '#0096C7'],
+      ['pushover', '#249DF1'],
+      ['gotify', '#00BCD4'],
+      ['ntfy', '#57A143'],
+      ['ifttt', '#33CCFF'],
+      ['apprise', '#3B82F6'],
+      ['command', '#10B981'],
+      ['docker', '#2496ED'],
+      ['dockercompose', '#2496ED'],
+      ['rocketchat', '#F5455C'],
+      ['unknown', '#6B7280'],
+      [undefined, '#6B7280'],
+    ])('returns %s color', (type, color) => {
+      expect(getTriggerProviderColor(type)).toBe(color);
     });
   });
 

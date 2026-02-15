@@ -38,6 +38,7 @@
         <v-btn
           variant="text"
           size="small"
+          class="updates-toggle"
           @click="updateAvailableLocal = !updateAvailableLocal; emitUpdateAvailableChanged()"
         >
           <v-icon start size="small">{{ updateAvailableLocal ? 'fas fa-square-check' : 'far fa-square' }}</v-icon>
@@ -61,12 +62,12 @@
       <v-btn
         variant="outlined"
         size="small"
-        class="flex-shrink-0"
+        class="check-updates-btn"
         @click.stop="refreshAllContainers"
         :loading="isRefreshing"
       >
         <v-icon start size="small">fas fa-arrows-rotate</v-icon>
-        <span class="filter-label">Check updates</span>
+        Check updates
       </v-btn>
     </div>
 
@@ -163,7 +164,16 @@
   display: none;
 }
 
+.check-updates-btn {
+  flex-shrink: 0;
+}
+
 @media (max-width: 599px) {
+  .check-updates-btn {
+    order: -1;
+    width: 100%;
+  }
+
   .filter-label {
     display: none;
   }
@@ -177,7 +187,15 @@
   }
 
   .filter-toolbar {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+  }
+
+  .filter-actions {
+    width: 100%;
+  }
+
+  .updates-toggle {
+    margin-left: auto;
   }
 }
 </style>

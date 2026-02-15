@@ -24,6 +24,32 @@ const docker = new Docker();
 docker.configuration = configurationValid;
 docker.log = log;
 
+const mockGetSecurityConfiguration = vi.hoisted(() => vi.fn());
+vi.mock('../../../configuration/index.js', async () => {
+  const actual = await vi.importActual<typeof import('../../../configuration/index.js')>(
+    '../../../configuration/index.js',
+  );
+  return {
+    ...actual,
+    getSecurityConfiguration: (...args: any[]) => mockGetSecurityConfiguration(...args),
+  };
+});
+
+const mockScanImageForVulnerabilities = vi.hoisted(() => vi.fn());
+const mockVerifyImageSignature = vi.hoisted(() => vi.fn());
+const mockGenerateImageSbom = vi.hoisted(() => vi.fn());
+vi.mock('../../../security/scan.js', () => ({
+  scanImageForVulnerabilities: mockScanImageForVulnerabilities,
+  verifyImageSignature: mockVerifyImageSignature,
+  generateImageSbom: mockGenerateImageSbom,
+}));
+
+vi.mock('../../../store/container.js', () => ({
+  getContainer: vi.fn(),
+  updateContainer: vi.fn((container) => container),
+  cacheSecurityState: vi.fn(),
+}));
+
 vi.mock('../../../store/backup', () => ({
   insertBackup: vi.fn(),
   pruneOldBackups: vi.fn(),
@@ -167,6 +193,76 @@ function createTriggerContainer(overrides = {}) {
   };
 }
 
+function createSecurityScanResult(overrides = {}) {
+  return {
+    scanner: 'trivy',
+    image: 'my-registry/test/test:4.5.6',
+    scannedAt: new Date().toISOString(),
+    status: 'passed',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    blockingCount: 0,
+    summary: {
+      unknown: 0,
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+    vulnerabilities: [],
+    ...overrides,
+  };
+}
+
+function createSignatureVerificationResult(overrides = {}) {
+  return {
+    verifier: 'cosign',
+    image: 'my-registry/test/test:4.5.6',
+    verifiedAt: new Date().toISOString(),
+    status: 'verified',
+    keyless: true,
+    signatures: 1,
+    ...overrides,
+  };
+}
+
+function createSbomResult(overrides = {}) {
+  return {
+    generator: 'trivy',
+    image: 'my-registry/test/test:4.5.6',
+    generatedAt: new Date().toISOString(),
+    status: 'generated',
+    formats: ['spdx-json'],
+    documents: {
+      'spdx-json': { SPDXID: 'SPDXRef-DOCUMENT' },
+    },
+    ...overrides,
+  };
+}
+
+function createSecurityConfiguration(overrides = {}) {
+  return {
+    enabled: true,
+    scanner: 'trivy',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: { server: '', command: 'trivy', timeout: 120000 },
+    signature: {
+      verify: false,
+      cosign: {
+        command: 'cosign',
+        timeout: 60000,
+        key: '',
+        identity: '',
+        issuer: '',
+      },
+    },
+    sbom: {
+      enabled: false,
+      formats: ['spdx-json'],
+    },
+    ...overrides,
+  };
+}
+
 /** Spy on all Docker methods needed for trigger flow (non-dryrun, non-running) */
 function stubTriggerFlow(opts = {}) {
   const { running = false, autoRemove = false, inspectOverrides = {} } = opts;
@@ -212,6 +308,39 @@ beforeEach(async () => {
   vi.resetAllMocks();
   docker.configuration = configurationValid;
   docker.log = log;
+  mockGetSecurityConfiguration.mockReturnValue({
+    enabled: false,
+    scanner: '',
+    blockSeverities: ['CRITICAL', 'HIGH'],
+    trivy: {
+      server: '',
+      command: 'trivy',
+      timeout: 120000,
+    },
+    signature: {
+      verify: false,
+      cosign: {
+        command: 'cosign',
+        timeout: 60000,
+        key: '',
+        identity: '',
+        issuer: '',
+      },
+    },
+    sbom: {
+      enabled: false,
+      formats: ['spdx-json'],
+    },
+  });
+  mockScanImageForVulnerabilities.mockResolvedValue({
+    ...createSecurityScanResult(),
+  });
+  mockVerifyImageSignature.mockResolvedValue({
+    ...createSignatureVerificationResult(),
+  });
+  mockGenerateImageSbom.mockResolvedValue({
+    ...createSbomResult(),
+  });
 });
 
 // --- Configuration validation ---
@@ -651,6 +780,293 @@ test('trigger should not throw when container does not exist', async () => {
   ).resolves.toBeUndefined();
 });
 
+test('trigger should block update when security scan is blocked', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(createSecurityConfiguration());
+  mockScanImageForVulnerabilities.mockResolvedValue(
+    createSecurityScanResult({
+      status: 'blocked',
+      blockingCount: 2,
+      summary: {
+        unknown: 0,
+        low: 0,
+        medium: 0,
+        high: 2,
+        critical: 0,
+      },
+      vulnerabilities: [
+        { id: 'CVE-1', severity: 'HIGH' },
+        { id: 'CVE-2', severity: 'HIGH' },
+      ],
+    }),
+  );
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Security scan blocked update',
+  );
+
+  expect(mockScanImageForVulnerabilities).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).not.toHaveBeenCalled();
+});
+
+test('trigger should block update when security scan errors', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(createSecurityConfiguration());
+  mockScanImageForVulnerabilities.mockResolvedValue(
+    createSecurityScanResult({
+      status: 'error',
+      error: 'Trivy command failed',
+    }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Security scan failed: Trivy command failed',
+  );
+});
+
+test('trigger should continue update when security scan passes', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(createSecurityConfiguration());
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockScanImageForVulnerabilities).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).toHaveBeenCalled();
+});
+
+test('trigger should continue update when signature verification passes', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      signature: {
+        verify: true,
+        cosign: {
+          command: 'cosign',
+          timeout: 60000,
+          key: '',
+          identity: '',
+          issuer: '',
+        },
+      },
+    }),
+  );
+  mockVerifyImageSignature.mockResolvedValue(createSignatureVerificationResult());
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockVerifyImageSignature).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).toHaveBeenCalled();
+});
+
+test('trigger should block update when signature verification is unverified', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      signature: {
+        verify: true,
+        cosign: {
+          command: 'cosign',
+          timeout: 60000,
+          key: '',
+          identity: '',
+          issuer: '',
+        },
+      },
+    }),
+  );
+  mockVerifyImageSignature.mockResolvedValue(
+    createSignatureVerificationResult({
+      status: 'unverified',
+      signatures: 0,
+      error: 'no matching signatures',
+    }),
+  );
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Image signature verification failed',
+  );
+
+  expect(mockVerifyImageSignature).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).not.toHaveBeenCalled();
+});
+
+test('trigger should generate sbom when enabled', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      sbom: {
+        enabled: true,
+        formats: ['spdx-json', 'cyclonedx-json'],
+      },
+    }),
+  );
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  mockGenerateImageSbom.mockResolvedValue(
+    createSbomResult({
+      formats: ['spdx-json', 'cyclonedx-json'],
+      documents: {
+        'spdx-json': { SPDXID: 'SPDXRef-DOCUMENT' },
+        'cyclonedx-json': { bomFormat: 'CycloneDX' },
+      },
+    }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockGenerateImageSbom).toHaveBeenCalledWith(
+    expect.objectContaining({
+      formats: ['spdx-json', 'cyclonedx-json'],
+    }),
+  );
+});
+
+test('trigger should continue update when sbom generation fails', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      sbom: {
+        enabled: true,
+        formats: ['spdx-json'],
+      },
+    }),
+  );
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  mockGenerateImageSbom.mockResolvedValue(
+    createSbomResult({
+      status: 'error',
+      documents: {},
+      error: 'trivy unavailable',
+    }),
+  );
+  stubTriggerFlow({ running: true });
+  const executeContainerUpdateSpy = vi.spyOn(docker, 'executeContainerUpdate');
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockGenerateImageSbom).toHaveBeenCalled();
+  expect(executeContainerUpdateSpy).toHaveBeenCalled();
+});
+
+test('trigger should use fallback message when signature verification fails without error', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      signature: {
+        verify: true,
+        cosign: { command: 'cosign', timeout: 60000, key: '', identity: '', issuer: '' },
+      },
+    }),
+  );
+  mockVerifyImageSignature.mockResolvedValue(
+    createSignatureVerificationResult({ status: 'unverified', signatures: 0, error: '' }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Image signature verification failed: no valid signatures found',
+  );
+});
+
+test('trigger should use security-signature-failed action when signature status is error', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      signature: {
+        verify: true,
+        cosign: { command: 'cosign', timeout: 60000, key: '', identity: '', issuer: '' },
+      },
+    }),
+  );
+  mockVerifyImageSignature.mockResolvedValue(
+    createSignatureVerificationResult({ status: 'error', signatures: 0, error: 'cosign crashed' }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Image signature verification failed: cosign crashed',
+  );
+
+  expect(mockAuditCounterInc).toHaveBeenCalledWith({ action: 'security-signature-failed' });
+});
+
+test('trigger should use fallback message when sbom generation fails without error', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(
+    createSecurityConfiguration({
+      sbom: { enabled: true, formats: ['spdx-json'] },
+    }),
+  );
+  mockScanImageForVulnerabilities.mockResolvedValue(createSecurityScanResult());
+  mockGenerateImageSbom.mockResolvedValue(
+    createSbomResult({ status: 'error', documents: {}, error: '' }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).resolves.toBeUndefined();
+
+  expect(mockAuditCounterInc).toHaveBeenCalledWith(
+    expect.objectContaining({ action: 'security-sbom-failed' }),
+  );
+});
+
+test('trigger should use fallback message when security scan errors without error', async () => {
+  mockGetSecurityConfiguration.mockReturnValue(createSecurityConfiguration());
+  mockScanImageForVulnerabilities.mockResolvedValue(
+    createSecurityScanResult({ status: 'error', error: '' }),
+  );
+  stubTriggerFlow({ running: true });
+
+  await expect(docker.trigger(createTriggerContainer())).rejects.toThrowError(
+    'Security scan failed: unknown scanner error',
+  );
+});
+
+test('persistSecurityState should warn when container store update fails', async () => {
+  const storeContainer = await import('../../../store/container.js');
+  storeContainer.updateContainer.mockImplementationOnce(() => {
+    throw new Error('store unavailable');
+  });
+  const logContainer = createMockLog('warn');
+
+  await docker.persistSecurityState(
+    createTriggerContainer(),
+    { scan: createSecurityScanResult() },
+    logContainer,
+  );
+
+  expect(logContainer.warn).toHaveBeenCalledWith(
+    expect.stringContaining('Unable to persist security state (store unavailable)'),
+  );
+});
+
+test('persistSecurityState should merge with existing security state from store', async () => {
+  const storeContainer = await import('../../../store/container.js');
+  storeContainer.getContainer.mockReturnValue({
+    id: '123456789',
+    security: {
+      scan: createSecurityScanResult(),
+    },
+  });
+  const logContainer = createMockLog('warn');
+
+  await docker.persistSecurityState(
+    createTriggerContainer(),
+    { signature: createSignatureVerificationResult() },
+    logContainer,
+  );
+
+  expect(storeContainer.updateContainer).toHaveBeenCalledWith(
+    expect.objectContaining({
+      security: expect.objectContaining({
+        scan: expect.any(Object),
+        signature: expect.any(Object),
+      }),
+    }),
+  );
+});
+
 // --- triggerBatch ---
 
 test('triggerBatch should call trigger for each container', async () => {
@@ -966,7 +1382,7 @@ test('sanitizeEndpointConfig should return empty object for undefined config', (
 
 test('sanitizeEndpointConfig should copy IPAMConfig, Links, DriverOpts, MacAddress', () => {
   const config = {
-    IPAMConfig: { IPv4Address: '10.0.0.5' }, // NOSONAR - test fixture IP
+    IPAMConfig: { IPv4Address: '10.0.0.5' },
     Links: ['link1'],
     DriverOpts: { opt: 'val' },
     MacAddress: '02:42:ac:11:00:02',

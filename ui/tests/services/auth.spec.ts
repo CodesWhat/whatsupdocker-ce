@@ -43,6 +43,19 @@ describe('Auth Service', () => {
 
       expect(user).toBeUndefined();
     });
+
+    it('logs fallback error detail when thrown value is not an Error object', async () => {
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      fetch.mockRejectedValueOnce('raw-network-error');
+
+      try {
+        const user = await getUser();
+        expect(user).toBeUndefined();
+        expect(debugSpy).toHaveBeenCalledWith('Unable to fetch current user: raw-network-error');
+      } finally {
+        debugSpy.mockRestore();
+      }
+    });
   });
 
   describe('loginBasic', () => {
@@ -70,16 +83,15 @@ describe('Auth Service', () => {
       expect(user).toEqual(mockUser);
     });
 
-    it('handles login failure', async () => {
+    it('throws on login failure', async () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Invalid credentials' }),
       });
 
-      const user = await loginBasic('testuser', 'wrongpass');
-
-      expect(user).toEqual({ error: 'Invalid credentials' });
+      await expect(loginBasic('testuser', 'wrongpass')).rejects.toThrow(
+        'Username or password error',
+      );
     });
   });
 

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ConfigurationAgentsView from '@/views/ConfigurationAgentsView';
+import ConfigurationAgentsView from '@/views/ConfigurationAgentsView.vue';
 
 vi.mock('@/services/agent', () => ({
   default: {

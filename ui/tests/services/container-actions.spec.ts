@@ -1,4 +1,9 @@
-import { restartContainer, startContainer, stopContainer } from '@/services/container-actions';
+import {
+  restartContainer,
+  startContainer,
+  stopContainer,
+  updateContainer,
+} from '@/services/container-actions';
 
 global.fetch = vi.fn();
 
@@ -126,6 +131,49 @@ describe('Container Actions Service', () => {
 
       await expect(restartContainer('abc123')).rejects.toThrow(
         'Failed to restart container: Internal Server Error',
+      );
+    });
+  });
+
+  describe('updateContainer', () => {
+    it('posts to update endpoint', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Container updated successfully' }),
+      } as any);
+
+      const result = await updateContainer('abc123');
+
+      expect(fetch).toHaveBeenCalledWith('/api/containers/abc123/update', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      expect(result).toEqual({ message: 'Container updated successfully' });
+    });
+
+    it('throws with server error message on failure', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Bad Request',
+        json: async () => ({ error: 'No update available for this container' }),
+      } as any);
+
+      await expect(updateContainer('abc123')).rejects.toThrow(
+        'No update available for this container',
+      );
+    });
+
+    it('throws with statusText when response body parsing fails', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw new Error('parse error');
+        },
+      } as any);
+
+      await expect(updateContainer('abc123')).rejects.toThrow(
+        'Failed to update container: Internal Server Error',
       );
     });
   });

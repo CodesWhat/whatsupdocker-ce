@@ -1,20 +1,9 @@
-import { Counter, register } from 'prom-client';
+import { createCounter } from './counter-factory.js';
 
-const METRIC_NAME = 'dd_audit_entries_total';
+const { init, getCounter: getAuditCounter } = createCounter(
+  'dd_audit_entries_total',
+  'Total count of audit log entries',
+  ['action'],
+);
 
-let auditCounter: Counter<string> | undefined;
-
-export function init(): void {
-  if (auditCounter) {
-    register.removeSingleMetric(METRIC_NAME);
-  }
-  auditCounter = new Counter({
-    name: METRIC_NAME,
-    help: 'Total count of audit log entries',
-    labelNames: ['action'],
-  });
-}
-
-export function getAuditCounter(): Counter<string> | undefined {
-  return auditCounter;
-}
+export { init, getAuditCounter };

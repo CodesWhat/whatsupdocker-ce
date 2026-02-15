@@ -1,6 +1,7 @@
 // @ts-nocheck
 import crypto from 'node:crypto';
 import parse from 'parse-docker-image-name';
+import { getSecurityConfiguration } from '../../../configuration/index.js';
 import {
   emitContainerUpdateApplied,
   emitContainerUpdateFailed,
@@ -9,8 +10,15 @@ import {
 import { fullName } from '../../../model/container.js';
 import { getAuditCounter } from '../../../prometheus/audit.js';
 import { getState } from '../../../registry/index.js';
+import {
+  generateImageSbom,
+  scanImageForVulnerabilities,
+  verifyImageSignature,
+} from '../../../security/scan.js';
 import * as auditStore from '../../../store/audit.js';
 import * as backupStore from '../../../store/backup.js';
+import * as storeContainer from '../../../store/container.js';
+import { cacheSecurityState } from '../../../store/container.js';
 import { runHook } from '../../hooks/HookRunner.js';
 import Trigger from '../Trigger.js';
 import { startHealthMonitor } from './HealthMonitor.js';
@@ -604,7 +612,7 @@ class Docker extends Trigger {
     };
   }
 
-  recordHookAudit(action, container, status, details) {
+  recordAudit(action, container, status, details) {
     auditStore.insertAudit({
       id: '',
       timestamp: new Date().toISOString(),
@@ -615,6 +623,14 @@ class Docker extends Trigger {
       details,
     });
     getAuditCounter()?.inc({ action });
+  }
+
+  recordHookAudit(action, container, status, details) {
+    this.recordAudit(action, container, status, details);
+  }
+
+  recordSecurityAudit(action, container, status, details) {
+    this.recordAudit(action, container, status, details);
   }
 
   isHookFailure(hookResult) {
@@ -694,6 +710,116 @@ class Docker extends Trigger {
     emitSelfUpdateStarting();
     // Brief delay to allow SSE to deliver the event to connected clients
     await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  async persistSecurityState(container, securityPatch, logContainer) {
+    try {
+      const containerCurrent = storeContainer.getContainer(container.id);
+      const containerWithSecurity = {
+        ...(containerCurrent || container),
+        security: {
+          ...((containerCurrent || container).security || {}),
+          ...securityPatch,
+        },
+      };
+      storeContainer.updateContainer(containerWithSecurity);
+      cacheSecurityState(container.watcher, container.name, containerWithSecurity.security);
+    } catch (e: any) {
+      logContainer.warn(`Unable to persist security state (${e.message})`);
+    }
+  }
+
+  async maybeScanAndGateUpdate(context, container, logContainer) {
+    const securityConfiguration = getSecurityConfiguration();
+    if (!securityConfiguration.enabled || securityConfiguration.scanner !== 'trivy') {
+      return;
+    }
+
+    if (securityConfiguration.signature.verify) {
+      logContainer.info(`Verifying image signature for candidate image ${context.newImage}`);
+      const signatureResult = await verifyImageSignature({
+        image: context.newImage,
+        auth: context.auth,
+      });
+      await this.persistSecurityState(container, { signature: signatureResult }, logContainer);
+
+      if (signatureResult.status !== 'verified') {
+        const details = `Image signature verification failed: ${
+          signatureResult.error || 'no valid signatures found'
+        }`;
+        this.recordSecurityAudit(
+          signatureResult.status === 'unverified'
+            ? 'security-signature-blocked'
+            : 'security-signature-failed',
+          container,
+          'error',
+          details,
+        );
+        throw new Error(details);
+      }
+
+      this.recordSecurityAudit(
+        'security-signature-verified',
+        container,
+        'success',
+        `Image signature verified (${signatureResult.signatures} signatures)`,
+      );
+    }
+
+    logContainer.info(`Running security scan for candidate image ${context.newImage}`);
+    const scanResult = await scanImageForVulnerabilities({
+      image: context.newImage,
+      auth: context.auth,
+    });
+    await this.persistSecurityState(container, { scan: scanResult }, logContainer);
+
+    if (securityConfiguration.sbom.enabled) {
+      logContainer.info(`Generating SBOM for candidate image ${context.newImage}`);
+      const sbomResult = await generateImageSbom({
+        image: context.newImage,
+        auth: context.auth,
+        formats: securityConfiguration.sbom.formats,
+      });
+      await this.persistSecurityState(container, { sbom: sbomResult }, logContainer);
+
+      if (sbomResult.status === 'error') {
+        this.recordSecurityAudit(
+          'security-sbom-failed',
+          container,
+          'error',
+          `SBOM generation failed: ${sbomResult.error || 'unknown SBOM error'}`,
+        );
+      } else {
+        this.recordSecurityAudit(
+          'security-sbom-generated',
+          container,
+          'success',
+          `SBOM generated (${sbomResult.formats.join(', ')})`,
+        );
+      }
+    }
+
+    if (scanResult.status === 'error') {
+      const details = `Security scan failed: ${scanResult.error || 'unknown scanner error'}`;
+      this.recordSecurityAudit('security-scan-failed', container, 'error', details);
+      throw new Error(details);
+    }
+
+    const summary = scanResult.summary;
+    const details = `critical=${summary.critical}, high=${summary.high}, medium=${summary.medium}, low=${summary.low}, unknown=${summary.unknown}`;
+
+    if (scanResult.status === 'blocked') {
+      const blockedDetails = `Security scan blocked update (${scanResult.blockingCount} vulnerabilities matched block severities: ${scanResult.blockSeverities.join(', ')}). Summary: ${details}`;
+      this.recordSecurityAudit('security-scan-blocked', container, 'error', blockedDetails);
+      throw new Error(blockedDetails);
+    }
+
+    this.recordSecurityAudit(
+      'security-scan-passed',
+      container,
+      'success',
+      `Security scan passed. Summary: ${details}`,
+    );
   }
 
   async createTriggerContext(container, logContainer) {
@@ -840,6 +966,8 @@ class Docker extends Trigger {
       if (!context) {
         return;
       }
+
+      await this.maybeScanAndGateUpdate(context, container, logContainer);
 
       const hookConfig = this.buildHookConfig(container);
       await this.runPreUpdateHook(container, hookConfig, logContainer);

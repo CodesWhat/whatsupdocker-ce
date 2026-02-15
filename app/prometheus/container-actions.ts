@@ -1,18 +1,9 @@
-import { Counter, register } from 'prom-client';
+import { createCounter } from './counter-factory.js';
 
-let containerActionsCounter;
+const { init, getCounter: getContainerActionsCounter } = createCounter(
+  'dd_container_actions_total',
+  'Total count of container action operations',
+  ['action'],
+);
 
-export function init() {
-  if (containerActionsCounter) {
-    register.removeSingleMetric(containerActionsCounter.name);
-  }
-  containerActionsCounter = new Counter({
-    name: 'dd_container_actions_total',
-    help: 'Total count of container action operations',
-    labelNames: ['action'],
-  });
-}
-
-export function getContainerActionsCounter() {
-  return containerActionsCounter;
-}
+export { init, getContainerActionsCounter };

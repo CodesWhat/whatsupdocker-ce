@@ -4,18 +4,18 @@ import Acr from './Acr.js';
 const acr = new Acr();
 acr.configuration = {
   clientid: 'clientid',
-  clientsecret: 'clientsecret', // NOSONAR - test fixture, not a real credential
+  clientsecret: 'clientsecret',
 };
 
 test('validatedConfiguration should initialize when configuration is valid', async () => {
   expect(
     acr.validateConfiguration({
       clientid: 'clientid',
-      clientsecret: 'clientsecret', // NOSONAR - test fixture, not a real credential
+      clientsecret: 'clientsecret',
     }),
   ).toStrictEqual({
     clientid: 'clientid',
-    clientsecret: 'clientsecret', // NOSONAR - test fixture, not a real credential
+    clientsecret: 'clientsecret',
   });
 });
 
@@ -71,7 +71,7 @@ test('normalizeImage should return the proper registry v2 endpoint', async () =>
 test('authenticate should add basic auth', async () => {
   expect(acr.authenticate(undefined, { headers: {} })).resolves.toEqual({
     headers: {
-      Authorization: 'Basic Y2xpZW50aWQ6Y2xpZW50c2VjcmV0', // NOSONAR - test fixture, not a real credential
+      Authorization: 'Basic Y2xpZW50aWQ6Y2xpZW50c2VjcmV0',
     },
   });
 });
@@ -80,7 +80,7 @@ test('getAuthPull should return clientid and clientsecret', async () => {
   const result = await acr.getAuthPull();
   expect(result).toEqual({
     username: 'clientid',
-    password: 'clientsecret', // NOSONAR - test fixture, not a real credential
+    password: 'clientsecret',
   });
 });
 

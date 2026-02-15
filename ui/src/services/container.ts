@@ -104,6 +104,24 @@ async function updateContainerPolicy(containerId, action, payload = {}) {
   return response.json();
 }
 
+async function scanContainer(containerId) {
+  const response = await fetch(`/api/containers/${containerId}/scan`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    let details = '';
+    try {
+      const body = await response.json();
+      details = body?.error ? ` (${body.error})` : '';
+    } catch (e: any) {
+      console.debug(`Unable to parse scan response payload: ${e?.message || e}`);
+    }
+    throw new Error(`Failed to scan container: ${response.statusText}${details}`);
+  }
+  return response.json();
+}
+
 export {
   getContainerIcon,
   getAllContainers,
@@ -113,5 +131,6 @@ export {
   getContainerTriggers,
   getContainerLogs,
   runTrigger,
+  scanContainer,
   updateContainerPolicy,
 };

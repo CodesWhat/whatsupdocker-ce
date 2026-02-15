@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import ApplicationLogs from '@/components/ApplicationLogs';
+import ApplicationLogs from '@/components/ApplicationLogs.vue';
 
 const { mockGetLogEntries, mockGetAgents } = vi.hoisted(() => ({
   mockGetLogEntries: vi.fn(),
@@ -352,6 +352,45 @@ describe('ApplicationLogs', () => {
       const selects = wrapper.findAll('.v-select');
       // Should have 2 selects: level, tail (no source when no agents)
       expect(selects.length).toBeGreaterThanOrEqual(2);
+      wrapper.unmount();
+    });
+
+    it('updates source/level/tail via select model handlers', async () => {
+      mockGetLogEntries.mockResolvedValue(mockEntries);
+      mockGetAgents.mockResolvedValue([{ name: 'agent-1', connected: true }]);
+
+      const wrapper = mount(ApplicationLogs, {
+        global: {
+          stubs: {
+            'v-select': {
+              template:
+                '<div class="v-select-stub" @click="$emit(\'update:modelValue\', nextValue)"></div>',
+              props: ['modelValue', 'label'],
+              emits: ['update:modelValue'],
+              computed: {
+                nextValue() {
+                  if (this.label === 'Source') return 'agent-1';
+                  if (this.label === 'Level') return 'warn';
+                  return 500;
+                },
+              },
+            },
+          },
+        },
+      });
+      await flushPromises();
+
+      const selects = wrapper.findAll('.v-select-stub');
+      expect(selects.length).toBeGreaterThanOrEqual(3);
+
+      await selects[0].trigger('click');
+      await selects[1].trigger('click');
+      await selects[2].trigger('click');
+      await flushPromises();
+
+      expect(wrapper.vm.source).toBe('agent-1');
+      expect(wrapper.vm.level).toBe('warn');
+      expect(wrapper.vm.tail).toBe(500);
       wrapper.unmount();
     });
   });
