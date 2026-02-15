@@ -83,16 +83,15 @@ describe('Auth Service', () => {
       expect(user).toEqual(mockUser);
     });
 
-    it('handles login failure', async () => {
+    it('throws on login failure', async () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Invalid credentials' }),
       });
 
-      const user = await loginBasic('testuser', 'wrongpass');
-
-      expect(user).toEqual({ error: 'Invalid credentials' });
+      await expect(loginBasic('testuser', 'wrongpass')).rejects.toThrow(
+        'Username or password error',
+      );
     });
   });
 

@@ -58,6 +58,9 @@ async function loginBasic(username, password) {
       password,
     }),
   });
+  if (!response.ok) {
+    throw new Error('Username or password error');
+  }
   user = await response.json();
   return user;
 }
