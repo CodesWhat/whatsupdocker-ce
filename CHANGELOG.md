@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Pin Trivy install script by commit hash** — Replaced mutable `main` branch reference in Dockerfile `curl | sh` with a pinned commit SHA to satisfy OpenSSF Scorecard pinned-dependencies check and prevent supply-chain risk from upstream changes.
+
 ## [1.3.0] — 2026-02-15
 
 ### Fixed
