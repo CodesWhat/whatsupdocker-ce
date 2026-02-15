@@ -13,6 +13,7 @@ import {
   getContainerTriggers,
   refreshContainer,
   runTrigger,
+  scanContainer,
   updateContainerPolicy,
 } from '@/services/container';
 import { restartContainer, startContainer, stopContainer } from '@/services/container-actions';
@@ -72,6 +73,7 @@ export default defineComponent({
       isStarting: false,
       isStopping: false,
       isRestarting: false,
+      isScanningContainer: false,
       containerActionsEnabled: false,
     };
   },
@@ -468,6 +470,23 @@ export default defineComponent({
         this.$eventBus.emit('notify', `Error restarting container (${e.message})`, 'error');
       } finally {
         this.isRestarting = false;
+      }
+    },
+
+    async scanContainerNow() {
+      this.isScanningContainer = true;
+      try {
+        const containerScanned = await scanContainer(this.container.id);
+        this.$emit('container-refreshed', containerScanned);
+        this.$eventBus.emit('notify', 'Security scan completed');
+      } catch (e: any) {
+        this.$eventBus.emit(
+          'notify',
+          `Error when running security scan (${e.message})`,
+          'error',
+        );
+      } finally {
+        this.isScanningContainer = false;
       }
     },
 

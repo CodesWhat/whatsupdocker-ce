@@ -1,4 +1,4 @@
-type SseBusEvent = 'sse:connected' | 'self-update' | 'connection-lost';
+type SseBusEvent = 'sse:connected' | 'self-update' | 'connection-lost' | 'scan-started' | 'scan-completed';
 
 interface SseEventBus {
   emit: (event: SseBusEvent) => void;
@@ -29,6 +29,14 @@ class SseService {
     this.eventSource.addEventListener('dd:self-update', () => {
       this.selfUpdateMode = true;
       this.eventBus?.emit('self-update');
+    });
+
+    this.eventSource.addEventListener('dd:scan-started', () => {
+      this.eventBus?.emit('scan-started');
+    });
+
+    this.eventSource.addEventListener('dd:scan-completed', () => {
+      this.eventBus?.emit('scan-completed');
     });
 
     this.eventSource.addEventListener('dd:heartbeat', () => {

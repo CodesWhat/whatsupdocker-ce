@@ -258,6 +258,19 @@
                 <v-divider vertical class="mx-1" />
               </template>
 
+              <!-- Security scan -->
+              <v-tooltip text="Run security scan" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn icon variant="text" size="small" v-bind="props"
+                    :loading="isScanningContainer"
+                    @click="scanContainerNow">
+                    <v-icon>fas fa-shield-halved</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+
+              <v-divider vertical class="mx-1" />
+
               <!-- Preview -->
               <v-tooltip text="Preview update" location="top">
                 <template v-slot:activator="{ props }">
@@ -430,6 +443,10 @@
                     <v-list-item @click="restartContainerAction">
                       <template v-slot:prepend><v-icon>fas fa-arrows-rotate</v-icon></template>
                       <v-list-item-title>Restart</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item :loading="isScanningContainer" @click="scanContainerNow">
+                      <template v-slot:prepend><v-icon>fas fa-shield-halved</v-icon></template>
+                      <v-list-item-title>Security scan</v-list-item-title>
                     </v-list-item>
                     <v-divider />
                   </template>

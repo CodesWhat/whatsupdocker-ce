@@ -5,6 +5,7 @@ const {
   mockGetContainerTriggers,
   mockRefreshContainer,
   mockRunTrigger,
+  mockScanContainer,
   mockUpdateContainerPolicy,
   mockStartContainer,
   mockStopContainer,
@@ -15,6 +16,7 @@ const {
   mockGetContainerTriggers: vi.fn(),
   mockRefreshContainer: vi.fn(),
   mockRunTrigger: vi.fn(),
+  mockScanContainer: vi.fn(),
   mockUpdateContainerPolicy: vi.fn(),
   mockStartContainer: vi.fn(),
   mockStopContainer: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('@/services/container', () => ({
   getContainerTriggers: mockGetContainerTriggers,
   refreshContainer: mockRefreshContainer,
   runTrigger: mockRunTrigger,
+  scanContainer: mockScanContainer,
   updateContainerPolicy: mockUpdateContainerPolicy,
 }));
 
@@ -158,6 +161,7 @@ describe('ContainerItem', () => {
     mockGetContainerTriggers.mockReset();
     mockRefreshContainer.mockReset();
     mockRunTrigger.mockReset();
+    mockScanContainer.mockReset();
     mockUpdateContainerPolicy.mockReset();
     mockStartContainer.mockReset();
     mockStopContainer.mockReset();
@@ -175,6 +179,7 @@ describe('ContainerItem', () => {
     mockGetContainerTriggers.mockResolvedValue([]);
     mockRunTrigger.mockResolvedValue({});
     mockUpdateContainerPolicy.mockResolvedValue(createContainer({ id: 'policy-updated' }));
+    mockScanContainer.mockResolvedValue(createContainer({ id: 'scanned' }));
     mockStartContainer.mockResolvedValue({ container: createContainer({ id: 'started' }) });
     mockStopContainer.mockResolvedValue({ container: createContainer({ id: 'stopped' }) });
     mockRestartContainer.mockResolvedValue({ container: createContainer({ id: 'restarted' }) });
@@ -1071,5 +1076,34 @@ describe('ContainerItem', () => {
     expect(wrapper.vm.vulnerabilityTooltipDescription).toBe(
       `Security scan failed at ${new Date(errorScanNoMessage.scannedAt).toLocaleString()}: unknown error`,
     );
+  });
+
+  it('scans container and emits refreshed event on success', async () => {
+    const scanned = createContainer({ id: 'scanned' });
+    mockScanContainer.mockResolvedValueOnce(scanned);
+
+    await wrapper.vm.scanContainerNow();
+
+    expect(mockScanContainer).toHaveBeenCalledWith('test-container-id');
+    expect(wrapper.emitted('container-refreshed')?.at(-1)).toEqual([scanned]);
+    expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith('notify', 'Security scan completed');
+    expect(wrapper.vm.isScanningContainer).toBe(false);
+  });
+
+  it('handles scan container errors', async () => {
+    mockScanContainer.mockRejectedValueOnce(new Error('scan failed'));
+
+    await wrapper.vm.scanContainerNow();
+
+    expect(wrapper.vm.$eventBus.emit).toHaveBeenCalledWith(
+      'notify',
+      'Error when running security scan (scan failed)',
+      'error',
+    );
+    expect(wrapper.vm.isScanningContainer).toBe(false);
+  });
+
+  it('has isScanningContainer data property defaulting to false', () => {
+    expect(wrapper.vm.isScanningContainer).toBe(false);
   });
 });

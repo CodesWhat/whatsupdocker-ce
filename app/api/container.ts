@@ -2,16 +2,19 @@
 import express from 'express';
 import nocache from 'nocache';
 import { getAgent } from '../agent/manager.js';
-import { getServerConfiguration } from '../configuration/index.js';
+import { getSecurityConfiguration, getServerConfiguration } from '../configuration/index.js';
 import logger from '../log/index.js';
 import { sanitizeLogParam } from '../log/sanitize.js';
 import * as registry from '../registry/index.js';
 import {
   generateImageSbom,
+  scanImageForVulnerabilities,
+  verifyImageSignature,
   SECURITY_SBOM_FORMATS,
   type SecuritySbomFormat,
 } from '../security/scan.js';
 import * as storeContainer from '../store/container.js';
+import { broadcastScanStarted, broadcastScanCompleted } from './sse.js';
 import Trigger from '../triggers/providers/Trigger.js';
 import { mapComponentsToList } from './component.js';
 
@@ -152,13 +155,14 @@ function resolveSbomFormat(rawFormat: unknown): SecuritySbomFormat | undefined {
   return undefined;
 }
 
-function getContainerImageFullName(container) {
+function getContainerImageFullName(container, tagOverride?: string) {
+  const tag = tagOverride || container.image.tag.value;
   const registryState = registry.getState().registry || {};
   const containerRegistry = registryState[container.image.registry.name];
   if (containerRegistry && typeof containerRegistry.getImageFullName === 'function') {
-    return containerRegistry.getImageFullName(container.image, container.image.tag.value);
+    return containerRegistry.getImageFullName(container.image, tag);
   }
-  return `${container.image.registry.url}/${container.image.name}:${container.image.tag.value}`;
+  return `${container.image.registry.url}/${container.image.name}:${tag}`;
 }
 
 async function getContainerRegistryAuth(container) {
@@ -661,6 +665,69 @@ async function getContainerLogs(req, res) {
   }
 }
 
+async function scanContainer(req, res) {
+  const { id } = req.params;
+  const container = storeContainer.getContainer(id);
+  if (!container) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const securityConfiguration = getSecurityConfiguration();
+  if (!securityConfiguration.enabled || securityConfiguration.scanner !== 'trivy') {
+    res.status(400).json({ error: 'Security scanner is not configured' });
+    return;
+  }
+
+  broadcastScanStarted(id);
+
+  try {
+    const updateTag = container.updateKind?.remoteValue;
+    const image = getContainerImageFullName(container, updateTag);
+    log.info(`Running on-demand security scan for ${image}`);
+    const auth = await getContainerRegistryAuth(container);
+    const securityPatch: Record<string, any> = {};
+
+    // Run vulnerability scan
+    const scanResult = await scanImageForVulnerabilities({ image, auth });
+    securityPatch.scan = scanResult;
+
+    // Run signature verification if configured
+    if (securityConfiguration.signature.verify) {
+      const signatureResult = await verifyImageSignature({ image, auth });
+      securityPatch.signature = signatureResult;
+    }
+
+    // Generate SBOM if configured
+    if (securityConfiguration.sbom.enabled) {
+      const sbomResult = await generateImageSbom({
+        image,
+        auth,
+        formats: securityConfiguration.sbom.formats,
+      });
+      securityPatch.sbom = sbomResult;
+    }
+
+    // Persist results
+    const containerToStore = {
+      ...container,
+      security: {
+        ...(container.security || {}),
+        ...securityPatch,
+      },
+    };
+    const updatedContainer = storeContainer.updateContainer(containerToStore);
+
+    broadcastScanCompleted(id, scanResult.status);
+    res.status(200).json(updatedContainer);
+  } catch (e: any) {
+    broadcastScanCompleted(id, 'error');
+    res.status(500).json({
+      error: `Security scan failed (${e.message})`,
+    });
+  }
+}
+
 /**
  * Init Router.
  * @returns {*}
@@ -678,6 +745,7 @@ export function init() {
   router.post('/:id/watch', watchContainer);
   router.get('/:id/vulnerabilities', getContainerVulnerabilities);
   router.get('/:id/sbom', getContainerSbom);
+  router.post('/:id/scan', scanContainer);
   router.get('/:id/logs', getContainerLogs);
   return router;
 }
