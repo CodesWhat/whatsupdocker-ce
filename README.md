@@ -215,7 +215,7 @@ Automatic pre-update image backup with configurable retention and one-click roll
 <tr>
 <td align="center" width="33%">
 <h3>Container Actions</h3>
-Start, stop, and restart containers from the UI or API with feature-flag control
+Start, stop, restart, and update containers from the UI or API with feature-flag control
 </td>
 <td align="center" width="33%">
 <h3>Webhook API</h3>
@@ -427,7 +427,7 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 <tr><td>Container grouping / stacks</td><td align="center">✅</td><td align="center">⚠️ (linked)</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td></tr>
 <tr><td>Lifecycle hooks (pre/post)</td><td align="center">✅</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
 <tr><td>Webhook API for CI/CD</td><td align="center">✅</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
-<tr><td>Container start/stop/restart</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
+<tr><td>Container start/stop/restart/update</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
 <tr><td>Distributed agents (remote)</td><td align="center">✅</td><td align="center">⚠️ (single host)</td><td align="center">❌</td><td align="center">✅ (multi-orch)</td><td align="center">❌</td></tr>
 <tr><td>Audit log</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
 <tr><td>Security scanning (Trivy)</td><td align="center">✅</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td><td align="center">❌</td></tr>
@@ -470,7 +470,7 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 | **Font Awesome 6 icons** | Migrated from MDI to FA6 with support for `fab:`/`far:`/`fas:` prefix syntax |
 | **Icon CDN** | Auto-resolve container icons via selfhst/icons (`sh-` prefix) with homarr-labs fallback, plus `hl-`/`si-` and custom URL support |
 | **Mobile responsive UI** | Optimized mobile breakpoints for dashboard, containers, and self-update overlay |
-| **Container actions** | Start/stop/restart containers via API and UI, gated by `DD_SERVER_FEATURE_CONTAINERACTIONS` |
+| **Container actions** | Start/stop/restart/update containers via API and UI, gated by `DD_SERVER_FEATURE_CONTAINERACTIONS` |
 | **Webhook API** | Token-authenticated HTTP endpoints for CI/CD integration to trigger watch cycles and updates, gated by `DD_SERVER_WEBHOOK_ENABLED` and `DD_SERVER_WEBHOOK_TOKEN` |
 | **Lifecycle hooks** | Pre/post-update shell command hooks with configurable timeout |
 | **Auto rollback on health failure** | Monitors container health after updates and rolls back if unhealthy, configured via `dd.rollback.auto=true` |

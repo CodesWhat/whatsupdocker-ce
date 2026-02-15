@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OIDC session resilience for WUD migrations** — Corrupt or incompatible session data (e.g. from WUD's connect-loki store) no longer causes 500 errors. Sessions that fail to reload are automatically regenerated. All OIDC error responses now return JSON instead of plain text, preventing frontend parse errors. Added a global Express error handler to ensure unhandled exceptions return JSON.
 - **Disabled X-Powered-By header** — Removed the default Express `X-Powered-By` header from both the main API and agent API servers to reduce information exposure.
 - **Trivy scan queue** — Serialized concurrent Trivy invocations to prevent `"cache may be in use by another process"` errors when multiple containers are scanned simultaneously (batch triggers, on-demand scans, SBOM generation).
+- **Login error on wrong password** — `loginBasic()` attempted to parse the response body as JSON even on 401 failures, causing `Unexpected token 'U', "Unauthorized" is not valid JSON` errors instead of the friendly "Username or password error" message.
+- **Snackbar notification colors ignoring level** — The SnackBar component had a hardcoded `color="primary"` instead of binding to the `level` prop, causing error and warning notifications to display as blue instead of red/amber.
 - **SBOM format key mismatch** — Fixed container model schema validating SBOM formats against `cyclonedx` instead of the correct `cyclonedx-json` key.
 
 ### Added
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Update Guard SBOM generation** — Added Trivy SBOM generation (`spdx-json`, `cyclonedx-json`) for candidate images with persistence in `container.security.sbom` and a new `GET /api/containers/:id/sbom` API endpoint (with `format` query support).
 - **Container card security status chip** — Added a vulnerability chip on container cards showing Update Guard scan status (`safe`, `blocked`, `scan error`) with severity summary tooltip data from `container.security.scan`.
 - **On-demand security scan** — Added `POST /api/containers/:id/scan` endpoint for triggering vulnerability scan, signature verification, and SBOM generation on demand. Broadcasts `dd:scan-started` and `dd:scan-completed` SSE events for real-time UI feedback. Added shield button to container card actions and mobile overflow menu.
+- **Direct container update from UI** — Added `POST /api/containers/:id/update` endpoint that triggers a Docker update directly without requiring trigger configuration. The "Update now" button in the UI now calls this single endpoint instead of looping through configured triggers.
 - **Trivy and cosign in official image** — The official drydock image now includes both `trivy` and `cosign` binaries, removing the need for custom images in local CLI mode.
 
 ### Changed
