@@ -41,22 +41,20 @@
   <a href="https://snyk.io/test/github/CodesWhat/drydock?targetFile=app/package.json"><img src="https://snyk.io/test/github/CodesWhat/drydock/badge.svg?targetFile=app/package.json" alt="Snyk"></a>
 </p>
 
----
-
 <h2 align="center">Contents</h2>
 
 - [Quick Start](#quick-start)
 - [Screenshots](#screenshots)
 - [Features](#features)
+- [Update Guard](#update-guard)
 - [Migrating from WUD](#migrating-from-wud)
 - [Supported Registries](#supported-registries)
 - [Supported Triggers](#supported-triggers)
 - [Authentication](#authentication)
+- [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Star History](#star-history)
 - [Built With](#built-with)
-
----
 
 <h2 align="center" id="quick-start">Quick Start</h2>
 
@@ -136,8 +134,6 @@ Accepted values: `false` (default — no proxy), `true` (trust all), a number (h
 
 </details>
 
----
-
 <h2 align="center" id="screenshots">Screenshots</h2>
 
 <table>
@@ -154,8 +150,6 @@ Accepted values: `false` (default — no proxy), `true` (trust all), a number (h
 <td align="center"><img src="docs/assets/drydock-mobile-containers.png" alt="Mobile containers" width="200"></td>
 </tr>
 </table>
-
----
 
 <h2 align="center" id="features">Features</h2>
 
@@ -246,7 +240,28 @@ Available on GHCR, Docker Hub, and Quay.io for flexible deployment
 </tr>
 </table>
 
----
+<h2 align="center" id="update-guard">Update Guard</h2>
+
+`Update Guard` adds a Trivy-powered safe-pull gate before container updates:
+
+1. Scan the candidate image before pull/restart
+2. Block the update when vulnerabilities exceed configured severity threshold
+3. Persist scan results to `container.security.scan` for API/UI visibility
+
+Security scanning is disabled by default and is enabled with `DD_SECURITY_SCANNER=trivy`.
+
+```yaml
+services:
+  drydock:
+    image: codeswhat/drydock:latest
+    environment:
+      - DD_SECURITY_SCANNER=trivy
+      - DD_SECURITY_BLOCK_SEVERITY=CRITICAL,HIGH
+      # Optional: use Trivy server mode instead of local CLI
+      # - DD_SECURITY_TRIVY_SERVER=http://trivy:4954
+```
+
+See full configuration in [`docs/configuration/security/README.md`](docs/configuration/security/README.md).
 
 <h2 align="center" id="supported-registries">Supported Registries</h2>
 
@@ -285,8 +300,6 @@ See [Registry docs](docs/configuration/registries/README.md) for full configurat
 
 </details>
 
----
-
 <h2 align="center" id="supported-triggers">Supported Triggers</h2>
 
 <details>
@@ -317,8 +330,6 @@ All triggers support **threshold filtering** (`all`, `major`, `minor`, `patch`) 
 
 </details>
 
----
-
 <h2 align="center" id="authentication">Authentication</h2>
 
 <details>
@@ -331,8 +342,6 @@ All triggers support **threshold filtering** (`all`, `major`, `minor`, `patch`) 
 | OIDC | OpenID Connect (Authelia, Auth0, Authentik) | [docs](docs/configuration/authentications/oidc/README.md) |
 
 </details>
-
----
 
 <h2 align="center" id="migrating-from-wud">Migrating from WUD</h2>
 
@@ -424,6 +433,7 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 | **Dry-run preview** | Preview what a container update would do without performing it |
 | **Image backup & rollback** | Automatic pre-update image backup with configurable retention and rollback API |
 | **Grafana dashboard** | Importable JSON template for Prometheus metrics overview |
+| **Update Guard** | Trivy vulnerability gate that scans candidate images before Docker updates and blocks based on configured severity thresholds |
 | **Font Awesome 6 icons** | Migrated from MDI to FA6 with support for `fab:`/`far:`/`fas:` prefix syntax |
 | **Icon CDN** | Auto-resolve container icons via selfhst/icons (`sh-` prefix) with homarr-labs fallback, plus `hl-`/`si-` and custom URL support |
 | **Mobile responsive UI** | Optimized mobile breakpoints for dashboard, containers, and self-update overlay |
@@ -464,7 +474,22 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 
 </details>
 
----
+<h2 align="center" id="roadmap">Roadmap</h2>
+
+Here's what's coming. See the [full roadmap](docs/planning/ROADMAP.md) for details.
+
+| Version | Theme | Highlights |
+| --- | --- | --- |
+| **v1.3.0** | Security Integration | Trivy scanning, Update Guard, SBOM generation, image signing |
+| **v1.4.0** | UI Modernization | PrimeVue migration, Composition API, Vite cleanup, font personalization |
+| **v1.5.0** | Observability | Real-time log viewer, resource monitoring, registry webhooks, notification templates, release notes, MS Teams & Matrix |
+| **v1.6.0** | Fleet Management | YAML config, live UI config panels, volume browser, parallel updates, dependency ordering, container groups |
+| **v2.0.0** | Platform Expansion | Docker Swarm, Kubernetes watchers and triggers |
+| **v2.1.0** | Deployment Patterns | Health check gates, canary deployments |
+| **v2.2.0** | Container Operations | Web terminal, file browser, image building |
+| **v2.3.0** | Developer Experience | API keys, passkey auth, TOTP 2FA, OpenAPI docs, TypeScript actions, CLI |
+| **v2.4.0** | Data Safety | Scheduled backups (S3, SFTP), compose templates, secret management |
+| **v3.0.0** | GitOps & Beyond | Git-based stack deployment, network topology, GPU monitoring, i18n |
 
 <h2 align="center" id="documentation">Documentation</h2>
 
@@ -478,8 +503,6 @@ drydock is a drop-in replacement for What's Up Docker (WUD). Switch only the ima
 | Roadmap | [`docs/planning/ROADMAP.md`](docs/planning/ROADMAP.md) |
 | Issues | [GitHub Issues](https://github.com/CodesWhat/drydock/issues) |
 | Discussions | [GitHub Discussions](https://github.com/CodesWhat/drydock/discussions) — feature requests & ideas welcome |
-
----
 
 <h2 align="center" id="star-history">Star History</h2>
 

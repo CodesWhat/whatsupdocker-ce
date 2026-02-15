@@ -5,6 +5,8 @@
 - :lock: [UI] - Migrate to Vue 3
 - :lock: [UI] - Migrate to Vuetify 3
 - :lock: Upgrade to node.js 24
+- :star: [SECURITY] - Add Update Guard (Trivy pre-update safe-pull vulnerability gate) with severity-based blocking (`DD_SECURITY_SCANNER`, `DD_SECURITY_BLOCK_SEVERITY`, `DD_SECURITY_TRIVY_SERVER`)
+- :star: [UI/API] - Add container vulnerability status chip from `container.security.scan` and `GET /api/containers/:id/vulnerabilities` endpoint
 - :star: Add TrueForge Container Registry support (oci.trueforge.org)
 - :star: [TRIGGER] - Add trigger execution order (`ORDER`) to control trigger sequencing
 - :star: [TRIGGER] - Allow include/exclude labels to match trigger names (example: `update`)

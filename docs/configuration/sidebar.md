@@ -5,6 +5,7 @@
   - [Authentication](configuration/authentications/)
   - [Logs](configuration/logs/)
   - [Registries](configuration/registries/)
+  - [Update Guard](configuration/security/)
   - [Server](configuration/server/)
   - [Storage](configuration/storage/)
   - [Timezone](configuration/timezone/)
